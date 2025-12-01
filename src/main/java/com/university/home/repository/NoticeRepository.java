@@ -18,7 +18,7 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
     List<Notice> findByTitleContaining(String title);
 
     // 최신글 5개
-    List<Notice> findTop5ByOrderByCreateTimeDesc();
+    List<Notice> findTop5ByOrderByCreatedTimeDesc();
 
     // 조회수 증가
     @Modifying
