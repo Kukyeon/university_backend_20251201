@@ -3,26 +3,26 @@ package com.university.home.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StaffDto;
 import com.university.home.entity.Staff;
-import com.university.home.entity.Student;
+import com.university.home.entity.User;
 import com.university.home.repository.StaffRepository;
-import com.university.home.repository.StudentRepository;
+import com.university.home.repository.UserRepository;
+
 import jakarta.transaction.Transactional;
 
 @Service
 public class StaffService {
 
-    private final StudentRepository studentRepository;
-
 	@Autowired
 	StaffRepository staffRepository;
-
-    StaffService(StudentRepository studentRepository) {
-        this.studentRepository = studentRepository;
-    }
+	@Autowired
+	UserRepository userRepository;
+	@Autowired
+	PasswordEncoder encoder;
 	
 	@Transactional
 	public Long createStaff(StaffDto staffDto) {
@@ -34,6 +34,13 @@ public class StaffService {
 		staff.setGender(staffDto.getGender());
 		staff.setTel(staffDto.getTel());
 		staffRepository.save(staff);
+		
+		User user = new User();
+		user.setId(staff.getId());
+		user.setUserRole("staff");
+		user.setPassword(encoder.encode(staff.getId().toString()));
+		
+		userRepository.save(user);
 		
 		return staff.getId();
 		
@@ -48,7 +55,7 @@ public class StaffService {
 		Staff staff = staffRepository.findById(dto.getId())
 				.orElseThrow(() -> new RuntimeException("Staff not found"));
 		staff.setTel(dto.getTel());
-		staff.setAddress(dto.getAddress());;
+		staff.setAddress(dto.getAddress());
 		staff.setEmail(dto.getEmail());
 	}
 	@Transactional
@@ -65,31 +72,5 @@ public class StaffService {
 	public List<Staff> getAllStaffs() {
 		return staffRepository.findAll();
 	}
-	@Transactional
-	public void updateStudentGradeAndSemesters() {
-		List<Student> students = studentRepository.findAll();
-		
-	    for (Student student : students) {
-	        int grade = student.getGrade().intValue();
-	        int semester = student.getSemester().intValue();
 
-	        switch (grade) {
-            case 1:
-                if (semester == 1) student.setSemester(Long.valueOf(2));
-                else { student.setGrade(Long.valueOf(2)); student.setSemester(Long.valueOf(1)); }
-                break;
-            case 2:
-                if (semester == 1) student.setSemester(Long.valueOf(2));
-                else { student.setGrade(Long.valueOf(3)); student.setSemester(Long.valueOf(1)); }
-                break;
-            case 3:
-                if (semester == 1) student.setSemester(Long.valueOf(2));
-                else { student.setGrade(Long.valueOf(4)); student.setSemester(Long.valueOf(1)); }
-                break;
-            case 4:
-                if (semester == 1) student.setSemester(Long.valueOf(2));
-	                break;
-	        }
-	    }
-	}
 }

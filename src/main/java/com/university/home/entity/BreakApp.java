@@ -1,5 +1,7 @@
 package com.university.home.entity;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.*;
 
 import lombok.Getter;
@@ -33,5 +35,6 @@ public class BreakApp {
     private Long toSemester; // Integer -> Long
 
     private String type;
-    private String status;
+    private LocalDate appDate;
+    private String status ="처리중";
 }
