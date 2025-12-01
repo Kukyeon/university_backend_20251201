@@ -11,7 +11,7 @@ import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
 import com.university.home.repository.EvaluationRepository;
 import com.university.home.repository.StudentRepository;
-import com.university.home.repository.SubjectRepository;
+//import com.university.home.repository.SubjectRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,18 +21,18 @@ public class EvaluationService {
 
     private final EvaluationRepository evaluationRepository;
     private final StudentRepository studentRepository;
-    private final SubjectRepository subjectRepository;
+   // private final SubjectRepository subjectRepository;
 
     @Transactional
     public Evaluation createEvaluation(EvaluationDto dto) {
         Student student = studentRepository.findById(dto.getStudentId())
                 .orElseThrow(() -> new RuntimeException("학생이 없습니다."));
-        Subject subject = subjectRepository.findById(dto.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("과목이 없습니다."));
+//        Subject subject = subjectRepository.findById(dto.getSubjectId())
+//                .orElseThrow(() -> new RuntimeException("과목이 없습니다."));
 
         Evaluation evaluation = new Evaluation();
         evaluation.setStudent(student);
-        evaluation.setSubject(subject);
+        //evaluation.setSubject(subject);
         evaluation.setAnswer1((long) dto.getAnswer1());
         evaluation.setAnswer2((long) dto.getAnswer2());
         evaluation.setAnswer3((long) dto.getAnswer3());
