@@ -1,10 +1,12 @@
 package com.university.home.dto;
 
 import lombok.Data;
+
 import java.util.List;
 
 @Data
 public class GeminiResponseDto {
+
     private List<Candidate> candidates;
 
     @Data
