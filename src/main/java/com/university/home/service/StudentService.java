@@ -1,6 +1,11 @@
 package com.university.home.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StudentDto;
@@ -13,14 +18,9 @@ import jakarta.transaction.Transactional;
 @Service
 public class StudentService {
 
-    private final ScholarshipRepository scholarshipRepository;
-
 	@Autowired
 	StudentRepository studentRepository;
 
-    StudentService(ScholarshipRepository scholarshipRepository) {
-        this.scholarshipRepository = scholarshipRepository;
-    }
 	
 	@Transactional
 	public Long createStudent(StudentDto dto) {
@@ -49,5 +49,38 @@ public class StudentService {
 	public void updateStudent(StudentDto dto) {
 		Student student = studentRepository.findById(dto.getId())
 				.orElseThrow(() -> new RuntimeException("Student not found"));
+		student.setTel(dto.getTel());
+		student.setAddress(dto.getAddress());
+		student.setEmail(dto.getEmail());
 	}
+	@Transactional
+	public List<Student> getAllStudents() {
+		return studentRepository.findAll();
+	}
+	@Transactional
+	public boolean checkExistsForPasswordReset(Long id, String name, String email) {
+		return studentRepository.existsByIdAndNameAndEmail(id, name, email);
+	}
+	@Transactional
+	public Long findByNameEmail(String name, String email) {
+		return studentRepository.findByNameAndEmail(name, email)
+				.map(Student::getId)
+				.orElseThrow(() -> new RuntimeException("Student not found"));
+	}
+	// 전체 학생 조회
+	public Page<Student> getStudents(int page, int size) {
+		Pageable pageable = PageRequest.of(page, size);
+		return studentRepository.findAll(pageable);
+	}
+	// 학과별 학생 조회
+	public Page<Student> getStudentsByDep(Long deptId,int page, int size) {
+		Pageable pageable = PageRequest.of(page, size);
+		return studentRepository.findByDepartmentId(deptId, pageable);
+	}
+	// 학번 학생 조회
+	public Page<Student> getStudentsById(Long studentId,int page, int size) {
+		Pageable pageable = PageRequest.of(page, size);
+		return studentRepository.findByStudentId(studentId, pageable);
+	}
+	
 }
