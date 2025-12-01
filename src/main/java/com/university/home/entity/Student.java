@@ -14,6 +14,11 @@ public class Student {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // Integer -> Long
     
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
+    private User user; // User와 1:1 매핑
+    
     private String name;
     private LocalDate birthDate;
     private String gender;
