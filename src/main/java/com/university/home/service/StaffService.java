@@ -7,15 +7,22 @@ import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StaffDto;
 import com.university.home.entity.Staff;
+import com.university.home.entity.Student;
 import com.university.home.repository.StaffRepository;
-
+import com.university.home.repository.StudentRepository;
 import jakarta.transaction.Transactional;
 
 @Service
 public class StaffService {
 
+    private final StudentRepository studentRepository;
+
 	@Autowired
 	StaffRepository staffRepository;
+
+    StaffService(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+    }
 	
 	@Transactional
 	public Long createStaff(StaffDto staffDto) {
@@ -57,5 +64,32 @@ public class StaffService {
 	@Transactional
 	public List<Staff> getAllStaffs() {
 		return staffRepository.findAll();
+	}
+	@Transactional
+	public void updateStudentGradeAndSemesters() {
+		List<Student> students = studentRepository.findAll();
+		
+	    for (Student student : students) {
+	        int grade = student.getGrade().intValue();
+	        int semester = student.getSemester().intValue();
+
+	        switch (grade) {
+            case 1:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+                else { student.setGrade(Long.valueOf(2)); student.setSemester(Long.valueOf(1)); }
+                break;
+            case 2:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+                else { student.setGrade(Long.valueOf(3)); student.setSemester(Long.valueOf(1)); }
+                break;
+            case 3:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+                else { student.setGrade(Long.valueOf(4)); student.setSemester(Long.valueOf(1)); }
+                break;
+            case 4:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+	                break;
+	        }
+	    }
 	}
 }
