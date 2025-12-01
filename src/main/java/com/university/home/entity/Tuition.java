@@ -23,8 +23,9 @@ public class Tuition {
     @Column(name = "tui_amount")
     private Long tuiAmount; // Integer -> Long
 
-    @Column(name = "sch_type")
-    private Long schType; // Integer -> Long
+    @ManyToOne
+    @JoinColumn(name = "sch_type")
+    private Scholarship scholarshipType;
 
     @Column(name = "sch_amount")
     private Long schAmount; // Integer -> Long

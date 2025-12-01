@@ -19,6 +19,7 @@ public class StuSch {
     private Long schYear; // Integer -> Long
     private Long semester; // Integer -> Long
     
-    @Column(name = "sch_type")
-    private Long schType; // Integer -> Long
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sch_type")
+    private Scholarship scholarshipType;
 }

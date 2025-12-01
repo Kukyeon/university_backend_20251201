@@ -1,0 +1,22 @@
+package com.university.home.dto;
+
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+@Data
+public class CollTuitFormDto {
+
+	@NotNull(message = "단과대 ID는 필수입니다.")
+    private Long collegeId;
+
+    @NotNull(message = "등록금 금액은 필수입니다.")
+    private Long amount;
+
+    /**
+     * 화면 출력용 포맷
+     */
+    public String amountFormat() {
+        if (amount == null) return "";
+        return String.format("%,d", amount); // 1000단위 콤마
+    }
+}
