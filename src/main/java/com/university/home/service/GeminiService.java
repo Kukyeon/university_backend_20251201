@@ -14,31 +14,38 @@ import com.university.home.dto.GeminiResponseDto;
 @RequiredArgsConstructor
 public class GeminiService {
 
-    @Value("${gemini.api.url}")
-    private String apiUrl;
-
     @Value("${gemini.api.key}")
     private String apiKey;
+
+    // ★ v1로 변경 (중요)
+    private static final String MODEL = "gemini-2.5-flash";
+    private static final String API_URL =
+            "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     public String talk(String message) {
-        // 1. 요청 주소 만들기 (URL + Key)
-        String requestUrl = apiUrl + "?key=" + apiKey;
 
-        // 2. 데이터 포장하기
-        GeminiRequestDto request = new GeminiRequestDto(message);
+        // 요청 JSON 구조 생성
+        GeminiRequestDto request = GeminiRequestDto.of(message);
+
+        String requestUrl = API_URL + "?key=" + apiKey;
 
         try {
-            // 3. 구글 서버로 발송! (POST 요청)
-            GeminiResponseDto response = restTemplate.postForObject(requestUrl, request, GeminiResponseDto.class);
+            GeminiResponseDto response =
+                    restTemplate.postForObject(requestUrl, request, GeminiResponseDto.class);
 
-            // 4. 답변 꺼내기 (복잡한 JSON에서 text만 쏙 뺌)
-            if (response != null && !response.getCandidates().isEmpty()) {
+            if (response != null &&
+                response.getCandidates() != null &&
+                !response.getCandidates().isEmpty() &&
+                response.getCandidates().get(0).getContent() != null &&
+                !response.getCandidates().get(0).getContent().getParts().isEmpty()) {
+
                 return response.getCandidates().get(0).getContent().getParts().get(0).getText();
             }
-            return "답변을 들을 수 없습니다.";
-            
+
+            return "AI가 응답하지 않습니다.";
+
         } catch (Exception e) {
             log.error("Gemini 연결 에러: ", e);
             return "AI 서버 연결 실패: " + e.getMessage();

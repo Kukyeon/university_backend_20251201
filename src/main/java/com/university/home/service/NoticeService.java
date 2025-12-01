@@ -77,6 +77,6 @@ public class NoticeService {
     }
 
     public List<Notice> getLatest5Notices() {
-        return noticeRepository.findTop5ByOrderByCreateTimeDesc();
+        return noticeRepository.findTop5ByOrderByCreatedTimeDesc();
     }
 }
