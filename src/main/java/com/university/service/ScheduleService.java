@@ -48,7 +48,7 @@ public class ScheduleService {
 
     @Transactional
     public void deleteSchedule(Long id, Long staffId) {
-        scheduleRepository.deleteByIdAndStaffId(id, staffId);
+        scheduleRepository.deleteByIdAndStaff_Id(id, staffId);
     }
 
     public List<Schedule> getSchedulesByMonth(int month) {
