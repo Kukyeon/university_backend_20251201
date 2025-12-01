@@ -16,7 +16,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     // 교수 기준 전체 강의 평가 조회
     List<Evaluation> findBySubject_Professor_Id(Long professorId);
 
-    // 교수 기준 과목별 강의 평가 조회
+    // 교수 기준 과목별 강의 평가 조회111
     @Query("SELECT e FROM Evaluation e WHERE e.subject.professor.id = :professorId AND e.subject.name = :subjectName")
     List<Evaluation> findByProfessorIdAndSubjectName(@Param("professorId") Long professorId,
                                                      @Param("subjectName") String subjectName);
