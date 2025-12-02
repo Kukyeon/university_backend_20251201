@@ -43,7 +43,7 @@ public class NoticeService {
     }
 
     public List<Notice> getNotices(NoticePageFormDto dto) {
-        if (dto.getKeyword() == null) {
+        if (dto.getKeyword() == null || dto.getKeyword().isEmpty()) {
             return noticeRepository.findAll();
         }
         if ("title".equals(dto.getType())) {
@@ -57,7 +57,9 @@ public class NoticeService {
     public Notice getNoticeById(Long id) {
         Notice notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("공지사항이 없습니다."));
-        noticeRepository.incrementViews(id); // 조회수 증가
+        // 조회수 안전 증가
+        if (notice.getViews() == null) notice.setViews(0L);
+        noticeRepository.incrementViews(id);
         return notice;
     }
 
