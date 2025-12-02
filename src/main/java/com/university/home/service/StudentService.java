@@ -26,9 +26,16 @@ public class StudentService {
 	UserService userService;
 	@Autowired
 	DepartmentRepository departmentRepository;
-	
+	@Autowired
+	StuStatService stuStatService;
 	@Transactional
-	public Long createStudent(StudentDto dto) {
+	public Student createStudentWithStatus(StudentDto dto) {
+	    Student student = createStudent(dto);  // 학생 생성
+	    stuStatService.createFirstStatus(student); // 학적 상태 생성
+	    return student;
+	}
+	@Transactional
+	public Student createStudent(StudentDto dto) {
 		Student student = new Student();
 		student.setName(dto.getName());
 		student.setAddress(dto.getAddress());
@@ -37,16 +44,16 @@ public class StudentService {
 		student.setGender(dto.getGender());
 		student.setTel(dto.getTel());
 		student.setEntranceDate(dto.getEntranceDate());
-		student.setDepartment(dto.getDepartment());
-		//  Department dept = departmentRepository.findById(dto.getDepartmentId())
-        // .orElseThrow(() -> new RuntimeException("Department not found"));
-		// student.setDepartment(dept);
+		//student.setDepartment(dto.getDepartment());
+		Department dept = departmentRepository.findById(dto.getDepartmentId())
+        .orElseThrow(() -> new RuntimeException("Department not found"));
+		student.setDepartment(dept);
 		studentRepository.save(student);
 		
 		User user = userService.createUser(student.getId(), "student");
 		student.setUser(user);
 		studentRepository.save(student);
-		return student.getId();
+		return student;
 	}
 	
 	@Transactional
@@ -86,7 +93,7 @@ public class StudentService {
 		Department dept = departmentRepository.findById(deptId)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
 		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findByDepartment(deptId, pageable);
+		return studentRepository.findByDepartment(dept, pageable);
 	}
 	// 학번 학생 조회
 	public Student getStudentById(Long studentId) {
