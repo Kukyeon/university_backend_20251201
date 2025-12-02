@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import com.university.home.entity.BreakApp;
 import com.university.home.entity.CollTuit;
+import com.university.home.entity.College;
+import com.university.home.entity.Scholarship;
+import com.university.home.entity.StuSch;
 import com.university.home.entity.StuStat;
 import com.university.home.entity.Student;
 import com.university.home.entity.Tuition;
@@ -69,29 +72,34 @@ public class TuitionService {
     private int getCurrentSemester() {
         return (LocalDate.now().getMonthValue() <= 6) ? 1 : 2;
     }
-    @Transactional
-    public Tuition createTuition(Long studentId) {
-    	Student student = studentService.getStudentById(studentId);
-    	
-    	StuStat stuStat = stuStatService.getCurrentStatus(studentId);
-    	 
-    	if (stuStat.getStatus().equals("졸업") || stuStat.getStatus().equals("자퇴")) {
-			return null;
-		}
-    	
-    	List<BreakApp> breakApps = breakAppService.getByStudent(studentId);
-    	int currentYear = LocalDate.now().getYear();
-    	int currentSemester = getCurrentSemester();
-    	for (BreakApp b : breakApps) {
-			if (b.getStatus().equals("승인")) {
-				if(b.getToYear() > LocalDate.now().getYear()) return null;
-				if(b.getToYear() == LocalDate.now().getYear() && b.getToSemester() >= getCurrentSemester()) return null;
-			}
-		}
-    	Optional<Tuition> existing = tuitionRepository
-	            .findByStudentIdAndTuiYearAndSemester(studentId, (long)currentYear, (long)currentSemester);
-	    if (existing.isPresent()) return null;
-	   
-	    //CollTuit collTuit = collTuitRepository
-    }
+//    @Transactional
+//    public int createTuition(Long studentId) {
+//    	Student student = studentService.getStudentById(studentId);
+//    	
+//    	StuStat stuStat = stuStatService.getCurrentStatus(studentId);
+//    	 
+//    	if (stuStat.getStatus().equals("졸업") || stuStat.getStatus().equals("자퇴")) {
+//			return 0;
+//		}
+//    	
+//    	List<BreakApp> breakApps = breakAppService.getByStudent(studentId);
+//    	int currentYear = LocalDate.now().getYear();
+//    	int currentSemester = getCurrentSemester();
+//    	for (BreakApp b : breakApps) {
+//			if (b.getStatus().equals("승인")) {
+//				if(b.getToYear() > LocalDate.now().getYear()) return 0;
+//				if(b.getToYear() == LocalDate.now().getYear() && b.getToSemester() >= getCurrentSemester()) return 0;
+//			}
+//		}
+//    	Optional<Tuition> existing = tuitionRepository
+//	            .findByStudentIdAndTuiYearAndSemester(studentId, (long)currentYear, (long)currentSemester);
+//    	if (tuitionRepository.findByStudentIdAndTuiYearAndSemester(studentId, (long)currentYear, (long)currentSemester).isPresent()) {
+//            return 0;
+//        }
+//    	College college = student.getDepartment().getCollege();
+//    	CollTuit collTuit = collTuitRepository.findByCollege(college).orElseThrow(() -> new RuntimeException("등록금 정보가 없습니다."));
+//    	Long tuiAmount = collTuit.getAmount();
+//    	
+//
+//    }
 }
