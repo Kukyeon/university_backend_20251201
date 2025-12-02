@@ -6,12 +6,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StudentDto;
 import com.university.home.entity.Student;
+import com.university.home.entity.User;
 import com.university.home.repository.ScholarshipRepository;
 import com.university.home.repository.StudentRepository;
+import com.university.home.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -20,7 +23,10 @@ public class StudentService {
 
 	@Autowired
 	StudentRepository studentRepository;
-
+	@Autowired
+	UserRepository userRepository;
+	@Autowired
+	PasswordEncoder encoder;
 	
 	@Transactional
 	public Long createStudent(StudentDto dto) {
@@ -37,6 +43,13 @@ public class StudentService {
         // .orElseThrow(() -> new RuntimeException("Department not found"));
 		// student.setDepartment(dept);
 		studentRepository.save(student);
+		
+		User user = new User();
+		user.setId(student.getId());
+		user.setUserRole("student");
+		user.setPassword(encoder.encode(student.getId().toString()));
+		userRepository.save(user);
+		
 		return student.getId();
 	}
 	
@@ -82,5 +95,31 @@ public class StudentService {
 		Pageable pageable = PageRequest.of(page, size);
 		return studentRepository.findByStudentId(studentId, pageable);
 	}
-	
+	@Transactional
+	public void updateStudentGradeAndSemesters() {
+		List<Student> students = studentRepository.findAll();
+		
+	    for (Student student : students) {
+	        int grade = student.getGrade().intValue();
+	        int semester = student.getSemester().intValue();
+
+	        switch (grade) {
+            case 1:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+                else { student.setGrade(Long.valueOf(2)); student.setSemester(Long.valueOf(1)); }
+                break;
+            case 2:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+                else { student.setGrade(Long.valueOf(3)); student.setSemester(Long.valueOf(1)); }
+                break;
+            case 3:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+                else { student.setGrade(Long.valueOf(4)); student.setSemester(Long.valueOf(1)); }
+                break;
+            case 4:
+                if (semester == 1) student.setSemester(Long.valueOf(2));
+	                break;
+	        }
+	    }
+	}
 }
