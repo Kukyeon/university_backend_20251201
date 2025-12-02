@@ -8,5 +8,7 @@ import com.university.home.entity.StuSch;
 
 public interface StuSchRepository extends JpaRepository<StuSch, Long> {
 
-	List<StuSch> findByStudentIdAndSchYearAndSemester(Long studentId, Long schYear, Long semeste);
+	List<StuSch> findByStudentId(Long studentId);
+	
+	List<StuSch> findByStudentIdAndSchYearAndSemester(Long studentId, Long schYear, Long semester);
 }

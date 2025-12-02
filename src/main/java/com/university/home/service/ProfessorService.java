@@ -36,10 +36,10 @@ public class ProfessorService {
 		professor.setEmail(dto.getEmail());
 		professor.setGender(dto.getGender());
 		professor.setTel(dto.getTel());
-		professor.setDepartment(dto.getDepartment());
-		//  Department dept = departmentRepository.findById(dto.getDepartmentId())
-        // .orElseThrow(() -> new RuntimeException("Department not found"));
-		// professor.setDepartment(dept);
+		//professor.setDepartment(dto.getDepartment());
+		Department dept = departmentRepository.findById(dto.getDepartmentId())
+        .orElseThrow(() -> new RuntimeException("Department not found"));
+		professor.setDepartment(dept);
 		professorRepository.save(professor);
 		
 		User user =userService.createUser(professor.getId(), "professor");
