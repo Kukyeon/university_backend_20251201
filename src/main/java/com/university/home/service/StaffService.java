@@ -3,14 +3,11 @@ package com.university.home.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StaffDto;
 import com.university.home.entity.Staff;
-import com.university.home.entity.User;
 import com.university.home.repository.StaffRepository;
-import com.university.home.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -20,9 +17,7 @@ public class StaffService {
 	@Autowired
 	StaffRepository staffRepository;
 	@Autowired
-	UserRepository userRepository;
-	@Autowired
-	PasswordEncoder encoder;
+	UserService userService;
 	
 	@Transactional
 	public Long createStaff(StaffDto staffDto) {
@@ -35,12 +30,7 @@ public class StaffService {
 		staff.setTel(staffDto.getTel());
 		staffRepository.save(staff);
 		
-		User user = new User();
-		user.setId(staff.getId());
-		user.setUserRole("staff");
-		user.setPassword(encoder.encode(staff.getId().toString()));
-		
-		userRepository.save(user);
+		userService.createUser(staff.getId(), "student");
 		
 		return staff.getId();
 		
