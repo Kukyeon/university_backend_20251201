@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.university.home.dto.ScheduleFormDto;
 import com.university.home.entity.Schedule;
 import com.university.home.entity.Staff;
 import com.university.home.repository.ScheduleRepository;
@@ -29,20 +30,24 @@ public class ScheduleService {
     }
 
     @Transactional
-    public Schedule createSchedule(Long staffId, Schedule schedule) {
+    public Schedule createSchedule(Long staffId, ScheduleFormDto dto) {
         Staff staff = staffRepository.findById(staffId)
                 .orElseThrow(() -> new RuntimeException("직원을 찾을 수 없습니다."));
+        Schedule schedule = new Schedule();
         schedule.setStaff(staff);
+        schedule.setStartDay(dto.getStartDay());
+        schedule.setEndDay(dto.getEndDay());
+        schedule.setInformation(dto.getInformation());
         return scheduleRepository.save(schedule);
     }
 
     @Transactional
-    public Schedule updateSchedule(Long id, Schedule scheduleData) {
+    public Schedule updateSchedule(Long id, ScheduleFormDto dto) {
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("일정을 찾을 수 없습니다."));
-        schedule.setStartDay(scheduleData.getStartDay());
-        schedule.setEndDay(scheduleData.getEndDay());
-        schedule.setInformation(scheduleData.getInformation());
+        schedule.setStartDay(dto.getStartDay());
+        schedule.setEndDay(dto.getEndDay());
+        schedule.setInformation(dto.getInformation());
         return scheduleRepository.save(schedule);
     }
 
