@@ -15,8 +15,7 @@ public class Student {
     private Long id; // Integer -> Long
     
     @OneToOne
-    @MapsId
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "user_id")
     private User user; // User와 1:1 매핑
     
     private String name;

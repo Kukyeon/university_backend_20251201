@@ -23,5 +23,5 @@ public interface ProfessorRepository extends JpaRepository< Professor, Long> {
 	    Page<Professor> findByDepartmentId(Long deptId, Pageable pageable);
 
 	    // 학번으로 학생 조회
-	    Page<Professor> findByProfessorId(Long professorId, Pageable pageable);
+	    Page<Professor> findById(Long professorId, Pageable pageable);
 }

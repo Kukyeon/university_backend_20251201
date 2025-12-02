@@ -6,14 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.ProfessorDto;
 import com.university.home.entity.Professor;
 import com.university.home.entity.User;
 import com.university.home.repository.ProfessorRepository;
-import com.university.home.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -23,9 +21,7 @@ public class ProfessorService {
 	@Autowired
 	ProfessorRepository professorRepository;
 	@Autowired
-	UserRepository userRepository;
-	@Autowired
-	PasswordEncoder encoder;
+	UserService userService;
 	
 	@Transactional
 	public Long createProfessor(ProfessorDto dto) {
@@ -42,12 +38,9 @@ public class ProfessorService {
 		// professor.setDepartment(dept);
 		professorRepository.save(professor);
 		
-		User user = new User();
-		user.setId(professor.getId());
-		user.setUserRole("professor");
-		user.setPassword(encoder.encode(professor.getId().toString()));
-		
-		userRepository.save(user);
+		User user =userService.createUser(professor.getId(), "professor");
+		professor.setUser(user);
+		professorRepository.save(professor);
 		
 		return professor.getId();
 	}
@@ -78,19 +71,19 @@ public class ProfessorService {
 				.map(Professor::getId)
 				.orElseThrow(() -> new RuntimeException("Professor not found"));
 	}
-	// 전체 학생 조회
-	public Page<Professor> getStudents(int page, int size) {
+	// 전체 교수 조회
+	public Page<Professor> getProffesors(int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
 		return professorRepository.findAll(pageable);
 	}
-	// 학과별 학생 조회
-	public Page<Professor> getStudentsByDep(Long deptId,int page, int size) {
+	// 학과별 교수 조회
+	public Page<Professor> getProfessorsByDep(Long deptId,int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
 		return professorRepository.findByDepartmentId(deptId, pageable);
 	}
-	// 학번 학생 조회
-	public Page<Professor> getStudentsById(Long professorId,int page, int size) {
+	// id 교수 조회
+	public Page<Professor> getProfessorsById(Long professorId,int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
-		return professorRepository.findByProfessorId(professorId, pageable);
+		return professorRepository.findById(professorId, pageable);
 	}
 }
