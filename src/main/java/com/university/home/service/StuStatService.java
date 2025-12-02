@@ -63,4 +63,12 @@ public class StuStatService {
         newStat.setBreakAppId(breakAppId);
         stuStatRepository.save(newStat);
     }
+    public List<Long> getAllStudentIds() {
+        return stuStatRepository.findAll()
+                .stream()
+                .map(stuStat -> stuStat.getStudent().getId())
+                .distinct()
+                .toList();
+    }
+
 }
