@@ -6,15 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StudentDto;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
-import com.university.home.repository.ScholarshipRepository;
 import com.university.home.repository.StudentRepository;
-import com.university.home.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -24,9 +21,7 @@ public class StudentService {
 	@Autowired
 	StudentRepository studentRepository;
 	@Autowired
-	UserRepository userRepository;
-	@Autowired
-	PasswordEncoder encoder;
+	UserService userService;
 	
 	@Transactional
 	public Long createStudent(StudentDto dto) {
@@ -44,12 +39,9 @@ public class StudentService {
 		// student.setDepartment(dept);
 		studentRepository.save(student);
 		
-		User user = new User();
-		user.setId(student.getId());
-		user.setUserRole("student");
-		user.setPassword(encoder.encode(student.getId().toString()));
-		userRepository.save(user);
-		
+		User user = userService.createUser(student.getId(), "student");
+		student.setUser(user);
+		studentRepository.save(student);
 		return student.getId();
 	}
 	
@@ -93,7 +85,7 @@ public class StudentService {
 	// 학번 학생 조회
 	public Page<Student> getStudentsById(Long studentId,int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findByStudentId(studentId, pageable);
+		return studentRepository.findById(studentId, pageable);
 	}
 	@Transactional
 	public void updateStudentGradeAndSemesters() {
