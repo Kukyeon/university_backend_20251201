@@ -37,7 +37,7 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 	StaffService staffService;
 	
 	@PostMapping("/staff")
-	public ResponseEntity<?> createStaff(@Valid StaffDto dto, BindingResult bindingResult) {
+	public ResponseEntity<?> createStaff(@Valid @RequestBody StaffDto dto, BindingResult bindingResult) {
 		if (bindingResult.hasErrors()) {
 			StringBuilder sb = new StringBuilder();
 			bindingResult.getAllErrors().forEach(error -> {
@@ -50,7 +50,7 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 		return ResponseEntity.ok(staffId);
 	}
 	@PostMapping("/student")
-	public ResponseEntity<?> createStudent(@Valid StudentDto dto, BindingResult bindingResult) {
+	public ResponseEntity<?> createStudent(@Valid@RequestBody StudentDto dto, BindingResult bindingResult) {
 		if (bindingResult.hasErrors()) {
 			StringBuilder sb = new StringBuilder();
 			bindingResult.getAllErrors().forEach(error -> {
@@ -58,12 +58,12 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 			});
 			throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
 		}
-		Long studentId = studentService.createStudent(dto);
+		Student student = studentService.createStudentWithStatus(dto);
 		
-		return ResponseEntity.ok(studentId);
+		return ResponseEntity.ok(student);
 	}
 	@PostMapping("/professor")
-	public ResponseEntity<?> createProffesor(@Valid ProfessorDto dto, BindingResult bindingResult) {
+	public ResponseEntity<?> createProffesor(@Valid@RequestBody ProfessorDto dto, BindingResult bindingResult) {
 		if (bindingResult.hasErrors()) {
 			StringBuilder sb = new StringBuilder();
 			bindingResult.getAllErrors().forEach(error -> {
