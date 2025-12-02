@@ -26,5 +26,5 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Page<Student> findByDepartmentId(Long deptId, Pageable pageable);
 
     // 학번으로 학생 조회
-    Page<Student> findByStudentId(Long studentId, Pageable pageable);
+    Page<Student> findById(Long id, Pageable pageable);
 }
