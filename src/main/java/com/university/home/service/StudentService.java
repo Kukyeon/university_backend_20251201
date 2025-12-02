@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StudentDto;
 import com.university.home.entity.Student;
+import com.university.home.entity.User;
 import com.university.home.repository.StudentRepository;
 
 import jakarta.transaction.Transactional;
@@ -38,8 +39,9 @@ public class StudentService {
 		// student.setDepartment(dept);
 		studentRepository.save(student);
 		
-		userService.createUser(student.getId(), "student");
-		
+		User user = userService.createUser(student.getId(), "student");
+		student.setUser(user);
+		studentRepository.save(student);
 		return student.getId();
 	}
 	

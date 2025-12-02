@@ -7,18 +7,19 @@ import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StaffDto;
 import com.university.home.entity.Staff;
+import com.university.home.entity.User;
 import com.university.home.repository.StaffRepository;
-
 import jakarta.transaction.Transactional;
 
 @Service
 public class StaffService {
 
+
 	@Autowired
 	StaffRepository staffRepository;
 	@Autowired
 	UserService userService;
-	
+
 	@Transactional
 	public Long createStaff(StaffDto staffDto) {
 		Staff staff = new Staff();
@@ -30,7 +31,9 @@ public class StaffService {
 		staff.setTel(staffDto.getTel());
 		staffRepository.save(staff);
 		
-		userService.createUser(staff.getId(), "student");
+		User user = userService.createUser(staff.getId(), "staff");
+		staff.setUser(user);
+		staffRepository.save(staff);
 		
 		return staff.getId();
 		
