@@ -9,8 +9,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.ProfessorDto;
+import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
 import com.university.home.entity.User;
+import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
 
 import jakarta.transaction.Transactional;
@@ -22,6 +24,8 @@ public class ProfessorService {
 	ProfessorRepository professorRepository;
 	@Autowired
 	UserService userService;
+	@Autowired
+	DepartmentRepository departmentRepository;
 	
 	@Transactional
 	public Long createProfessor(ProfessorDto dto) {
@@ -72,18 +76,20 @@ public class ProfessorService {
 				.orElseThrow(() -> new RuntimeException("Professor not found"));
 	}
 	// 전체 교수 조회
-	public Page<Professor> getProffesors(int page, int size) {
+	public Page<Professor> getProfessors(int page, int size) {
 		Pageable pageable = PageRequest.of(page, size);
 		return professorRepository.findAll(pageable);
 	}
 	// 학과별 교수 조회
 	public Page<Professor> getProfessorsByDep(Long deptId,int page, int size) {
+		Department dept = departmentRepository.findById(deptId)
+                .orElseThrow(() -> new RuntimeException("Department not found"));
 		Pageable pageable = PageRequest.of(page, size);
-		return professorRepository.findByDepartmentId(deptId, pageable);
+		return professorRepository.findByDepartment(dept, pageable);
 	}
 	// id 교수 조회
-	public Page<Professor> getProfessorsById(Long professorId,int page, int size) {
-		Pageable pageable = PageRequest.of(page, size);
-		return professorRepository.findById(professorId, pageable);
-	}
+	public Professor getProfessorById(Long professorId) {
+        return professorRepository.findById(professorId)
+                .orElseThrow(() -> new RuntimeException("Professor not found"));
+    }
 }
