@@ -30,5 +30,6 @@ public class Tuition {
     @Column(name = "sch_amount")
     private Long schAmount; // Integer -> Long
 
-    private Boolean status; 
+    @Column(nullable = false)
+    private Boolean status = false; 
 }
