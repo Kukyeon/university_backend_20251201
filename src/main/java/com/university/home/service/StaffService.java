@@ -7,16 +7,19 @@ import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StaffDto;
 import com.university.home.entity.Staff;
+import com.university.home.entity.User;
 import com.university.home.repository.StaffRepository;
-
 import jakarta.transaction.Transactional;
 
 @Service
 public class StaffService {
 
+
 	@Autowired
 	StaffRepository staffRepository;
-	
+	@Autowired
+	UserService userService;
+
 	@Transactional
 	public Long createStaff(StaffDto staffDto) {
 		Staff staff = new Staff();
@@ -26,6 +29,10 @@ public class StaffService {
 		staff.setEmail(staffDto.getEmail());
 		staff.setGender(staffDto.getGender());
 		staff.setTel(staffDto.getTel());
+		staffRepository.save(staff);
+		
+		User user = userService.createUser(staff.getId(), "staff");
+		staff.setUser(user);
 		staffRepository.save(staff);
 		
 		return staff.getId();
@@ -41,7 +48,7 @@ public class StaffService {
 		Staff staff = staffRepository.findById(dto.getId())
 				.orElseThrow(() -> new RuntimeException("Staff not found"));
 		staff.setTel(dto.getTel());
-		staff.setAddress(dto.getAddress());;
+		staff.setAddress(dto.getAddress());
 		staff.setEmail(dto.getEmail());
 	}
 	@Transactional
@@ -58,4 +65,5 @@ public class StaffService {
 	public List<Staff> getAllStaffs() {
 		return staffRepository.findAll();
 	}
+
 }
