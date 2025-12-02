@@ -21,6 +21,7 @@ public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final NoticeFileRepository noticeFileRepository;
 
+    // 공지사항 생성
     @Transactional
     public Notice createNotice(NoticeFormDto dto) {
         Notice notice = new Notice();
@@ -29,6 +30,7 @@ public class NoticeService {
         notice.setContent(dto.getContent());
         notice.setViews(0L);
         notice.setCreatedTime(dto.getCreatedTime());
+
         notice = noticeRepository.save(notice);
 
         if (dto.getFile() != null && !dto.getFile().isEmpty()) {
@@ -42,10 +44,12 @@ public class NoticeService {
         return notice;
     }
 
+    // 공지사항 검색 / 목록
     public List<Notice> getNotices(NoticePageFormDto dto) {
         if (dto.getKeyword() == null || dto.getKeyword().isEmpty()) {
             return noticeRepository.findAll();
         }
+
         if ("title".equals(dto.getType())) {
             return noticeRepository.findByTitleContaining(dto.getKeyword());
         } else {
@@ -53,31 +57,38 @@ public class NoticeService {
         }
     }
 
+    // 공지사항 조회 (조회수 증가 포함)
     @Transactional
     public Notice getNoticeById(Long id) {
         Notice notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("공지사항이 없습니다."));
-        // 조회수 안전 증가
+
         if (notice.getViews() == null) notice.setViews(0L);
         noticeRepository.incrementViews(id);
+
         return notice;
     }
 
+    // 공지사항 수정
     @Transactional
     public Notice updateNotice(Long id, NoticeFormDto dto) {
         Notice notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("공지사항이 없습니다."));
+
         notice.setCategory(dto.getCategory());
         notice.setTitle(dto.getTitle());
         notice.setContent(dto.getContent());
+
         return noticeRepository.save(notice);
     }
 
+    // 공지사항 삭제
     @Transactional
     public void deleteNotice(Long id) {
         noticeRepository.deleteById(id);
     }
 
+    // 최신 공지 5개
     public List<Notice> getLatest5Notices() {
         return noticeRepository.findTop5ByOrderByCreatedTimeDesc();
     }
