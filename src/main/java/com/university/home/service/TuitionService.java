@@ -8,8 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.university.home.entity.BreakApp;
+import com.university.home.entity.CollTuit;
+import com.university.home.entity.StuStat;
+import com.university.home.entity.Student;
 import com.university.home.entity.Tuition;
 import com.university.home.exception.CustomRestfullException;
+import com.university.home.repository.CollTuitRepository;
 import com.university.home.repository.ScholarshipRepository;
 import com.university.home.repository.TuitionRepository;
 
@@ -24,6 +29,12 @@ public class TuitionService {
 	TuitionRepository tuitionRepository;
 	@Autowired
 	StudentService studentService;
+	@Autowired
+	StuStatService stuStatService;
+	@Autowired
+	BreakAppService breakAppService;
+	@Autowired
+	CollTuitRepository collTuitRepository;
 	
 	 public List<Tuition> tuitionList(Long studentId) {
 	        return tuitionRepository.findByStudentId(studentId);
@@ -49,5 +60,38 @@ public class TuitionService {
     	}
     	tuition.setStatus(true);
     	
+    	StuStat stuStat = stuStatService.getCurrentStatus(studentId);
+    	if ("휴학".equals(stuStat.getStatus())) {
+			stuStatService.updateStatus(stuStat.getStudent(),"재학", null);
+		}
+    	
+    }
+    private int getCurrentSemester() {
+        return (LocalDate.now().getMonthValue() <= 6) ? 1 : 2;
+    }
+    @Transactional
+    public Tuition createTuition(Long studentId) {
+    	Student student = studentService.getStudentById(studentId);
+    	
+    	StuStat stuStat = stuStatService.getCurrentStatus(studentId);
+    	 
+    	if (stuStat.getStatus().equals("졸업") || stuStat.getStatus().equals("자퇴")) {
+			return null;
+		}
+    	
+    	List<BreakApp> breakApps = breakAppService.getByStudent(studentId);
+    	int currentYear = LocalDate.now().getYear();
+    	int currentSemester = getCurrentSemester();
+    	for (BreakApp b : breakApps) {
+			if (b.getStatus().equals("승인")) {
+				if(b.getToYear() > LocalDate.now().getYear()) return null;
+				if(b.getToYear() == LocalDate.now().getYear() && b.getToSemester() >= getCurrentSemester()) return null;
+			}
+		}
+    	Optional<Tuition> existing = tuitionRepository
+	            .findByStudentIdAndTuiYearAndSemester(studentId, (long)currentYear, (long)currentSemester);
+	    if (existing.isPresent()) return null;
+	   
+	    //CollTuit collTuit = collTuitRepository
     }
 }
