@@ -25,8 +25,10 @@ public class ProfessorDto {
 	
 	@Size(min = 11, max = 13)
 	private String tel;
-	@Size(min = 100, max = 999)
-	private Integer deptId;
+	
+	//private Department department;
+	private Long departmentId;
+	
 	@Email
 	private String email;
 }

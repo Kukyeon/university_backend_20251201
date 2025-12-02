@@ -11,6 +11,11 @@ import java.time.LocalDate;
 public class Professor {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // Integer -> Long
+    
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user; // User와 1:1 매핑
+    
     private String name;
     private LocalDate birthDate;
     private String gender;
