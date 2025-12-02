@@ -6,5 +6,5 @@ import com.university.home.entity.CollTuit;
 
 public interface CollTuitRepository extends JpaRepository<CollTuit, Long>{
 
-	boolean existsByCollegeId(Long collegeId);
+	boolean existsByCollege_Id(Long collegeId);
 }
