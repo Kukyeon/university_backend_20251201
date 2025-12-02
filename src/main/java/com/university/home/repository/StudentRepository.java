@@ -23,8 +23,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Page<Student> findAll(Pageable pageable);
 
     // 학과별 학생 페이지 조회
-    Page<Student> findByDepartmentId(Long deptId, Pageable pageable);
+    Page<Student> findByDepartment(Long deptId, Pageable pageable);
 
     // 학번으로 학생 조회
-    Page<Student> findById(Long id, Pageable pageable);
+    //Page<Student> findById(Long id, Pageable pageable);
 }

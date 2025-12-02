@@ -9,8 +9,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StudentDto;
+import com.university.home.entity.Department;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
+import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.StudentRepository;
 
 import jakarta.transaction.Transactional;
@@ -22,6 +24,8 @@ public class StudentService {
 	StudentRepository studentRepository;
 	@Autowired
 	UserService userService;
+	@Autowired
+	DepartmentRepository departmentRepository;
 	
 	@Transactional
 	public Long createStudent(StudentDto dto) {
@@ -79,18 +83,20 @@ public class StudentService {
 	}
 	// 학과별 학생 조회
 	public Page<Student> getStudentsByDep(Long deptId,int page, int size) {
+		Department dept = departmentRepository.findById(deptId)
+                .orElseThrow(() -> new RuntimeException("Department not found"));
 		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findByDepartmentId(deptId, pageable);
+		return studentRepository.findByDepartment(deptId, pageable);
 	}
 	// 학번 학생 조회
-	public Page<Student> getStudentsById(Long studentId,int page, int size) {
-		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findById(studentId, pageable);
+	public Student getStudentById(Long studentId) {
+		return studentRepository.findById(studentId)
+				.orElseThrow(() -> new RuntimeException("Student not found"));
 	}
 	@Transactional
-	public void updateStudentGradeAndSemesters() {
+	public int updateStudentGradeAndSemesters() {
 		List<Student> students = studentRepository.findAll();
-		
+		int count = 0;
 	    for (Student student : students) {
 	        int grade = student.getGrade().intValue();
 	        int semester = student.getSemester().intValue();
@@ -112,6 +118,8 @@ public class StudentService {
                 if (semester == 1) student.setSemester(Long.valueOf(2));
 	                break;
 	        }
+	        count++;
 	    }
+	    return count;
 	}
 }
