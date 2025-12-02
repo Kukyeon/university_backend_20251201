@@ -6,11 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.ProfessorDto;
 import com.university.home.entity.Professor;
+import com.university.home.entity.User;
 import com.university.home.repository.ProfessorRepository;
+import com.university.home.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -19,6 +22,10 @@ public class ProfessorService {
 
 	@Autowired
 	ProfessorRepository professorRepository;
+	@Autowired
+	UserRepository userRepository;
+	@Autowired
+	PasswordEncoder encoder;
 	
 	@Transactional
 	public Long createProfessor(ProfessorDto dto) {
@@ -34,6 +41,14 @@ public class ProfessorService {
         // .orElseThrow(() -> new RuntimeException("Department not found"));
 		// professor.setDepartment(dept);
 		professorRepository.save(professor);
+		
+		User user = new User();
+		user.setId(professor.getId());
+		user.setUserRole("professor");
+		user.setPassword(encoder.encode(professor.getId().toString()));
+		
+		userRepository.save(user);
+		
 		return professor.getId();
 	}
 	@Transactional
