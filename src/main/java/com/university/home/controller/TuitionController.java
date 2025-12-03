@@ -63,7 +63,7 @@ public class TuitionController {
 	    return ResponseEntity.ok(tuition);
 	}
 	@PostMapping("/payment/{studentId}")
-	public ResponseEntity<?> payTuition(@PathVariable Long studentId){
+	public ResponseEntity<?> payTuition(@PathVariable(name = "studentId") Long studentId){
 		tuitionService.updateStatus(studentId);
 		return ResponseEntity.ok("등록금 남부 완료");
 	}
