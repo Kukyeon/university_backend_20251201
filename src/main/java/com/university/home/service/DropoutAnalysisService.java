@@ -1,15 +1,19 @@
 package com.university.home.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+
 import com.university.home.entity.DropoutRisk;
+import com.university.home.entity.Notification;
 import com.university.home.entity.StuStat;
 import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
 import com.university.home.repository.DropoutRiskRepository;
+import com.university.home.repository.NotificationRepository;
 import com.university.home.repository.StuStatRepository;
 import com.university.home.repository.StuSubDetailRepository;
 import com.university.home.repository.StudentRepository;
@@ -31,7 +35,7 @@ public class DropoutAnalysisService {
     private final GradeService gradeService; 
     
     // [추가 2] 알림 저장을 위한 Repository (필요 시 주석 해제 후 사용)
-    // private final NotificationRepository notificationRepository;
+    private final NotificationRepository notificationRepository;
     private final StuSubDetailRepository stuSubDetailRepository;
     private final StuStatRepository stuStatRepository;
     /**
@@ -130,13 +134,24 @@ public class DropoutAnalysisService {
 
     // [FUN-002] 위기 학생 감지 시 담당 지도교수에게 알림 
     private void sendAlertToProfessor(Student student, String level, String reason) {
-        // 교수님 정보가 있다면 알림 로직 실행
-        // if (student.getDepartment() != null) { ... }
-        log.warn("[알림 발송] 대상: {} 교수님 / 내용: 학생 {}이(가) 중도이탈 위험 '{}' 단계입니다. 사유: {}", 
-                "지도교수", student.getName(), level, reason);
-        
-        // TODO: NotificationRepository를 만들었다면 여기서 save() 하세요.
-        // Notification noti = Notification.builder()...build();
-        // notificationRepository.save(noti);
+        // 1. 교수님 ID 가져오기 (없으면 스킵)
+    	if (student.getProfessor() == null) {
+            log.warn("학생({})의 지도교수 정보가 없어 알림을 보낼 수 없습니다.", student.getName());
+            return; 
+        }
+        // 예시: 학과장이나 지도교수 ID를 가져오는 로직 필요
+        Long professorId = student.getProfessor().getId();
+
+        // 2. 알림 저장
+        Notification noti = Notification.builder() 
+                .receiverId(professorId)
+                .content(String.format("🚨[위험 알림] %s 학생이 '%s' 단계입니다. (사유: %s)", student.getName(), level, reason))
+                .url("/dashboard/risk-student/" + student.getId())
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        notificationRepository.save(noti);
+        log.info("교수님({})께 알림 전송 완료", professorId);
     }
 }
