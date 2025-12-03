@@ -11,4 +11,8 @@ import java.util.List;
 public interface BreakAppRepository extends JpaRepository<BreakApp, Long> {
 
 	List<BreakApp> findByStudentOrderByIdDesc(Student student);
+	
+	List<BreakApp> findByStatus(String status);
+	
+	List<BreakApp> findByStudentId(Long studentId);
 }
