@@ -30,6 +30,8 @@ public class Student {
     private LocalDate entranceDate;
     private LocalDate graduationDate;
 
+    private Professor professor;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dept_id")
     private Department department;

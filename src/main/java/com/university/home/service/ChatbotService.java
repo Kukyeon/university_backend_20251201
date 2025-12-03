@@ -1,6 +1,7 @@
 package com.university.home.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // jakarta 대신 springframework 권장
@@ -20,6 +21,8 @@ public class ChatbotService {
     private final ChatLogRepository chatLogRepository;
     private final StudentRepository studentRepository; // [추가] 리포지토리 주입
     private final GradeService gradeService;
+   
+    
     @Transactional
     public String ask(Long studentId, String question) {
         
@@ -58,4 +61,10 @@ public class ChatbotService {
 
         return answer;
     }
+    
+    public List<ChatLog> getChatHistory(Long studentId) {
+        // 과거 대화부터 순서대로 보여주기 위해 Asc(오름차순) 사용
+        return chatLogRepository.findByStudentIdOrderByCreatedAtAsc(studentId);
+    }
+    
 }
