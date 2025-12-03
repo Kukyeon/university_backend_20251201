@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import com.university.home.entity.BreakApp;
 import com.university.home.entity.CollTuit;
-import com.university.home.entity.College;
 import com.university.home.entity.Scholarship;
 import com.university.home.entity.StuSch;
 import com.university.home.entity.StuStat;
@@ -117,13 +116,25 @@ public class TuitionService {
     	 Scholarship schType = null;
     	 
     	 if (!stuSchs.isEmpty()) {
-    	        // 여러 장학금이 있을 경우 가장 큰 장학금 사용
-    	        StuSch bestSch = stuSchs.stream()
-    	                .max((a, b) -> Long.compare(a.getScholarshipType().getMaxAmount(), b.getScholarshipType().getMaxAmount()))
-    	                .get();
-    	        schAmount = Math.min(bestSch.getScholarshipType().getMaxAmount(), tuiAmount); // 등록금보다 크면 등록금 한도로
-    	        schType = bestSch.getScholarshipType();
-    	    }
+    		    // 여러 장학금이 있을 경우 가장 큰 장학금 사용
+		    StuSch bestSch = stuSchs.stream()
+		            .max((a, b) -> Long.compare(
+		                    a.getScholarshipType() != null ? a.getScholarshipType().getMaxAmount() : 0,
+		                    b.getScholarshipType() != null ? b.getScholarshipType().getMaxAmount() : 0))
+		            .get();
+
+		    if (bestSch.getScholarshipType() != null) {
+		        schType = bestSch.getScholarshipType();
+		        schAmount = Math.min(bestSch.getScholarshipType().getMaxAmount(), tuiAmount); // 등록금보다 크면 등록금 한도로
+		    }
+		}
+    	 System.out.println("stuSchs.size() = " + stuSchs.size());
+    	 if (schType != null) {
+    	     System.out.println("schType = " + schType.getType() + ", schAmount = " + schAmount);
+    	 } else {
+    	     System.out.println("schType is null");
+    	 }
+
     	 Tuition tuition = new Tuition();
 	    tuition.setStudent(student);
 	    tuition.setTuiYear((long) currentYear);
