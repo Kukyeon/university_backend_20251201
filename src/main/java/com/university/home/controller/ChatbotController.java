@@ -35,7 +35,7 @@ public class ChatbotController {
     }
     
     @GetMapping("/history")
-    public ResponseEntity<List<ChatLog>> getChatHistory(@RequestParam Long studentId) {
+    public ResponseEntity<List<ChatLog>> getChatHistory(@RequestParam("studentId") Long studentId) {
         // ChatLogRepository에 findByStudentIdOrderByCreatedAtAsc 메서드가 있어야 합니다.
         // (과거 대화부터 순서대로 보여줘야 하므로 Asc 오름차순 사용) //프론트 확인후 수정
     	// [수정] 리포지토리가 아니라 서비스를 호출합니다.
