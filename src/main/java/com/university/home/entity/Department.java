@@ -1,5 +1,7 @@
 package com.university.home.entity;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -14,4 +16,7 @@ public class Department {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "college_id")
     private College college;
+    
+    @OneToMany(mappedBy = "department")
+    private List<Professor> professors;
 }

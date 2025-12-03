@@ -27,4 +27,7 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
     // 정원 이상/미만 조회
     List<Subject> findByCapacityGreaterThanEqual(Long num);
     List<Subject> findByCapacityLessThan(Long num);
+    
+    // 해당년도, 학기의 모든 강좌 조회
+    List<Subject> findBySubYearAndSemester(Long subYear, Long semester);
 }
