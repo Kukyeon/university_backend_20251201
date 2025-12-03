@@ -49,7 +49,7 @@ public class ScheduleController {
     }
 
     @PostMapping("/update")
-    public String updateSchedule(@RequestParam Long id, ScheduleFormDto dto) {
+    public String updateSchedule(@RequestParam("id") Long id, ScheduleFormDto dto) {
         PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
         if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
 
@@ -58,7 +58,7 @@ public class ScheduleController {
     }
 
     @GetMapping("/delete")
-    public String deleteSchedule(@RequestParam Long id) {
+    public String deleteSchedule(@RequestParam("id") Long id) {
         PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
         if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
 
