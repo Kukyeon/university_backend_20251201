@@ -19,6 +19,7 @@ import com.university.home.entity.Tuition;
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.repository.CollTuitRepository;
 import com.university.home.repository.ScholarshipRepository;
+import com.university.home.repository.StuSchRepository;
 import com.university.home.repository.TuitionRepository;
 
 import jakarta.transaction.Transactional;
@@ -38,6 +39,8 @@ public class TuitionService {
 	BreakAppService breakAppService;
 	@Autowired
 	CollTuitRepository collTuitRepository;
+	@Autowired
+	StuSchRepository stuSchRepository;
 	
 	 public List<Tuition> tuitionList(Long studentId) {
 	        return tuitionRepository.findByStudentId(studentId);
@@ -72,34 +75,67 @@ public class TuitionService {
     private int getCurrentSemester() {
         return (LocalDate.now().getMonthValue() <= 6) ? 1 : 2;
     }
-//    @Transactional
-//    public int createTuition(Long studentId) {
-//    	Student student = studentService.getStudentById(studentId);
-//    	
-//    	StuStat stuStat = stuStatService.getCurrentStatus(studentId);
-//    	 
-//    	if (stuStat.getStatus().equals("졸업") || stuStat.getStatus().equals("자퇴")) {
-//			return 0;
-//		}
-//    	
-//    	List<BreakApp> breakApps = breakAppService.getByStudent(studentId);
-//    	int currentYear = LocalDate.now().getYear();
-//    	int currentSemester = getCurrentSemester();
-//    	for (BreakApp b : breakApps) {
-//			if (b.getStatus().equals("승인")) {
-//				if(b.getToYear() > LocalDate.now().getYear()) return 0;
-//				if(b.getToYear() == LocalDate.now().getYear() && b.getToSemester() >= getCurrentSemester()) return 0;
-//			}
-//		}
-//    	Optional<Tuition> existing = tuitionRepository
-//	            .findByStudentIdAndTuiYearAndSemester(studentId, (long)currentYear, (long)currentSemester);
-//    	if (tuitionRepository.findByStudentIdAndTuiYearAndSemester(studentId, (long)currentYear, (long)currentSemester).isPresent()) {
-//            return 0;
-//        }
-//    	College college = student.getDepartment().getCollege();
-//    	CollTuit collTuit = collTuitRepository.findByCollege(college).orElseThrow(() -> new RuntimeException("등록금 정보가 없습니다."));
-//    	Long tuiAmount = collTuit.getAmount();
-//    	
-//
-//    }
+    public Long getTuitionAmount(Long studentId) {
+        Student student = studentService.getStudentById(studentId);
+        Long collegeId = student.getDepartment().getCollege().getId();
+
+        CollTuit collTuit = collTuitRepository.findById(collegeId)
+                .orElseThrow(() -> new RuntimeException("등록금 정보 없음"));
+
+        return collTuit.getAmount();
+    }
+    @Transactional
+    public int createTuition(Long studentId) {
+    	Student student = studentService.getStudentById(studentId);
+    	
+    	StuStat stuStat = stuStatService.getCurrentStatus(studentId);
+    	 
+    	if (stuStat.getStatus().equals("졸업") || stuStat.getStatus().equals("자퇴")) {
+			return 0;
+		}
+    	
+    	List<BreakApp> breakApps = breakAppService.getByStudent(studentId);
+    	int currentYear = LocalDate.now().getYear();
+    	int currentSemester = getCurrentSemester();
+    	for (BreakApp b : breakApps) {
+			if (b.getStatus().equals("승인")) {
+				if(b.getToYear() > LocalDate.now().getYear()) return 0;
+				if(b.getToYear() == LocalDate.now().getYear() && b.getToSemester() >= getCurrentSemester()) return 0;
+			}
+		}
+    	 if (tuitionRepository.findByStudentIdAndTuiYearAndSemester(studentId, (long)currentYear, (long)currentSemester).isPresent()) {
+    	        return 0;
+    	    }
+
+    	 Long collegeId = student.getDepartment().getCollege().getId();
+    	 CollTuit collTuit = collTuitRepository.findById(collegeId)
+    	            .orElseThrow(() -> new RuntimeException("등록금 정보 없음"));
+    	 Long tuiAmount = collTuit.getAmount();
+    	 
+    	 List<StuSch> stuSchs = stuSchRepository.findByStudentIdAndSchYearAndSemester(studentId, (long) currentYear, (long) currentSemester);
+    	 Long schAmount = 0L;
+    	 Scholarship schType = null;
+    	 
+    	 if (!stuSchs.isEmpty()) {
+    	        // 여러 장학금이 있을 경우 가장 큰 장학금 사용
+    	        StuSch bestSch = stuSchs.stream()
+    	                .max((a, b) -> Long.compare(a.getScholarshipType().getMaxAmount(), b.getScholarshipType().getMaxAmount()))
+    	                .get();
+    	        schAmount = Math.min(bestSch.getScholarshipType().getMaxAmount(), tuiAmount); // 등록금보다 크면 등록금 한도로
+    	        schType = bestSch.getScholarshipType();
+    	    }
+    	 Tuition tuition = new Tuition();
+	    tuition.setStudent(student);
+	    tuition.setTuiYear((long) currentYear);
+	    tuition.setSemester((long) currentSemester);
+	    tuition.setTuiAmount(tuiAmount);
+	    tuition.setScholarshipType(schType);
+	    tuition.setSchAmount(schAmount);
+	    tuition.setStatus(false); // 기본 납부 상태 false
+
+	    // 8. 저장
+	    tuitionRepository.save(tuition);
+	    
+	    return 1;
+    }
 }
