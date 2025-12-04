@@ -1,74 +1,71 @@
 package com.university.home.controller;
 
+
+import java.io.IOException;
 import java.util.List;
 
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.university.home.dto.NoticeFormDto;
 import com.university.home.dto.NoticePageFormDto;
 import com.university.home.entity.Notice;
-import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.NoticeService;
 
 import lombok.RequiredArgsConstructor;
 
-@Controller
-@RequestMapping("/notice")
+@RestController
+@RequestMapping("/api/notice")
 @RequiredArgsConstructor
 public class NoticeController {
 
     private final NoticeService noticeService;
 
-    // 공지사항 목록
-    @GetMapping("")
-    public String noticeList(Model model,
-                             @RequestParam(defaultValue = "select") String crud,
-                             @RequestParam(defaultValue = "0") Integer page,
-                             @RequestParam(required = false) String keyword,
-                             @RequestParam(required = false) String type) {
-
-        model.addAttribute("crud", crud);
-
+    // 공지 리스트 조회
+    @GetMapping("/list")
+    public List<Notice> getNoticeList(
+            @RequestParam(name = "page" , defaultValue = "0") Integer page,
+            @RequestParam(name = "keyword" ,defaultValue = "") String keyword,
+            @RequestParam(name = "type", defaultValue = "") String type
+    ) {
         NoticePageFormDto dto = new NoticePageFormDto();
         dto.setPage(page);
         dto.setKeyword(keyword);
         dto.setType(type);
 
-        List<Notice> noticeList = noticeService.getNotices(dto);
-        model.addAttribute("listCount", Math.ceil(noticeList.size() / 10.0));
-        model.addAttribute("noticeList", noticeList.isEmpty() ? null : noticeList);
-
-        return "/board/notice";
+        return noticeService.getNotices(dto);
     }
 
-    // 공지사항 작성
+    // 공지 상세 조회
+    @GetMapping("/read/{id}")
+    public Notice getNoticeDetail(@PathVariable("id") Long id) {
+        return noticeService.getNoticeById(id);
+    }
+
+    // 공지 등록 (파일 포함)
     @PostMapping("/write")
-    public String createNotice(NoticeFormDto dto) {
-        noticeService.createNotice(dto);
-        return "redirect:/notice";
+    public Notice writeNotice(@ModelAttribute NoticeFormDto dto) throws IOException {
+        return noticeService.createNotice(dto);
     }
 
-    // 공지사항 읽기
-    @GetMapping("/read")
-    public String readNotice(Model model, @RequestParam Long id) {
-        model.addAttribute("crud", "read");
-        model.addAttribute("id", id);
-
-        Notice notice = noticeService.getNoticeById(id);
-        model.addAttribute("notice", notice);
-
-        // 줄바꿈 처리
-        notice.setContent(notice.getContent().replace("\r\n", "<br>"));
-
-        return "/board/notice";
+    // 공지 수정
+    @PostMapping("/update/{id}")
+    public Notice updateNotice(@PathVariable("id") Long id,  @ModelAttribute NoticeFormDto dto) {
+        return noticeService.updateNotice(id, dto);
     }
 
-    // 공지사항 삭제
-    @GetMapping("/delete")
-    public String deleteNotice(@RequestParam Long id) {
+
+    // 공지 삭제
+    @DeleteMapping("/delete/{id}")
+    public String deleteNotice(@PathVariable("id") Long id) {
         noticeService.deleteNotice(id);
-        return "redirect:/notice";
+        return "deleted";
     }
 }

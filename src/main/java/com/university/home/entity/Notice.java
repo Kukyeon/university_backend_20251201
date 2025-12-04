@@ -6,22 +6,35 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "notice_tb")
 @Getter @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Notice {
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id;
 
     private String title;
     private String content;
-    private Long views; // Integer -> Long
+
+    @Builder.Default
+    private Long views = 0L;  
+
     private String category;
-    
+
     @Column(name = "created_time")
     private LocalDateTime createdTime;
 
-    @OneToMany(mappedBy = "notice", cascade = CascadeType.ALL)
-    private List<NoticeFile> files = new ArrayList<>();
+    private String imageUrl;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdTime == null) createdTime = LocalDateTime.now();
+        if (views == null) views = 0L;
+    }
 }
