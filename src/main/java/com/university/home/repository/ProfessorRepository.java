@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
 
 public interface ProfessorRepository extends JpaRepository< Professor, Long> {
@@ -19,9 +20,9 @@ public interface ProfessorRepository extends JpaRepository< Professor, Long> {
 		 // 전체 학생 페이지 조회
 	    Page<Professor> findAll(Pageable pageable);
 
-	    // 학과별 학생 페이지 조회
-	    Page<Professor> findByDepartmentId(Long deptId, Pageable pageable);
+	    // 학과별 교수 페이지 조회
+	    Page<Professor> findByDepartment(Department department, Pageable pageable);
 
-	    // 학번으로 학생 조회
-	    Page<Professor> findByProfessorId(Long professorId, Pageable pageable);
+	    // 사번으로 교수 조회
+	    //Optional<Professor> findById(Long professorId);
 }

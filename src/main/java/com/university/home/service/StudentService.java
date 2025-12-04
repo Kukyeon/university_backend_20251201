@@ -6,15 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StudentDto;
+import com.university.home.entity.Department;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
-import com.university.home.repository.ScholarshipRepository;
+import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.StudentRepository;
-import com.university.home.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -24,12 +23,19 @@ public class StudentService {
 	@Autowired
 	StudentRepository studentRepository;
 	@Autowired
-	UserRepository userRepository;
+	UserService userService;
 	@Autowired
-	PasswordEncoder encoder;
-	
+	DepartmentRepository departmentRepository;
+	@Autowired
+	StuStatService stuStatService;
 	@Transactional
-	public Long createStudent(StudentDto dto) {
+	public Student createStudentWithStatus(StudentDto dto) {
+	    Student student = createStudent(dto);  // 학생 생성
+	    stuStatService.createFirstStatus(student); // 학적 상태 생성
+	    return student;
+	}
+	@Transactional
+	public Student createStudent(StudentDto dto) {
 		Student student = new Student();
 		student.setName(dto.getName());
 		student.setAddress(dto.getAddress());
@@ -38,19 +44,16 @@ public class StudentService {
 		student.setGender(dto.getGender());
 		student.setTel(dto.getTel());
 		student.setEntranceDate(dto.getEntranceDate());
-		student.setDepartment(dto.getDepartment());
-		//  Department dept = departmentRepository.findById(dto.getDepartmentId())
-        // .orElseThrow(() -> new RuntimeException("Department not found"));
-		// student.setDepartment(dept);
+		//student.setDepartment(dto.getDepartment());
+		Department dept = departmentRepository.findById(dto.getDepartmentId())
+        .orElseThrow(() -> new RuntimeException("Department not found"));
+		student.setDepartment(dept);
 		studentRepository.save(student);
 		
-		User user = new User();
-		user.setId(student.getId());
-		user.setUserRole("student");
-		user.setPassword(encoder.encode(student.getId().toString()));
-		userRepository.save(user);
-		
-		return student.getId();
+		User user = userService.createUser(student.getId(), "student");
+		student.setUser(user);
+		studentRepository.save(student);
+		return student;
 	}
 	
 	@Transactional
@@ -87,18 +90,20 @@ public class StudentService {
 	}
 	// 학과별 학생 조회
 	public Page<Student> getStudentsByDep(Long deptId,int page, int size) {
+		Department dept = departmentRepository.findById(deptId)
+                .orElseThrow(() -> new RuntimeException("Department not found"));
 		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findByDepartmentId(deptId, pageable);
+		return studentRepository.findByDepartment(dept, pageable);
 	}
 	// 학번 학생 조회
-	public Page<Student> getStudentsById(Long studentId,int page, int size) {
-		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findByStudentId(studentId, pageable);
+	public Student getStudentById(Long studentId) {
+		return studentRepository.findById(studentId)
+				.orElseThrow(() -> new RuntimeException("Student not found"));
 	}
 	@Transactional
-	public void updateStudentGradeAndSemesters() {
+	public int updateStudentGradeAndSemesters() {
 		List<Student> students = studentRepository.findAll();
-		
+		int count = 0;
 	    for (Student student : students) {
 	        int grade = student.getGrade().intValue();
 	        int semester = student.getSemester().intValue();
@@ -120,6 +125,8 @@ public class StudentService {
                 if (semester == 1) student.setSemester(Long.valueOf(2));
 	                break;
 	        }
+	        count++;
 	    }
+	    return count;
 	}
 }

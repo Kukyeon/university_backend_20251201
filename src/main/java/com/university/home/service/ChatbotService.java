@@ -1,6 +1,7 @@
 package com.university.home.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // jakarta 대신 springframework 권장
@@ -19,7 +20,9 @@ public class ChatbotService {
     private final GeminiService geminiService;
     private final ChatLogRepository chatLogRepository;
     private final StudentRepository studentRepository; // [추가] 리포지토리 주입
-
+    private final GradeService gradeService;
+   
+    
     @Transactional
     public String ask(Long studentId, String question) {
         
@@ -27,15 +30,20 @@ public class ChatbotService {
         // (만약 없는 ID라면 에러를 냅니다)
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("학생을 찾을 수 없습니다. ID: " + studentId));
-
+     // [추가] 자바 코드로 계산된 학점 가져오기 (쿼리문 X)
+        Integer totalCredits = gradeService.calculateTotalCredits(studentId);
+        Double avgGrade = gradeService.calculateAverageGrade(studentId);
         // 2. 시스템 프롬프트 구성 (AI 설정)
         String systemPrompt = """
                 당신은 '그린대학교'의 친절한 학사 행정 챗봇입니다.
                 [학사 규정 요약]
                 - 수강신청 기간: 2월 10일 ~ 2월 14일
                 - 졸업 요건: 총 130학점 이수
+                [학생 정보]
+        		- 이름: %s
+        		- 현재 총 이수 학점: %.1f학점 (졸업요건: 130학점)
                 [질문]: %s
-                """.formatted(question);
+                """.formatted(student.getName(), totalCredits, avgGrade, question);
 
         // 3. Gemini에게 질문 및 답변 받기
         String answer = geminiService.talk(systemPrompt);
@@ -53,4 +61,10 @@ public class ChatbotService {
 
         return answer;
     }
+    
+    public List<ChatLog> getChatHistory(Long studentId) {
+        // 과거 대화부터 순서대로 보여주기 위해 Asc(오름차순) 사용
+        return chatLogRepository.findByStudentIdOrderByCreatedAtAsc(studentId);
+    }
+    
 }

@@ -3,6 +3,8 @@ package com.university.home.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "professor_tb")
@@ -13,8 +15,7 @@ public class Professor {
     private Long id; // Integer -> Long
     
     @OneToOne
-    @MapsId
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "user_id")
     private User user; // User와 1:1 매핑
     
     private String name;
@@ -27,4 +28,6 @@ public class Professor {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dept_id")
     private Department department;
+    
+   
 }
