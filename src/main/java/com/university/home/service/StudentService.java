@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StudentDto;
+import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.Department;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
@@ -61,14 +62,7 @@ public class StudentService {
 		return studentRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Student not found"));
 	}
-	@Transactional
-	public void updateStudent(StudentDto dto) {
-		Student student = studentRepository.findById(dto.getId())
-				.orElseThrow(() -> new RuntimeException("Student not found"));
-		student.setTel(dto.getTel());
-		student.setAddress(dto.getAddress());
-		student.setEmail(dto.getEmail());
-	}
+
 	@Transactional
 	public List<Student> getAllStudents() {
 		return studentRepository.findAll();
