@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @Controller
-@RequestMapping("/evaluation")
+@RequestMapping("/api/evaluation")
 @RequiredArgsConstructor
 public class EvaluationController {
 
