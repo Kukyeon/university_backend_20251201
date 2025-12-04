@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.university.home.controller.StuSchDto;
+import com.university.home.dto.StuSchDto;
 import com.university.home.entity.Scholarship;
 import com.university.home.entity.StuSch;
 import com.university.home.entity.Student;

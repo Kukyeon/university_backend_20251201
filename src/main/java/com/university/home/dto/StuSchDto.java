@@ -1,4 +1,4 @@
-package com.university.home.controller;
+package com.university.home.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

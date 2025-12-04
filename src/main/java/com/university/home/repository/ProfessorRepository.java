@@ -1,5 +1,6 @@
 package com.university.home.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -23,6 +24,8 @@ public interface ProfessorRepository extends JpaRepository< Professor, Long> {
 	    // 학과별 교수 페이지 조회
 	    Page<Professor> findByDepartment(Department department, Pageable pageable);
 
+	    //학과 교수 모두 조회
+	    List<Professor> findByDepartmentId(Long deptId);
 	    // 사번으로 교수 조회
 	    //Optional<Professor> findById(Long professorId);
 }
