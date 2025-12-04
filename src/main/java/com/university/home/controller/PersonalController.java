@@ -7,12 +7,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import com.university.home.config.WebMvcConfig;
 import com.university.home.dto.FindUserDto;
 import com.university.home.dto.UserDto;
+import com.university.home.dto.UserPwDto;
+import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.User;
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.ProfessorService;
@@ -26,6 +30,8 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/user")
 public class PersonalController {
 
+    private final WebMvcConfig webMvcConfig;
+
 	@Autowired
 	ProfessorService professorService;
 	@Autowired
@@ -34,6 +40,20 @@ public class PersonalController {
 	StudentService studentService;
 	@Autowired
 	UserService userService;
+
+    PersonalController(WebMvcConfig webMvcConfig) {
+        this.webMvcConfig = webMvcConfig;
+    }
+	
+	private String generateRandomPassword(int length) {
+	    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	    StringBuilder sb = new StringBuilder();
+	    for (int i = 0; i < length; i++) {
+	        int idx = (int) (Math.random() * chars.length());
+	        sb.append(chars.charAt(idx));
+	    }
+	    return sb.toString();
+	}
 	
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody @Valid UserDto dto, BindingResult bindingResult) {
@@ -43,10 +63,7 @@ public class PersonalController {
 	        throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
 	    }
 
-	    // 1️⃣ User 검증
 	    User user = userService.login(dto.getId(), dto.getPassword());
-
-	    // 2️⃣ 역할(role)에 따라 실제 엔티티 조회
 	    Object result;
 	    switch(user.getUserRole()) {
 	        case "student":
@@ -113,14 +130,29 @@ public class PersonalController {
 
 	    return ResponseEntity.ok(Map.of("message", "임시 비밀번호 발급 완료", "tempPassword", tempPassword));
 	}
-	private String generateRandomPassword(int length) {
-	    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-	    StringBuilder sb = new StringBuilder();
-	    for (int i = 0; i < length; i++) {
-	        int idx = (int) (Math.random() * chars.length());
-	        sb.append(chars.charAt(idx));
-	    }
-	    return sb.toString();
-	}
+	@PutMapping("/update")
+	public ResponseEntity<?> updateUser(@RequestBody @Valid UserUpdateDto dto, BindingResult bindingResult) {
+		if (bindingResult.hasErrors()) {
+			StringBuilder sb = new StringBuilder();
+			bindingResult.getAllErrors().forEach(error -> {
+				sb.append(error.getDefaultMessage()).append("\\n");
+			});
+			throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
+		}
+		 Object updatedUser = userService.updateUser(dto);
 
+		    // 최신 객체를 그대로 반환
+		    return ResponseEntity.ok(updatedUser);
+	}
+	@PutMapping("/update/pw")
+	public ResponseEntity<?> updatePassword(@RequestBody@Valid UserPwDto dto, BindingResult bindingResult ){
+	if (bindingResult.hasErrors()) {
+        StringBuilder sb = new StringBuilder();
+        bindingResult.getAllErrors().forEach(error -> sb.append(error.getDefaultMessage()).append("\n"));
+        throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
+    }	
+	userService.updatePw(dto);
+	return ResponseEntity.ok("비밀번ㄴ호 변경!");
+}
+	
 }
