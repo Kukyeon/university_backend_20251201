@@ -37,12 +37,11 @@ public class UserService {
 		}
 		return user;
 	}
-	@Transactional
-	public void updatePassword(Long id, String newPassword) {
-		User user = userRepository.findById(id)
-				.orElseThrow(() -> new CustomRestfullException("User not found", HttpStatus.NOT_FOUND));
-		
-		user.setPassword(encoder.encode(newPassword));
-	}
-
+	 @Transactional
+	    public void resetPassword(Long id, String tempPassword) {
+	        User user = userRepository.findById(id)
+	                .orElseThrow(() -> new CustomRestfullException("User not found", HttpStatus.NOT_FOUND));
+	        user.setPassword(encoder.encode(tempPassword));
+	    }
+	
 }
