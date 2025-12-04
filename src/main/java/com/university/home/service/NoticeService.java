@@ -26,7 +26,7 @@ public class NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final NoticeFileRepository noticeFileRepository;
-    private final String uploadPath = "D:\\university_backend_20251201\\upload\\images\\";
+    private final String uploadPath = "D:\\university_backend_20251201\\upload\\";
 
     // 공지사항 생성
     @Transactional

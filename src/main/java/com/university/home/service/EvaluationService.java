@@ -47,6 +47,12 @@ public class EvaluationService {
         return evaluationRepository.save(evaluation);
     }
 
+    //  단일 평가 ID로 상세 정보 조회
+    public Evaluation getEvaluationById(Long id) {
+        return evaluationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("평가 ID: " + id + "에 해당하는 평가를 찾을 수 없습니다."));
+    }
+
     public Evaluation getEvaluationByStudentId(Long studentId) {
         return evaluationRepository.findByStudent_Id(studentId);
     }

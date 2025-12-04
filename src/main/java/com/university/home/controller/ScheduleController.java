@@ -2,11 +2,8 @@ package com.university.home.controller;
 
 import java.util.List;
 
-
-
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.university.home.dto.ScheduleFormDto;
@@ -19,7 +16,8 @@ import com.university.home.utils.Define;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
-@Controller
+
+@RestController
 @RequestMapping("/api/schedule")
 @RequiredArgsConstructor
 public class ScheduleController {
@@ -27,15 +25,10 @@ public class ScheduleController {
     private final HttpSession session;
     private final ScheduleService scheduleService;
 
-    @GetMapping("")
-    public String scheduleList(Model model) {
-        List<Schedule> schedules = scheduleService.getAllSchedules();
-        model.addAttribute("schedules", schedules);
-        return "/schedule/schedule";
-    }
-
+    //  일정 등록
     @PostMapping("/write")
-    public String createSchedule(ScheduleFormDto dto) {
+    
+    public ResponseEntity<Schedule> createSchedule(@RequestBody ScheduleFormDto dto) {
         PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
         if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
 
@@ -44,25 +37,45 @@ public class ScheduleController {
         if (dto.getInformation() == null || dto.getInformation().isEmpty())
             throw new CustomRestfullException("내용을 입력해주세요", HttpStatus.BAD_REQUEST);
 
-        scheduleService.createSchedule(principal.getId(), dto);
-        return "redirect:/schedule";
+        Schedule createdSchedule = scheduleService.createSchedule(principal.getId(), dto);
+        return new ResponseEntity<>(createdSchedule, HttpStatus.CREATED);
     }
 
-    @PostMapping("/update")
-    public String updateSchedule(@RequestParam("id") Long id, ScheduleFormDto dto) {
+    // 일정 목록 조회
+    @GetMapping("")
+    // ⭐️ String 대신 List<Schedule>를 JSON으로 반환합니다.
+    public ResponseEntity<List<Schedule>> scheduleList() { 
+        List<Schedule> schedules = scheduleService.getAllSchedules();
+        return new ResponseEntity<>(schedules, HttpStatus.OK);
+    }
+    
+    // 일정 상세 조회
+    @GetMapping("/{id}")
+    public ResponseEntity<Schedule> getScheduleDetail(@PathVariable("id") Long id) {
+        Schedule schedule = scheduleService.getSchedule(id);
+        return new ResponseEntity<>(schedule, HttpStatus.OK);
+    }
+
+
+    //일정 수정
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Schedule> updateSchedule(@PathVariable("id") Long id, @RequestBody ScheduleFormDto dto) {
         PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
         if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
 
-        scheduleService.updateSchedule(id, dto);
-        return "redirect:/schedule";
+        Schedule updatedSchedule = scheduleService.updateSchedule(id, dto);
+        return new ResponseEntity<>(updatedSchedule, HttpStatus.OK);
     }
 
-    @GetMapping("/delete")
-    public String deleteSchedule(@RequestParam("id") Long id) {
+    // 일정 삭제
+   
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteSchedule(@PathVariable("id") Long id) {
         PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
         if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
 
         scheduleService.deleteSchedule(id, principal.getId());
-        return "redirect:/schedule";
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 No Content
     }
 }
