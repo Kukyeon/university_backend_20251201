@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.university.home.entity.Department;
 import com.university.home.entity.Student;
 
 import java.util.List;
@@ -23,8 +24,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Page<Student> findAll(Pageable pageable);
 
     // 학과별 학생 페이지 조회
-    Page<Student> findByDepartmentId(Long deptId, Pageable pageable);
+    Page<Student> findByDepartment(Department department, Pageable pageable);
 
     // 학번으로 학생 조회
-    Page<Student> findByStudentId(Long studentId, Pageable pageable);
+    //Page<Student> findById(Long id, Pageable pageable);
 }

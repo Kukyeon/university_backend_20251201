@@ -17,7 +17,7 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    // ★ v1로 변경 (중요)
+    
     private static final String MODEL = "gemini-2.5-flash";
     private static final String API_URL =
             "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent";
