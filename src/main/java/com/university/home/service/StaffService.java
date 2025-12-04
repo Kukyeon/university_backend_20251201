@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.StaffDto;
+import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.Staff;
 import com.university.home.entity.User;
 import com.university.home.repository.StaffRepository;
@@ -42,14 +43,6 @@ public class StaffService {
 	public Staff readStaff(Long id) {
 		return staffRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Staff not found"));
-	}
-	@Transactional
-	public void updateStaff (StaffDto dto) {
-		Staff staff = staffRepository.findById(dto.getId())
-				.orElseThrow(() -> new RuntimeException("Staff not found"));
-		staff.setTel(dto.getTel());
-		staff.setAddress(dto.getAddress());
-		staff.setEmail(dto.getEmail());
 	}
 	@Transactional
 	public Long findByNameEmail(String name, String email) {
