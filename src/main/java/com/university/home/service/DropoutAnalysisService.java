@@ -9,11 +9,13 @@ import org.springframework.stereotype.Service;
 
 import com.university.home.entity.DropoutRisk;
 import com.university.home.entity.Notification;
+import com.university.home.entity.Professor;
 import com.university.home.entity.StuStat;
 import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
 import com.university.home.repository.DropoutRiskRepository;
 import com.university.home.repository.NotificationRepository;
+import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.StuStatRepository;
 import com.university.home.repository.StuSubDetailRepository;
 import com.university.home.repository.StudentRepository;
@@ -30,7 +32,7 @@ public class DropoutAnalysisService {
 	private final GeminiService geminiService;
     private final StudentRepository studentRepository;
     private final DropoutRiskRepository dropoutRiskRepository;
-    
+    private final ProfessorRepository professorRepository;
     // [추가 1] 실제 성적 계산을 위해 GradeService 주입
     private final GradeService gradeService; 
     
@@ -105,7 +107,7 @@ public class DropoutAnalysisService {
 
             // 6. [FUN-002] 위기 학생 알림 (심각 단계 시 교수님께 알림)
             if ("심각".equals(riskLevel)) {
-                sendAlertToProfessor(student, riskLevel, reason);
+            	sendAlert(student, riskLevel, reason);
             }
 
             // 7. DB 저장 (DropoutRisk 엔티티)
@@ -133,25 +135,44 @@ public class DropoutAnalysisService {
     }
 
     // [FUN-002] 위기 학생 감지 시 담당 지도교수에게 알림 
-    private void sendAlertToProfessor(Student student, String level, String reason) {
+    private void sendAlert(Student student, String level, String reason) {
         // 1. 교수님 ID 가져오기 (없으면 스킵)
-    	if (student.getProfessor() == null) {
+    	if (student.getDepartment().getProfessors() == null) {
             log.warn("학생({})의 지도교수 정보가 없어 알림을 보낼 수 없습니다.", student.getName());
             return; 
         }
-        // 예시: 학과장이나 지도교수 ID를 가져오는 로직 필요
-        Long professorId = student.getProfessor().getId();
+    	//학과 교수님에게 알림보내기
+    	if (student.getDepartment() != null) {
+            Long deptId = student.getDepartment().getId();
+            List<Professor> professors = professorRepository.findByDepartmentId(deptId);
 
         // 2. 알림 저장
+        for (Professor prof : professors) {
         Notification noti = Notification.builder() 
-                .receiverId(professorId)
-                .content(String.format("🚨[위험 알림] %s 학생이 '%s' 단계입니다. (사유: %s)", student.getName(), level, reason))
+        		.receiverId(prof.getId()) // 교수님 ID
+                .content(String.format("🚨[위험 알림] %s 학생이 '%s' 단계입니다. (사유: %s)", student.getName(), student.getDepartment(),level, reason))
                 .url("/dashboard/risk-student/" + student.getId())
                 .isRead(false)
                 .createdAt(LocalDateTime.now())
                 .build();
 
         notificationRepository.save(noti);
-        log.info("교수님({})께 알림 전송 완료", professorId);
+        }
+        log.info("교수님({})께 알림 전송 완료", professors.size());
     }
-}
+    	// ---------------------------------------------------
+        // 2. 학생 본인에게 상담 권유 알림 보내기 ->예방대책
+        // ---------------------------------------------------
+        Notification studentNoti = Notification.builder()
+                .receiverId(student.getId()) // 학생 본인 ID
+                .content(String.format("💬 [상담 권장] %s님, 학업에 어려움은 없으신가요? 교수님과 상담을 받아보세요.", student.getName()))
+                .url("/student/counseling") // 학생은 상담 예약 페이지로 이동
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        notificationRepository.save(studentNoti);
+        log.info("학생({}) 본인에게 상담 권유 알림 전송 완료", student.getName());
+    }
+    		
+  }

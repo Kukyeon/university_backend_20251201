@@ -30,9 +30,9 @@ public class Student {
     private LocalDate entranceDate;
     private LocalDate graduationDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "professor_id")
-    private Professor professor;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "professor_id")
+//    private Professor professor;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dept_id")
