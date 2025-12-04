@@ -26,32 +26,30 @@ public class ChatbotService {
     @Transactional
     public String ask(Long studentId, String question) {
         
-        // 1. 넘어온 ID(숫자)로 DB에서 실제 학생 객체를 가져옵니다.
-        // (만약 없는 ID라면 에러를 냅니다)
+    	// 1. 학생 조회
         Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new IllegalArgumentException("학생을 찾을 수 없습니다. ID: " + studentId));
-     // [추가] 자바 코드로 계산된 학점 가져오기 (쿼리문 X)
-        Integer totalCredits = gradeService.calculateTotalCredits(studentId);
-        Double avgGrade = gradeService.calculateAverageGrade(studentId);
-        // 2. 시스템 프롬프트 구성 (AI 설정)
-        String systemPrompt = """
-                당신은 '그린대학교'의 친절한 학사 행정 챗봇입니다.
-                [학사 규정 요약]
-                - 수강신청 기간: 2월 10일 ~ 2월 14일
-                - 졸업 요건: 총 130학점 이수
-                [학생 정보]
-        		- 이름: %s
-        		- 현재 총 이수 학점: %.1f학점 (졸업요건: 130학점)
-                [질문]: %s
-                """.formatted(student.getName(), totalCredits, avgGrade, question);
+                .orElseThrow(() -> new IllegalArgumentException("학생 찾기 실패"));
+        
+        // 2. [핵심] 학생의 모든 정보를 문자열로 예쁘게 포장하기
+        String studentProfile = makeStudentInfoString(student);
 
-        // 3. Gemini에게 질문 및 답변 받기
+        // 3. 프롬프트에 주입
+        String systemPrompt = """
+                당신은 '그린대학교'의 학사 행정 챗봇입니다.
+                아래 [학생 상세 프로필]을 참고하여, 질문에 대해 친절하고 정확하게 답변해주세요.
+                (학생의 개인정보를 물어보면 프로필 내용을 바탕으로 대답하세요.)
+                
+                %s
+                
+                [질문]: %s
+                """.formatted(studentProfile, question);
+
+        // 4. Gemini 호출
         String answer = geminiService.talk(systemPrompt);
 
-        // 4. 대화 내용 저장
-        // 여기서 아까 찾아둔 'student' 객체를 쏙 넣어줍니다.
+        // 5. 저장
         ChatLog log = ChatLog.builder()
-                .student(student)        // [핵심] 숫자가 아니라 객체를 넣음
+                .student(student)
                 .question(question)
                 .answer(answer)
                 .createdAt(LocalDateTime.now())
@@ -61,10 +59,46 @@ public class ChatbotService {
 
         return answer;
     }
+    //학생 엔티티 정보
+    private String makeStudentInfoString(Student student) {
+    	//학점계산
+    	Integer totalCredits = gradeService.calculateTotalCredits(student.getId());
+    	Double avgGrade = gradeService.calculateAverageGrade(student.getId());
+    	
+    	//학생 정보 Null방지
+    	String dept = (student.getDepartment() != null) ? student.getDepartment().getName() : "학부 미배정";
+    	String entrance = (student.getEntranceDate() != null) ? student.getEntranceDate().toString() : "정보없음";
+    	String birth = (student.getBirthDate() != null) ? student.getBirthDate().toString() : "정보 없음";
+        String tel = (student.getTel() != null) ? student.getTel() : "정보 없음";
+        String addr = (student.getAddress() != null) ? student.getAddress() : "정보 없음";
+        String email = (student.getEmail() != null) ? student.getEmail() : "정보 없음";
+        String gender = (student.getGender() != null) ? student.getGender() : "정보 없음";		
+    			
+        return """
+                [학생 상세 프로필]
+                - 학번: %d
+                - 이름: %s
+                - 성별: %s
+                - 생년월일: %s
+                - 소속 학과: %s
+                - 학년/학기: %d학년 %d학기
+                - 입학일: %s
+                - 연락처: %s
+                - 이메일: %s
+                - 주소: %s
+                - 총 이수 학점: %d학점 (졸업요건 130)
+                - 전체 평균 평점: %.2f점
+                """.formatted(
+                    student.getId(), student.getName(), gender, birth, dept, 
+                    student.getGrade(), student.getSemester(), entrance, 
+                    tel, email, addr, 
+                    totalCredits, avgGrade
+                );
+    }		
+    			
     
     public List<ChatLog> getChatHistory(Long studentId) {
         // 과거 대화부터 순서대로 보여주기 위해 Asc(오름차순) 사용
         return chatLogRepository.findByStudentIdOrderByCreatedAtAsc(studentId);
     }
-    
 }
