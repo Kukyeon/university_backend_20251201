@@ -1,6 +1,7 @@
 package com.university.home.controller;
 
 import com.university.home.dto.DropoutRiskResponseDto;
+import com.university.home.repository.DropoutRiskRepository;
 import com.university.home.service.DropoutDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,12 +15,17 @@ import java.util.List;
 public class DropoutDashboardController {
 
     private final DropoutDashboardService dashboardService;
-
+    private final DropoutRiskRepository dropoutRiskRepository;
     // [API] 교수님 대시보드 데이터 조회
     // 요청: GET http://localhost:8888/api/dashboard/risk-list?professorId=101
     @GetMapping("/risk-list")
-    public ResponseEntity<List<DropoutRiskResponseDto>> getRiskList(@RequestParam Long professorId) {
+    public ResponseEntity<List<DropoutRiskResponseDto>> getRiskList(@RequestParam("professorId") Long professorId) {
         List<DropoutRiskResponseDto> list = dashboardService.getProfessorDashboard(professorId);
         return ResponseEntity.ok(list);
+    }
+    @DeleteMapping("/risk/{id}")
+    public ResponseEntity<String> deleteRisk(@PathVariable("id") Long id) {
+        dropoutRiskRepository.deleteById(id);
+        return ResponseEntity.ok("삭제되었습니다.");
     }
 }

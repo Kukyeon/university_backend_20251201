@@ -17,7 +17,7 @@ public class CourseController {
     // [API] AI 강의 추천 기능
     // GET http://localhost:8888/api/course/recommend?studentId=1
     @GetMapping("/recommend")
-    public ResponseEntity<Map<String, String>> recommendCourses(@RequestParam Long studentId) {
+    public ResponseEntity<Map<String, String>> recommendCourses(@RequestParam("studentId") Long studentId) {
         String recommendation = recommendationService.recommendCourses(studentId);
         // JSON 형태로 반환 { "result": "추천 강의는..." }
         return ResponseEntity.ok(Map.of("result", recommendation));
