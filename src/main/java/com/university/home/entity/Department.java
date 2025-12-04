@@ -2,6 +2,8 @@ package com.university.home.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,5 +20,6 @@ public class Department {
     private College college;
     
     @OneToMany(mappedBy = "department")
+    @JsonManagedReference
     private List<Professor> professors;
 }
