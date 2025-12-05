@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +28,8 @@ public class StuSchController {
     public ResponseEntity<List<StuSchDto>> getByStudent(@RequestParam(name = "studentId") Long studentId) {
         return ResponseEntity.ok(stuSchService.getByStudent(studentId));
     }
-
+    
+    @PreAuthorize("hasRole('STAFF')")
     @PostMapping("/create")
     public ResponseEntity<StuSchDto> createStuSch(@RequestBody StuSchDto dto) {
         return ResponseEntity.ok(
@@ -35,6 +37,7 @@ public class StuSchController {
         );
     }
 
+    @PreAuthorize("hasRole('STAFF')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteStuSch(@PathVariable(name = "id") Long id) {
         stuSchService.deleteStuSch(id);
