@@ -1,6 +1,7 @@
 package com.university.home.controller;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +56,7 @@ public class BreakAppController {
 	public ResponseEntity<?> getByStudent(@AuthenticationPrincipal CustomUserDetails loginUser) {
 		Long studentId = loginUser.getUser().getId();
 		List<BreakApp> apps = breakAppService.getByStudent(studentId);
-		return ResponseEntity.ok(apps);
+		return ResponseEntity.ok( apps != null ? apps : new ArrayList<>());
 	}
 	@GetMapping("/detail/{id}")
 	public ResponseEntity<?> getAppDetail(@PathVariable(name = "id") Long id, @AuthenticationPrincipal CustomUserDetails loginUser) {
