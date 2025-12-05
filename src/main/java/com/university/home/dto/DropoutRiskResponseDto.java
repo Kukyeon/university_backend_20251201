@@ -10,6 +10,7 @@ import lombok.Data;
 @Data
 @Builder
 public class DropoutRiskResponseDto {
+	private Long id;
 	//학생 기본 정보
 	private Long studentId;
 	private String studentName;
@@ -25,6 +26,7 @@ public class DropoutRiskResponseDto {
 	//Entity -> Dto 변환 메소드
 	public static DropoutRiskResponseDto fromEntity(DropoutRisk risk) {
 		return DropoutRiskResponseDto.builder()
+				.id(risk.getId())
 				.studentId(risk.getStudent().getId())
                 .studentName(risk.getStudent().getName())
                 .departmentName(risk.getStudent().getDepartment().getName())
