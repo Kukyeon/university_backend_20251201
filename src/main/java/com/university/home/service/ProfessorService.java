@@ -8,8 +8,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.university.home.dto.CollegeDto;
+import com.university.home.dto.DepartmentDto;
 import com.university.home.dto.ProfessorDto;
 import com.university.home.dto.UserUpdateDto;
+import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
 import com.university.home.entity.User;
@@ -28,6 +31,35 @@ public class ProfessorService {
 	@Autowired
 	DepartmentRepository departmentRepository;
 	
+	public ProfessorDto toDto(Professor professor) {
+	    ProfessorDto dto = new ProfessorDto();
+	    dto.setId(professor.getId());
+	    dto.setName(professor.getName());
+	    dto.setBirthDate(professor.getBirthDate());
+	    dto.setGender(professor.getGender());
+	    dto.setAddress(professor.getAddress());
+	    dto.setTel(professor.getTel());
+	    dto.setEmail(professor.getEmail());
+
+	    Department dep = professor.getDepartment();
+	    if (dep != null) {
+	        DepartmentDto depDto = new DepartmentDto();
+	        depDto.setId(dep.getId());
+	        depDto.setName(dep.getName());
+
+	        College col = dep.getCollege();
+	        if (col != null) {
+	            CollegeDto colDto = new CollegeDto();
+	            colDto.setId(col.getId());
+	            colDto.setName(col.getName());
+	            depDto.setCollege(colDto);
+	        }
+
+	        dto.setDepartment(depDto);
+	    }
+
+	    return dto;
+	}
 	@Transactional
 	public Long createProfessor(ProfessorDto dto) {
 		Professor professor = new Professor();
@@ -38,7 +70,7 @@ public class ProfessorService {
 		professor.setGender(dto.getGender());
 		professor.setTel(dto.getTel());
 		//professor.setDepartment(dto.getDepartment());
-		Department dept = departmentRepository.findById(dto.getDepartmentId())
+		Department dept = departmentRepository.findById(dto.getDepartment().getId())
         .orElseThrow(() -> new RuntimeException("Department not found"));
 		professor.setDepartment(dept);
 		professorRepository.save(professor);
@@ -50,9 +82,10 @@ public class ProfessorService {
 		return professor.getId();
 	}
 	@Transactional
-	public Professor readProfessor(Long id) {
-		return professorRepository.findById(id)
+	public ProfessorDto readProfessor(Long id) {
+		Professor professor = professorRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Professor not found"));
+		return toDto(professor);
 	}
 
 	@Transactional
