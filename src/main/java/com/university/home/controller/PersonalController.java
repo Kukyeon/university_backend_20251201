@@ -57,8 +57,26 @@ public class PersonalController {
 	    return sb.toString();
 	}
 	 @GetMapping("/me")
-	    public User getMyInfo(@AuthenticationPrincipal CustomUserDetails loginUser) {
-	        return userService.getUserById(loginUser.getUser().getId());
+	    public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails loginUser) {
+	        User user = userService.getUserById(loginUser.getUser().getId());
+	        Long userId = user.getId();   
+	        String role = user.getUserRole();
+	        Object result;
+	        
+	        switch(role) {
+	        case "student":
+	            result = studentService.readStudent(userId);
+	            break;
+	        case "professor":
+	        	result = professorService.readProfessor(userId);
+	            break;
+	        case "staff":
+	        	result = staffService.readStaff(userId);
+	            break;
+	        default:
+	            throw new CustomRestfullException("Unknown user role", HttpStatus.BAD_REQUEST);
+	    }
+	        return ResponseEntity.ok(result);
 	    }
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody @Valid UserDto dto, BindingResult bindingResult) {
@@ -76,13 +94,13 @@ public class PersonalController {
 	    Object result;
 	    switch(user.getUserRole()) {
 	        case "student":
-	            result = studentService.readStudent(dto.getId());
+	            result = studentService.readStudent(user.getId());
 	            break;
 	        case "professor":
-	            result = professorService.readProfessor(dto.getId());
+	            result = professorService.readProfessor(user.getId());
 	            break;
 	        case "staff":
-	            result = staffService.readStaff(dto.getId());
+	            result = staffService.readStaff(user.getId());
 	            break;
 	        default:
 	            throw new CustomRestfullException("Unknown user role", HttpStatus.BAD_REQUEST);
