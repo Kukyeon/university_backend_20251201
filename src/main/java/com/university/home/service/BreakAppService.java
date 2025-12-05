@@ -58,6 +58,7 @@ public class BreakAppService {
         breakApp.setToSemester(dto.getToSemester());
         breakApp.setType(dto.getType());
         breakApp.setStatus("처리중");
+        breakApp.setAppDate(LocalDate.now());
 
         breakAppRepository.save(breakApp);
 	}
