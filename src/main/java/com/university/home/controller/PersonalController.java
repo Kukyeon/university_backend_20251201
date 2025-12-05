@@ -76,7 +76,10 @@ public class PersonalController {
 	        default:
 	            throw new CustomRestfullException("Unknown user role", HttpStatus.BAD_REQUEST);
 	    }
-	        return ResponseEntity.ok(result);
+	        return ResponseEntity.ok(Map.of(
+	                "user", result,
+	                "role", role
+	            ));
 	    }
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody @Valid UserDto dto, BindingResult bindingResult) {

@@ -1,5 +1,6 @@
 package com.university.home.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,10 +36,10 @@ public class TuitionController {
 	@Autowired
 	BreakAppService breakAppService;
 
-	@GetMapping
+	@GetMapping("/me")
 	public ResponseEntity<?> getTuitionList(@AuthenticationPrincipal CustomUserDetails loginUser){
 		Long studentId = loginUser.getUser().getId();
-		List<Tuition> tuitions = tuitionService.tuitionList(studentId);
+		List<Tuition> tuitions = tuitionService.getStatusList(studentId, true);
 		return ResponseEntity.ok(tuitions);
 	}
 	@GetMapping("/payment")
@@ -48,20 +49,20 @@ public class TuitionController {
 	    Student student = studentService.getStudentById(studentId);
 
 	    // 학적 상태 + 휴학 체크
-	    StuStat stuStat = stuStatService.getCurrentStatus(studentId);
+	    StuStat stuStat = stuStatService.getCurrentStatus(student.getId());
 	    List<BreakApp> breakAppList = breakAppService.getByStudent(studentId);
 	    if (stuStat.getStatus().equals("졸업") || stuStat.getStatus().equals("자퇴")) {
             throw new CustomRestfullException("등록금 납부 대상이 아닙니다.", HttpStatus.BAD_REQUEST);
         }
         for (BreakApp b : breakAppList) {
-            if ("승인".equals(b.getStatus()) && b.getToYear() >= java.time.LocalDate.now().getYear()) {
+            if ("승인".equals(b.getStatus()) && b.getToYear() >= LocalDate.now().getYear()) {
                 throw new CustomRestfullException("현재 학기 휴학 중이므로 등록금 납부 불가", HttpStatus.BAD_REQUEST);
             }
         }
 
 	    // 등록금 고지서 조회
-	    Tuition tuition = tuitionService.getSemester(studentId,  (long) java.time.LocalDate.now().getYear(),
-                (java.time.LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
+	    Tuition tuition = tuitionService.getSemester(studentId,  (long) LocalDate.now().getYear(),
+                (LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
 	    return ResponseEntity.ok(tuition);
 	}
 	@PostMapping("/payment")
