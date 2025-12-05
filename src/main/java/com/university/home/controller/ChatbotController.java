@@ -42,6 +42,13 @@ public class ChatbotController {
         List<ChatLog> history = chatbotService.getChatHistory(studentId);
         return ResponseEntity.ok(history);
     }
+    
+    @DeleteMapping("/history")
+    public ResponseEntity<String> claerHistory(@RequestParam("studentId") Long studentId) {
+    	chatbotService.clearChatHistory(studentId);
+    	return ResponseEntity.ok("대화가 종료되었습니다");
+    }
+    
 
     // --- DTO 클래스 ---
     @Data
