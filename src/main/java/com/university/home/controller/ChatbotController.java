@@ -2,6 +2,8 @@ package com.university.home.controller;
 
 import com.university.home.entity.ChatLog;
 import com.university.home.service.ChatbotService;
+import com.university.home.service.CustomUserDetails;
+
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -35,16 +38,18 @@ public class ChatbotController {
     }
     
     @GetMapping("/history")
-    public ResponseEntity<List<ChatLog>> getChatHistory(@RequestParam("studentId") Long studentId) {
+    public ResponseEntity<List<ChatLog>> getChatHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
         // ChatLogRepository에 findByStudentIdOrderByCreatedAtAsc 메서드가 있어야 합니다.
         // (과거 대화부터 순서대로 보여줘야 하므로 Asc 오름차순 사용) //프론트 확인후 수정
     	// [수정] 리포지토리가 아니라 서비스를 호출합니다.
+    	Long studentId = loginUser.getUser().getId();
         List<ChatLog> history = chatbotService.getChatHistory(studentId);
         return ResponseEntity.ok(history);
     }
     
     @DeleteMapping("/history")
-    public ResponseEntity<String> claerHistory(@RequestParam("studentId") Long studentId) {
+    public ResponseEntity<String> claerHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
+    	Long studentId = loginUser.getUser().getId();
     	chatbotService.clearChatHistory(studentId);
     	return ResponseEntity.ok("대화가 종료되었습니다");
     }
