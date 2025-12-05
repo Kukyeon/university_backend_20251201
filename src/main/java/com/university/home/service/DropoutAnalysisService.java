@@ -158,7 +158,7 @@ public class DropoutAnalysisService {
 
         notificationRepository.save(noti);
         }
-        log.info("교수님({})께 알림 전송 완료", professors.size());
+        log.info("학과 교수님들께 알림 전송 완료", professors.size());
     }
     	// ---------------------------------------------------
         // 2. 학생 본인에게 상담 권유 알림 보내기 ->예방대책
