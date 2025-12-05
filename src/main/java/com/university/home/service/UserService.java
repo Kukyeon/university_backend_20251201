@@ -51,6 +51,10 @@ public class UserService {
 		}
 		return user;
 	}
+	public User getUserById(Long id) {
+	    return userRepository.findById(id)
+	             .orElseThrow(() -> new CustomRestfullException("User not found", HttpStatus.NOT_FOUND));
+	}
 	 @Transactional
 	    public void resetPassword(Long id, String tempPassword) {
 	        User user = userRepository.findById(id)
