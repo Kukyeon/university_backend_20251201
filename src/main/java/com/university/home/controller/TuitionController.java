@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,10 +17,10 @@ import com.university.home.entity.Student;
 import com.university.home.entity.Tuition;
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.BreakAppService;
+import com.university.home.service.CustomUserDetails;
 import com.university.home.service.StuStatService;
 import com.university.home.service.StudentService;
 import com.university.home.service.TuitionService;
-import com.university.home.service.UserService;
 
 @RestController
 @RequestMapping("/api/tuition")
@@ -35,14 +35,16 @@ public class TuitionController {
 	@Autowired
 	BreakAppService breakAppService;
 
-	@GetMapping("/{studentId}")
-	public ResponseEntity<?> getTuitionList(@PathVariable(name = "studentId") Long studentId){
+	@GetMapping
+	public ResponseEntity<?> getTuitionList(@AuthenticationPrincipal CustomUserDetails loginUser){
+		Long studentId = loginUser.getUser().getId();
 		List<Tuition> tuitions = tuitionService.tuitionList(studentId);
 		return ResponseEntity.ok(tuitions);
 	}
-	@GetMapping("/payment/{studentId}")
-	public ResponseEntity<?> getTuitionPayment(@PathVariable(name = "studentId") Long studentId) {
+	@GetMapping("/payment")
+	public ResponseEntity<?> getTuitionPayment(@AuthenticationPrincipal CustomUserDetails loginUser) {
 	    // 학생 정보 확인
+		Long studentId = loginUser.getUser().getId();
 	    Student student = studentService.getStudentById(studentId);
 
 	    // 학적 상태 + 휴학 체크
@@ -62,8 +64,9 @@ public class TuitionController {
                 (java.time.LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
 	    return ResponseEntity.ok(tuition);
 	}
-	@PostMapping("/payment/{studentId}")
-	public ResponseEntity<?> payTuition(@PathVariable(name = "studentId") Long studentId){
+	@PostMapping("/payment")
+	public ResponseEntity<?> payTuition(@AuthenticationPrincipal CustomUserDetails loginUser){
+		Long studentId = loginUser.getUser().getId();
 		tuitionService.updateStatus(studentId);
 		return ResponseEntity.ok("등록금 남부 완료");
 	}
