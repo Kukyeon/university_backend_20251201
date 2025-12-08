@@ -10,6 +10,7 @@ import lombok.*;
 @Entity
 @Table(name = "department_tb")
 @Getter @NoArgsConstructor
+@Setter
 public class Department {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // Integer -> Long
