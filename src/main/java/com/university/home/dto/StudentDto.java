@@ -27,7 +27,7 @@ public class StudentDto {
 	private String tel;
 	
 	//private Department department;
-	private Long departmentId;
+	private DepartmentDto department;
 	
 	private LocalDate entranceDate;
 	@Email
