@@ -3,6 +3,7 @@ package com.university.home.controller;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,7 @@ public class BreakAppController {
 	@PostMapping("/app")
 	public ResponseEntity<?> createBreakApp(@RequestBody BreakAppDto dto, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		Long studentId = loginUser.getUser().getId();
+		
 		dto.setStudentId(studentId);
 		
 		int month = LocalDate.now().getMonthValue();
@@ -54,9 +56,16 @@ public class BreakAppController {
 	}
 	@GetMapping("/list")
 	public ResponseEntity<?> getByStudent(@AuthenticationPrincipal CustomUserDetails loginUser) {
-		Long studentId = loginUser.getUser().getId();
-		List<BreakApp> apps = breakAppService.getByStudent(studentId);
-		return ResponseEntity.ok( apps != null ? apps : new ArrayList<>());
+		List<BreakApp> apps;
+		String role = loginUser.getUser().getUserRole();
+		
+		if(role.equals("student")) {
+			Long studentId = loginUser.getUser().getId();
+			apps = breakAppService.getByStudent(studentId);
+		} else {
+			apps = breakAppService.getBreakApps();
+		}
+		return ResponseEntity.ok(apps != null ? apps : new ArrayList<>());
 	}
 	@GetMapping("/detail/{id}")
 	public ResponseEntity<?> getAppDetail(@PathVariable(name = "id") Long id, @AuthenticationPrincipal CustomUserDetails loginUser) {
@@ -80,11 +89,12 @@ public class BreakAppController {
 		return ResponseEntity.ok("신청 취소 완료");
 	}
 	@PutMapping("/update/{id}")
-	public ResponseEntity<?> updateApp(@PathVariable(name = "id") Long id, @RequestParam(name = "status")String status, @AuthenticationPrincipal CustomUserDetails loginUser) {
+	public ResponseEntity<?> updateApp(@PathVariable(name = "id") Long id,  @RequestBody Map<String, String> body, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		if (!loginUser.getUser().getUserRole().equals("staff") &&
 			!loginUser.getUser().getUserRole().equals("student")	) {
 			throw new CustomRestfullException("권한이 없습니다.", HttpStatus.FORBIDDEN);
 		}
+		String status = body.get("status");
 		breakAppService.updateStatus(id, status);
 		return ResponseEntity.ok("휴학 신청 상태 변경 완료");
 	}
