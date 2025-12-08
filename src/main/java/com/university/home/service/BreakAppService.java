@@ -30,7 +30,7 @@ public class BreakAppService {
     }
 	
 	public List<BreakApp> getByStudent(Long studentId) {
-		Student student = studentService.getStudentById(studentId);
+		Student student = studentService.getStudentByIdEntity(studentId);
 		List<BreakApp> breakAppList = breakAppRepository
 				.findByStudentOrderByIdDesc(student);
 		
@@ -49,7 +49,7 @@ public class BreakAppService {
 				throw new CustomRestfullException("이미 처리중인 신청내역이 존재합니다.", HttpStatus.BAD_REQUEST);
 			}
 		}
-		Student student = studentService.getStudentById(dto.getStudentId());
+		Student student = studentService.getStudentByIdEntity(dto.getStudentId());
 		BreakApp breakApp = new BreakApp();
 		breakApp.setStudent(student);
         breakApp.setFromYear(dto.getFromYear());
@@ -85,7 +85,7 @@ public class BreakAppService {
 		
 		if (status.equals("승인")) {
 			LocalDate toDate;
-			Student student = studentService.getStudentById(app.getStudent().getId());
+			Student student = studentService.getStudentByIdEntity(app.getStudent().getId());
 			if (app.getToSemester() ==1) {
 				toDate = LocalDate.of(app.getToYear().intValue(), 8, 31);
 			} else {
