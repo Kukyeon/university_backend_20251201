@@ -2,17 +2,16 @@ package com.university.home.controller;
 
 import java.util.List;
 
-
-
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.annotation.AuthenticationPrincipal; 
+import com.university.home.dto.PrincipalDto;
 import com.university.home.dto.EvaluationDto;
 import com.university.home.dto.MyEvaluationDto;
 import com.university.home.dto.PrincipalDto;
 import com.university.home.dto.QuestionDto;
+import com.university.home.entity.Evaluation; 
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.EvaluationService;
 import com.university.home.service.QuestionService;
@@ -21,63 +20,75 @@ import com.university.home.utils.Define;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
-@Controller
-@RequestMapping("/evaluation")
+// ⭐️ @RestController 사용
+@RestController
+@RequestMapping("/api/evaluation")
 @RequiredArgsConstructor
 public class EvaluationController {
 
-    private final HttpSession session;
+//    private final HttpSession session;
     private final EvaluationService evaluationService;
     private final QuestionService questionService;
 
-    @GetMapping("")
-    public String evaluation(Model model, @RequestParam Long subjectId) {
+    // 평가 문항 조회
+    @GetMapping("/questions")
+    public ResponseEntity<QuestionDto> getEvaluationQuestions() {
         QuestionDto dto = questionService.getQuestions();
-        model.addAttribute("subjectId", subjectId);
-        model.addAttribute("dto", dto);
-        return "evaluation/evaluation";
+        return new ResponseEntity<>(dto, HttpStatus.OK);
     }
-
+    
+    // 평가 등록
     @PostMapping("/write/{subjectId}")
-    public String evaluationProc(@PathVariable Long subjectId, EvaluationDto evaluationDto, Model model) {
-        PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
-        if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
-
-        evaluationDto.setStudentId(principal.getId());
+    public ResponseEntity<?> evaluationProc(
+    		@PathVariable("subjectId") Long subjectId, 
+    		@RequestBody EvaluationDto evaluationDto,
+    		@AuthenticationPrincipal PrincipalDto principal) {
+    	if (principal == null) {
+            // JWT 필터가 실패하면 여기까지 오지 않지만, 혹시 모를 경우 대비
+            throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+       }
+    	evaluationDto.setStudentId(principal.getId()); 
         evaluationDto.setSubjectId(subjectId);
 
-        if (evaluationDto.getAnswer1() == null) throw new CustomRestfullException("1번 질문에 답 해주세요", HttpStatus.BAD_REQUEST);
-        if (evaluationDto.getAnswer2() == null) throw new CustomRestfullException("2번 질문에 답 해주세요", HttpStatus.BAD_REQUEST);
-        if (evaluationDto.getAnswer3() == null) throw new CustomRestfullException("3번 질문에 답 해주세요", HttpStatus.BAD_REQUEST);
-        if (evaluationDto.getAnswer4() == null) throw new CustomRestfullException("4번 질문에 답 해주세요", HttpStatus.BAD_REQUEST);
-        if (evaluationDto.getAnswer5() == null) throw new CustomRestfullException("5번 질문에 답 해주세요", HttpStatus.BAD_REQUEST);
-        if (evaluationDto.getAnswer6() == null) throw new CustomRestfullException("6번 질문에 답 해주세요", HttpStatus.BAD_REQUEST);
-        if (evaluationDto.getAnswer7() == null) throw new CustomRestfullException("7번 질문에 답 해주세요", HttpStatus.BAD_REQUEST);
+        if (evaluationDto.getAnswer1() == null || evaluationDto.getAnswer2() == null ||
+            evaluationDto.getAnswer3() == null || evaluationDto.getAnswer4() == null ||
+            evaluationDto.getAnswer5() == null || evaluationDto.getAnswer6() == null ||
+            evaluationDto.getAnswer7() == null) {
+            throw new CustomRestfullException("모든 질문에 답 해주세요.", HttpStatus.BAD_REQUEST);
+        }
 
         evaluationService.createEvaluation(evaluationDto);
-        model.addAttribute("type", 1);
-        return "evaluation/evaluation";
+        return new ResponseEntity<>(HttpStatus.CREATED); 
     }
 
-    @GetMapping("/read")
-    public String readEvaluation(Model model) {
-        PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
-        if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
-
-        List<MyEvaluationDto> subjectNameList = evaluationService.getEvaluationsByProfessorId(principal.getId());
-        model.addAttribute("subjectNameList", subjectNameList);
-        model.addAttribute("evaluations", subjectNameList);
-        return "evaluation/myEvaluation";
+    //교수 기준 전체 강의 평가 조회
+    @GetMapping("/professor")
+    public ResponseEntity<List<MyEvaluationDto>> getEvaluationByProfessor(@AuthenticationPrincipal PrincipalDto principal) {
+       
+    	if (principal == null) {
+            throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+       }
+    	
+        List<MyEvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorId(principal.getId());
+        return new ResponseEntity<>(evaluations, HttpStatus.OK);
     }
 
-    @PostMapping("/read")
-    public String readEvaluationBySubject(Model model, @RequestParam String subjectName) {
-        PrincipalDto principal = (PrincipalDto) session.getAttribute(Define.PRINCIPAL);
-        if (principal == null) throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
-
-        List<MyEvaluationDto> eval = evaluationService.getEvaluationsByProfessorAndSubject(principal.getId(), subjectName);
-        model.addAttribute("subjectNameList", eval);
-        model.addAttribute("evaluations", eval);
-        return "evaluation/myEvaluation";
+    //교수 기준 과목별 강의 평가 조회
+    @GetMapping("/subject/{subjectName}")
+    public ResponseEntity<List<MyEvaluationDto>> getEvaluationBySubject(@PathVariable("subjectName") String subjectName, @AuthenticationPrincipal PrincipalDto principal) {
+    	if (principal == null) {
+            throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+       }
+        List<MyEvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorAndSubject(principal.getId(), subjectName);
+        return new ResponseEntity<>(evaluations, HttpStatus.OK);
+    }
+    
+    // 단일 평가 상세 조회 (평가 ID 기준)
+    @GetMapping("/{id}")
+    
+    public ResponseEntity<Evaluation> getEvaluationDetail(@PathVariable("id") Long id) {
+    
+        Evaluation evaluation = evaluationService.getEvaluationById(id);
+        return new ResponseEntity<>(evaluation, HttpStatus.OK);
     }
 }

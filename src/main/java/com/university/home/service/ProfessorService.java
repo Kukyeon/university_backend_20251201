@@ -1,5 +1,6 @@
 package com.university.home.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +63,7 @@ public class ProfessorService {
 	    return dto;
 	}
 	@Transactional
-	public Long createProfessor(ProfessorDto dto) {
+	public ProfessorDto createProfessor(ProfessorDto dto) {
 		Professor professor = new Professor();
 		professor.setName(dto.getName());
 		professor.setAddress(dto.getAddress());
@@ -70,7 +71,7 @@ public class ProfessorService {
 		professor.setEmail(dto.getEmail());
 		professor.setGender(dto.getGender());
 		professor.setTel(dto.getTel());
-		professor.setHireDate(dto.getHireDate());
+		professor.setHireDate(LocalDate.now());
 		//professor.setDepartment(dto.getDepartment());
 		Department dept = departmentRepository.findById(dto.getDepartment().getId())
         .orElseThrow(() -> new RuntimeException("Department not found"));
@@ -81,7 +82,7 @@ public class ProfessorService {
 		professor.setUser(user);
 		professorRepository.save(professor);
 		
-		return professor.getId();
+		return toDto(professor);
 	}
 	@Transactional
 	public ProfessorDto readProfessor(Long id) {

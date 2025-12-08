@@ -46,9 +46,9 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 			});
 			throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
 		}
-		Long staffId = staffService.createStaff(dto);
+		StaffDto staffDto = staffService.createStaff(dto);
 		
-		return ResponseEntity.ok(staffId);
+		return ResponseEntity.ok(staffDto);
 	}
 	@PostMapping("/student")
 	public ResponseEntity<?> createStudent(@Valid@RequestBody StudentDto dto, BindingResult bindingResult) {
@@ -59,7 +59,7 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 			});
 			throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
 		}
-		Student student = studentService.createStudentWithStatus(dto);
+		StudentDto student = studentService.createStudentWithStatus(dto);
 		
 		return ResponseEntity.ok(student);
 	}
@@ -72,9 +72,9 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 			});
 			throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
 		}
-		Long professorId = professorService.createProfessor(dto);
+		ProfessorDto professorDto= professorService.createProfessor(dto);
 		
-		return ResponseEntity.ok(professorId);
+		return ResponseEntity.ok(professorDto);
 	}
 	@GetMapping("/list/professor")
 	public ResponseEntity<?> professorList(
