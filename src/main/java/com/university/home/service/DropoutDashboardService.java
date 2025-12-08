@@ -38,4 +38,16 @@ public class DropoutDashboardService {
                 .map(DropoutRiskResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
+	
+	// [추가] 관리자(STAFF)용: 전교생 위험군 조회
+    @Transactional
+    public List<DropoutRiskResponseDto> getAllRiskStudents() {
+        // 1. 전체 데이터 가져오기 (점수 높은 순)
+        List<DropoutRisk> allRisks = dropoutRiskRepository.findAllByOrderByRiskScoreDesc();
+
+        // 2. DTO 변환
+        return allRisks.stream()
+                .map(DropoutRiskResponseDto::fromEntity)
+                .collect(Collectors.toList());
+    }
 }

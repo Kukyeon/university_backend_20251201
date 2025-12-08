@@ -27,7 +27,7 @@ public class ProfessorDto {
 	private String tel;
 	
 	//private Department department;
-	private Long departmentId;
+	private DepartmentDto department;
 	
 	@Email
 	private String email;
