@@ -28,4 +28,6 @@ public class StaffDto {
 	
 	@Email
 	private String email;
+	
+	private LocalDate hireDate;
 }
