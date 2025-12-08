@@ -19,4 +19,7 @@ public interface DropoutRiskRepository extends JpaRepository<DropoutRisk, Long>{
     long countByStudentDepartmentIdAndRiskLevel(Long deptId, String riskLevel);
 	
     Optional<DropoutRisk> findTopByStudentIdOrderByAnalyzedDateDesc(Long studentId);
+    // [추가] 전교생 조회 (위험 점수 높은 순서대로)
+    List<DropoutRisk> findAllByOrderByRiskScoreDesc(); 
+    
 }
