@@ -135,31 +135,40 @@ public class DropoutAnalysisService {
     }
 
     // [FUN-002] 위기 학생 감지 시 담당 지도교수에게 알림 
+ // [FUN-002] 알림 발송 로직
     private void sendAlert(Student student, String level, String reason) {
-        // 1. 교수님 ID 가져오기 (없으면 스킵)
-    	if (student.getDepartment().getProfessors() == null) {
-            log.warn("학생({})의 지도교수 정보가 없어 알림을 보낼 수 없습니다.", student.getName());
+        
+        // 1. 학생의 학과 정보가 있는지 확인
+        if (student.getDepartment() == null) {
+            log.warn("학생({})의 소속 학과가 없어 교수님을 찾을 수 없습니다.", student.getName());
             return; 
         }
-    	//학과 교수님에게 알림보내기
-    	if (student.getDepartment() != null) {
-            Long deptId = student.getDepartment().getId();
-            List<Professor> professors = professorRepository.findByDepartmentId(deptId);
 
-        // 2. 알림 저장
-        for (Professor prof : professors) {
-        Notification noti = Notification.builder() 
-        		.receiverId(prof.getId()) // 교수님 ID
-                .content(String.format("🚨[위험 알림] %s 학생이 '%s' 단계입니다. (사유: %s)", student.getName(), student.getDepartment(),level, reason))
-                .url("/dashboard/risk-student/" + student.getId())
-                .isRead(false)
-                .createdAt(LocalDateTime.now())
-                .build();
+        // 2. [수정] 학과 객체에서 꺼내는 게 아니라, 리포지토리로 조회합니다!
+        Long deptId = student.getDepartment().getId(); // 학생의 학과 ID
+        List<Professor> professors = professorRepository.findByDepartmentId(deptId); // DB 조회
 
-        notificationRepository.save(noti);
+        if (professors.isEmpty()) {
+            log.warn("학과(ID:{})에 등록된 교수님이 한 명도 없습니다.", deptId);
         }
-        log.info("학과 교수님들께 알림 전송 완료", professors.size());
-    }
+
+        // 3. 조회된 교수님들에게 알림 발송 (반복문)
+        for (Professor prof : professors) {
+            String profMsg = String.format("🚨[위험 알림] %s 학생(%s)이 '%s' 단계입니다. (사유: %s)", 
+                    student.getName(), student.getDepartment().getName(), level, reason);
+
+            Notification profNoti = Notification.builder()
+                    .receiverId(prof.getId())
+                    .content(profMsg)
+                    .url("/professor/dashboard")
+                    .isRead(false)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            
+            notificationRepository.save(profNoti);
+        }
+        log.info("학과 교수님 {}명에게 알림 전송 완료", professors.size());
+    
     	// ---------------------------------------------------
         // 2. 학생 본인에게 상담 권유 알림 보내기 ->예방대책
         // ---------------------------------------------------

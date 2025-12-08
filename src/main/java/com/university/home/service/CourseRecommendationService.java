@@ -63,4 +63,74 @@ public class CourseRecommendationService {
         // 5. Gemini 호출
         return geminiService.talk(prompt);
     }
+ // 1. [조회] 개설된 전체 강의 목록 가져오기 (수강신청 화면용)
+    @Transactional(readOnly = true)
+    public List<Subject> getAvailableCourses(Long subYear, Long semester) {
+    	// 1. 만약 연도나 학기가 입력되지 않았다면? (null 체크)
+        if (subYear == null || semester == null) {
+            // DB에서 가장 최신 과목 하나를 꺼내봅니다.
+            Subject latestSubject = subjectRepository.findTopByOrderBySubYearDescSemesterDesc()
+                    .orElse(null);
+
+            if (latestSubject != null) {
+                // 최신 과목의 연도와 학기를 사용!
+                subYear = latestSubject.getSubYear();
+                semester = latestSubject.getSemester();
+                System.out.println("🤖 자동 감지된 최신 학기: " + subYear + "년 " + semester + "학기");
+            } else {
+                // DB가 텅 비어있으면 기본값 (예: 2025-1)
+                subYear = 2023L;
+                semester = 1L;
+               
+            }
+        } else {
+            System.out.println("📡 프론트 요청 학기: " + subYear + "년 " + semester + "학기");
+        }
+
+        // 2. 결정된 연도/학기로 조회
+        List<Subject> result = subjectRepository.findBySubYearAndSemester(subYear, semester);
+       
+        
+        return result;
+    }
+    // 2. [조회] 나의 수강 내역 가져오기 (마이페이지용)
+    @Transactional(readOnly = true)
+    public List<StuSub> getMyCourseHistory(Long studentId) {
+        return stuSubRepository.findByStudentId(studentId);
+    }
+
+    // 3. [동작] 수강 신청 하기 (핵심 로직!)
+    @Transactional
+    public String registerCourse(Long studentId, Long subjectId) {
+        // (1) 학생과 과목 정보 확인
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("학생 없음"));
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new IllegalArgumentException("과목 없음"));
+
+        // (2) 중복 신청 체크 (이미 신청했는지?)
+        // StuSubRepository에 existsByStudentIdAndSubjectId 메서드가 필요합니다! (없으면 추가하세요)
+        boolean alreadyRegistered = stuSubRepository.existsByStudentIdAndSubjectId(studentId, subjectId);
+        if (alreadyRegistered) {
+            throw new IllegalStateException("이미 신청한 과목입니다.");
+        }
+
+        // (3) 정원 초과 체크
+        if (subject.getNumOfStudent() >= subject.getCapacity()) {
+            throw new IllegalStateException("정원이 초과되었습니다.");
+        }
+
+        // (4) 수강신청 완료 (DB 저장)
+        StuSub newEnrollment = new StuSub();
+        newEnrollment.setStudent(student);
+        newEnrollment.setSubject(subject);
+        newEnrollment.setGrade(null); // 성적은 아직 없음
+        
+        stuSubRepository.save(newEnrollment);
+
+        // (5) 과목의 수강인원 +1 증가 (Dirty Checking)
+        subject.setNumOfStudent(subject.getNumOfStudent() + 1);
+        
+        return subject.getName() + " 수강신청 성공!";
+    }
 }
