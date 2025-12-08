@@ -11,7 +11,7 @@ public interface StuSubRepository extends JpaRepository<StuSub, Long> {
     List<StuSub> findByStudentId(Long studentId);
 
     //중복 신청 확인
-    boolean existsByStudentIdAndSubjectId(Long studentId, Long subjectId);
+    boolean existsByStudent_IdAndSubject_Id(Long studentId, Long subjectId);
     
     //수강 취소용 조회
     Optional<StuSub> findByStudentIdAndSubjectId(Long studentId, Long subjectId);

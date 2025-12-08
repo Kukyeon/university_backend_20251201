@@ -140,7 +140,7 @@ public class CourseService {
                 .orElseThrow(() -> new IllegalArgumentException("강의 정보가 없습니다."));
 
         // 2. 중복 체크
-        if (stuSubRepository.existsByStudentIdAndSubjectId(studentId, subjectId)) {
+        if (stuSubRepository.existsByStudent_IdAndSubject_Id(studentId, subjectId)) {
             throw new IllegalStateException("이미 수강신청한 강의입니다.");
         }
 
