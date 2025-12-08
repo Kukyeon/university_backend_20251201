@@ -97,5 +97,4 @@ public class BreakAppService {
 			stuStatService.updateStatus(student,"휴학", app.getId());
 		}
 	}
-	
 }
