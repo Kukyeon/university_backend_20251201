@@ -19,20 +19,32 @@ public class QuestionService {
 
     @Transactional(readOnly = true)
     public QuestionDto getQuestions() {
-        List<Question> questions = questionRepository.findAll();
+        // DB 스키마를 따르기 위해, 모든 질문 레코드를 가져와 그 중 첫 번째(유일한) 레코드를 사용합니다.
+        List<Question> questionsList = questionRepository.findAll();
         QuestionDto dto = new QuestionDto();
 
-        if (questions.size() >= 7) {
-            dto.setQuestion1(questions.get(0).getContent());
-            dto.setQuestion2(questions.get(1).getContent());
-            dto.setQuestion3(questions.get(2).getContent());
-            dto.setQuestion4(questions.get(3).getContent());
-            dto.setQuestion5(questions.get(4).getContent());
-            dto.setQuestion6(questions.get(5).getContent());
-            dto.setQuestion7(questions.get(6).getContent());
+        if (!questionsList.isEmpty()) {
+            Question questionRecord = questionsList.get(0); // 첫 번째 레코드 사용
+
+            // ⭐️ 스키마의 question1 ~ question7 컬럼에서 직접 값을 가져와 DTO에 세팅
+            // 단, Question 엔티티에 question1~question7 필드가 정의되어 있어야 합니다!
+            
+            // 만약 Question 엔티티에 question1~question7 필드가 있다면:
+            dto.setQuestion1(questionRecord.getQuestion1());
+            dto.setQuestion2(questionRecord.getQuestion2());
+            dto.setQuestion3(questionRecord.getQuestion3());
+            dto.setQuestion4(questionRecord.getQuestion4());
+            dto.setQuestion5(questionRecord.getQuestion5());
+            dto.setQuestion6(questionRecord.getQuestion6());
+            dto.setQuestion7(questionRecord.getQuestion7());
+
+            // 이전 코드에서 사용하던 content 필드는 더 이상 사용하지 않습니다.
+            // dto.setSugContent(questionRecord.getSugContent()); // 필요 시 추가
+        } else {
+             // 데이터베이스에 질문 레코드가 없는 경우 로그 처리 또는 기본값 설정
+             System.out.println("ERROR: question_tb에 질문 레코드가 존재하지 않습니다.");
         }
 
-        dto.setSugContent(null); // 필요 시 세팅
         return dto;
     }
 }
