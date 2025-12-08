@@ -2,10 +2,13 @@ package com.university.home.controller;
 
 import com.university.home.service.CourseService;
 import com.university.home.service.CustomUserDetails; // 패키지명 확인 필요
+import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.Subject;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,17 +22,21 @@ import java.util.Map;
 public class CourseController {
 
     private final CourseService courseService;
-
     // ============================ 조회 API ============================
 
     // 1. 강의 목록 조회 (학기 자동 감지)
     // GET /api/course/list
     @GetMapping("/list")
-    public ResponseEntity<List<Subject>> getCourseList(
+    public ResponseEntity<Page<Subject>> getCourseList(
             @RequestParam(name = "year", required = false) Long year,
-            @RequestParam(name = "semester", required = false) Long semester
+            @RequestParam(name = "semester", required = false) Long semester,
+            @RequestParam(name = "page", defaultValue = "0") int page, 
+        
+            @RequestParam(name = "type", required = false) String type,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "deptId", required = false) Long deptId
     ) {
-        return ResponseEntity.ok(courseService.getAvailableCourses(year, semester));
+        return ResponseEntity.ok(courseService.getAvailableCourses(year, semester, page, type, name, deptId));
     }
 
     // 2. 내 수강 내역 조회
@@ -89,5 +96,13 @@ public class CourseController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("❌ 취소 실패: " + e.getMessage());
         }
+    }
+    
+ // 6. 강의 상세 조회 (강의계획서용)
+    // GET /api/course/syllabus/101
+    @GetMapping("/syllabus/{subjectId}")
+    public ResponseEntity<SyllabusDto> getSyllabus(@PathVariable("subjectId") Long subjectId) {
+        // 기존 Repository 활용
+        return courseService.Syllabus(subjectId);
     }
 }
