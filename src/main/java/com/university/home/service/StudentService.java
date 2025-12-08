@@ -113,22 +113,29 @@ public class StudentService {
 				.orElseThrow(() -> new RuntimeException("Student not found"));
 	}
 	// 전체 학생 조회
-	public Page<Student> getStudents(int page, int size) {
-		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findAll(pageable);
+	public Page<StudentDto> getStudents(Pageable pageable) {
+		 return studentRepository.findAll(pageable)
+	                .map(this::toDto); // map으로 DTO 변환
 	}
 	// 학과별 학생 조회
-	public Page<Student> getStudentsByDep(Long deptId,int page, int size) {
+	public Page<StudentDto> getStudentsByDep(Long deptId,Pageable pageable) {
 		Department dept = departmentRepository.findById(deptId)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
-		Pageable pageable = PageRequest.of(page, size);
-		return studentRepository.findByDepartment(dept, pageable);
+		  return studentRepository.findByDepartment(dept, pageable)
+	                .map(this::toDto);
 	}
 	// 학번 학생 조회
-	public Student getStudentById(Long studentId) {
-		return studentRepository.findById(studentId)
-				.orElseThrow(() -> new RuntimeException("Student not found"));
+	public StudentDto getStudentById(Long studentId) {
+		Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        return toDto(student);
 	}
+	// StudentService
+	public Student getStudentByIdEntity(Long studentId) {
+	    return studentRepository.findById(studentId)
+	            .orElseThrow(() -> new RuntimeException("학생이 존재하지 않습니다."));
+	}
+
 	@Transactional
 	public int updateStudentGradeAndSemesters() {
 		List<Student> students = studentRepository.findAll();

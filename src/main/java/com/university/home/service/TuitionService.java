@@ -75,7 +75,7 @@ public class TuitionService {
         return (LocalDate.now().getMonthValue() <= 6) ? 1 : 2;
     }
     public Long getTuitionAmount(Long studentId) {
-        Student student = studentService.getStudentById(studentId);
+        Student student = studentService.getStudentByIdEntity(studentId);
         Long collegeId = student.getDepartment().getCollege().getId();
 
         CollTuit collTuit = collTuitRepository.findById(collegeId)
@@ -85,7 +85,7 @@ public class TuitionService {
     }
     @Transactional
     public int createTuition(Long studentId) {
-    	Student student = studentService.getStudentById(studentId);
+    	Student student = studentService.getStudentByIdEntity(studentId);
     	
     	StuStat stuStat = stuStatService.getCurrentStatus(studentId);
     	 

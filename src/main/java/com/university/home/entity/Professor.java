@@ -32,5 +32,7 @@ public class Professor {
    // @JsonBackReference
     private Department department;
     
+    private LocalDate hireDate;
+    
    
 }
