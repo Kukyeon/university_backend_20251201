@@ -28,7 +28,10 @@ public class BreakAppService {
     BreakAppService(StuStatService stuStatService) {
         this.stuStatService = stuStatService;
     }
-	
+	public List<BreakApp> getBreakApps() {
+		List<BreakApp> breakApps = breakAppRepository.findAll();
+		return breakApps;
+	}
 	public List<BreakApp> getByStudent(Long studentId) {
 		Student student = studentService.getStudentByIdEntity(studentId);
 		List<BreakApp> breakAppList = breakAppRepository
@@ -45,7 +48,7 @@ public class BreakAppService {
 		
 		List<BreakApp> breakApps = getStudentApps(dto.getStudentId());
 		for (BreakApp b : breakApps) {
-			if(b.getStatus().equals("처리중")) {
+			if(b.getStatus().equals("처리중") || b.getStatus().equals("승인")) {
 				throw new CustomRestfullException("이미 처리중인 신청내역이 존재합니다.", HttpStatus.BAD_REQUEST);
 			}
 		}

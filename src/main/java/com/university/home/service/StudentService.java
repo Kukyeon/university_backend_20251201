@@ -35,10 +35,10 @@ public class StudentService {
 	@Autowired
 	StuStatService stuStatService;
 	@Transactional
-	public Student createStudentWithStatus(StudentDto dto) {
+	public StudentDto createStudentWithStatus(StudentDto dto) {
 	    Student student = createStudent(dto);  // 학생 생성
 	    stuStatService.createFirstStatus(student); // 학적 상태 생성
-	    return student;
+	    return toDto(student);
 	}
 	public StudentDto toDto(Student student) {
 	    StudentDto dto = new StudentDto();
