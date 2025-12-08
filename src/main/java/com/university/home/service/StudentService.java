@@ -8,9 +8,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.university.home.dto.CollegeDto;
+import com.university.home.dto.DepartmentDto;
+import com.university.home.dto.ProfessorDto;
 import com.university.home.dto.StudentDto;
 import com.university.home.dto.UserUpdateDto;
+import com.university.home.entity.College;
 import com.university.home.entity.Department;
+import com.university.home.entity.Professor;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
 import com.university.home.repository.DepartmentRepository;
@@ -35,6 +40,35 @@ public class StudentService {
 	    stuStatService.createFirstStatus(student); // 학적 상태 생성
 	    return student;
 	}
+	public StudentDto toDto(Student student) {
+	    StudentDto dto = new StudentDto();
+	    dto.setId(student.getId());
+	    dto.setName(student.getName());
+	    dto.setBirthDate(student.getBirthDate());
+	    dto.setGender(student.getGender());
+	    dto.setAddress(student.getAddress());
+	    dto.setTel(student.getTel());
+	    dto.setEmail(student.getEmail());
+
+	    Department dep = student.getDepartment();
+	    if (dep != null) {
+	        DepartmentDto depDto = new DepartmentDto();
+	        depDto.setId(dep.getId());
+	        depDto.setName(dep.getName());
+
+	        College col = dep.getCollege();
+	        if (col != null) {
+	            CollegeDto colDto = new CollegeDto();
+	            colDto.setId(col.getId());
+	            colDto.setName(col.getName());
+	            depDto.setCollege(colDto);
+	        }
+
+	        dto.setDepartment(depDto);
+	    }
+
+	    return dto;
+	}
 	@Transactional
 	public Student createStudent(StudentDto dto) {
 		Student student = new Student();
@@ -46,7 +80,7 @@ public class StudentService {
 		student.setTel(dto.getTel());
 		student.setEntranceDate(dto.getEntranceDate());
 		//student.setDepartment(dto.getDepartment());
-		Department dept = departmentRepository.findById(dto.getDepartmentId())
+		Department dept = departmentRepository.findById(dto.getDepartment().getId())
         .orElseThrow(() -> new RuntimeException("Department not found"));
 		student.setDepartment(dept);
 		studentRepository.save(student);
@@ -58,9 +92,10 @@ public class StudentService {
 	}
 	
 	@Transactional
-	public Student readStudent(Long id) {
-		return studentRepository.findById(id)
+	public StudentDto readStudent(Long id) {
+		Student student =  studentRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("Student not found"));
+		return toDto(student);
 	}
 
 	@Transactional
