@@ -1,11 +1,18 @@
 package com.university.home.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.lang.Nullable;
+
 import com.university.home.entity.Subject;
 import java.util.List;
 import java.util.Optional;
 
-public interface SubjectRepository extends JpaRepository<Subject, Long> {
+public interface SubjectRepository extends JpaRepository<Subject, Long>, JpaSpecificationExecutor<Subject> {
 
     // 과목 삭제
     void deleteById(Long id);
@@ -33,4 +40,17 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
     List<Subject> findBySubYearAndSemester(Long subYear, Long semester);
     
     Optional<Subject> findTopByOrderBySubYearDescSemesterDesc();
+    
+    // 페이징 적용된 버전
+    // 메서드 이름 뒤에 Pageable 파라미터만 추가하면 JPA가 알아서 페이징 쿼리를 날립니다.
+    @EntityGraph(attributePaths = {"professor", "department", "department.college"})
+    Page<Subject> findBySubYearAndSemester(Long subYear, Long semester, Pageable pageable);
+    
+    @Override
+    @EntityGraph(attributePaths = {"professor", "department", "department.college"})
+    Page<Subject> findAll(@Nullable Specification<Subject> spec, Pageable pageable);
+    
+    // (학기 자동감지 메서드 유지)
+    // Optional<Subject> findTopByOrderBySubYearDescSemesterDesc();
+   
 }
