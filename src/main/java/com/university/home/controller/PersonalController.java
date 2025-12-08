@@ -61,6 +61,7 @@ public class PersonalController {
 	        User user = userService.getUserById(loginUser.getUser().getId());
 	        Long userId = user.getId();   
 	        String role = user.getUserRole();
+	        System.out.println("롤ㄹㄹㄹ!!!"+role);
 	        Object result;
 	        
 	        switch(role) {
@@ -91,11 +92,11 @@ public class PersonalController {
 
 	    
 	    User user = userService.login(dto.getId(), dto.getPassword());
-	    
+	    String role = user.getUserRole();
 	    String token = jwtUtil.generateToken(user);
 	    
 	    Object result;
-	    switch(user.getUserRole()) {
+	    switch(role) {
 	        case "student":
 	            result = studentService.readStudent(user.getId());
 	            break;
@@ -112,7 +113,8 @@ public class PersonalController {
 	    // 3️⃣ 반환
 	    return ResponseEntity.ok(Map.of(
 	            "token", token,
-	            "user", result
+	            "user", result,
+	            "role", role
 	        ));
 	}
 	@PostMapping("/findId")
