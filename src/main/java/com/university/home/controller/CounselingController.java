@@ -6,11 +6,13 @@ import com.university.home.dto.RecordSearchRequestDto;
 import com.university.home.service.CounselingScheduleService;
 import com.university.home.service.CounselingRecordService;
 import com.university.home.entity.ProfessorAvailability;
+import com.university.home.entity.ScheduleStatus;
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.entity.CounselingSchedule;
 import com.university.home.entity.CounselingRecord;
 import lombok.RequiredArgsConstructor;
-
+import com.university.home.dto.PrincipalDto; 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -28,7 +30,7 @@ public class CounselingController {
     private final CounselingRecordService recordService;
     
     // TODO: 실제 Spring Security에서 현재 로그인 사용자 ID를 가져오는 메서드로 대체해야 합니다.
-    private Long getCurrentUserId() { return 1L; } // 임시 ID 반환
+//    private Long getCurrentUserId() { return 1L; } // 임시 ID 반환
 
     
 //    private Long getCurrentUserId() {
@@ -43,8 +45,15 @@ public class CounselingController {
     
     // POST /api/schedules/availability : 교수자 상담 가능 시간 설정
     @PostMapping("/availability")
-    public ResponseEntity<ProfessorAvailability> setAvailability(@RequestBody AvailabilityRequestDto request) {
-        Long professorId = getCurrentUserId(); 
+    public ResponseEntity<ProfessorAvailability> setAvailability(@RequestBody AvailabilityRequestDto request,
+    		@AuthenticationPrincipal PrincipalDto principal) {
+       
+    	if (principal == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+    	
+    	Long professorId = principal.getId();
+    	
         ProfessorAvailability availability = scheduleService.setAvailability(
             professorId, 
             request.getStartTime(), 
@@ -55,8 +64,13 @@ public class CounselingController {
     
     // GET /api/schedules/professor/{profId} : 교수자별 예약 현황 및 가능 시간 조회
     @GetMapping("/professor/{profId}")
-    public ResponseEntity<List<ProfessorAvailability>> getProfessorAvailability(@PathVariable("profId") Long profId) {
-        List<ProfessorAvailability> list = scheduleService.getProfessorAvailability(profId);
+    public ResponseEntity<List<ProfessorAvailability>> getProfessorAvailability(@AuthenticationPrincipal PrincipalDto principal) {
+      
+    	if (principal == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+    	
+    	List<ProfessorAvailability> list = scheduleService.getProfessorAvailability(principal.getId());
         return ResponseEntity.ok(list);
     }
     
@@ -78,8 +92,14 @@ public class CounselingController {
     
     // PUT /api/schedules/cancel/{scheduleId} : 상담 일정 취소
     @PutMapping("/cancel/{scheduleId}")
-    public ResponseEntity<CounselingSchedule> cancelAppointment(@PathVariable("scheduleId") Long scheduleId) {
-        Long currentUserId = getCurrentUserId();
+    public ResponseEntity<CounselingSchedule> cancelAppointment(@PathVariable("scheduleId") Long scheduleId,
+    		@AuthenticationPrincipal PrincipalDto principal) {
+    		
+    	if (principal == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+    	
+        Long currentUserId = principal.getId();
         CounselingSchedule cancelledSchedule = scheduleService.cancelAppointment(scheduleId, currentUserId);
         return ResponseEntity.ok(cancelledSchedule);
     }
@@ -89,9 +109,14 @@ public class CounselingController {
     // =========================================================
     
     // GET /api/schedules/student/{studentId} : 학생별 상담 기록 및 저장된 일정 조회
-    @GetMapping("/student/{studentId}")
-    public ResponseEntity<List<CounselingSchedule>> getStudentSchedules(@PathVariable("studentId") Long studentId) {
-        List<CounselingSchedule> list = scheduleService.getStudentSchedules(studentId);
+    @GetMapping("/student")
+    public ResponseEntity<List<CounselingSchedule>> getStudentSchedules(@AuthenticationPrincipal PrincipalDto principal) {
+      
+    	if (principal == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+    	
+    	List<CounselingSchedule> list = scheduleService.getStudentSchedules(principal.getId());
         return ResponseEntity.ok(list);
     }
 
@@ -119,5 +144,38 @@ public class CounselingController {
     public ResponseEntity<CounselingRecord> getRecord(@PathVariable("scheduleId") Long scheduleId) {
         CounselingRecord record = recordService.getRecordByScheduleId(scheduleId);
         return ResponseEntity.ok(record);
+    }
+    
+ // ⭐️ GET /api/schedules/requests : 로그인된 교수에게 신청된 상담 일정 조회
+    @GetMapping("/requests")
+    public ResponseEntity<List<CounselingSchedule>> getProfessorRequests(@AuthenticationPrincipal PrincipalDto principal) {
+        if (principal == null || !principal.getUserRole().equals("PROFESSOR")) {
+            throw new CustomRestfullException("교수만 접근 가능합니다.", HttpStatus.FORBIDDEN);
+        }
+        // ⭐️ 교수 ID를 서비스로 전달
+        List<CounselingSchedule> list = scheduleService.getProfessorRequests(principal.getId()); 
+        return ResponseEntity.ok(list);
+    }
+    
+    // ⭐️ PUT /api/schedules/status/{scheduleId} : 상담 일정 상태 변경 (승인/거절/완료)
+    @PutMapping("/status/{scheduleId}")
+    public ResponseEntity<CounselingSchedule> updateScheduleStatus(
+            @PathVariable("scheduleId") Long scheduleId, 
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal PrincipalDto principal) {
+
+        if (principal == null || !principal.getUserRole().equals("PROFESSOR")) {
+            throw new CustomRestfullException("교수만 상태를 변경할 수 있습니다.", HttpStatus.FORBIDDEN);
+        }
+        
+        String statusString = body.get("status");
+        if (statusString == null) {
+             throw new CustomRestfullException("변경할 상태를 지정해야 합니다.", HttpStatus.BAD_REQUEST);
+        }
+        ScheduleStatus newStatus = ScheduleStatus.valueOf(statusString);
+        
+        // ⭐️ 교수 ID와 새 상태를 서비스로 전달
+        CounselingSchedule updatedSchedule = scheduleService.updateScheduleStatus(scheduleId, principal.getId(), newStatus);
+        return ResponseEntity.ok(updatedSchedule);
     }
 }

@@ -10,4 +10,7 @@ import com.university.home.entity.ScheduleStatus;
 public interface CounselingScheduleRepository extends JpaRepository<CounselingSchedule, Long> {
     List<CounselingSchedule> findByProfessorIdAndStatus(Long professorId, ScheduleStatus status);
     List<CounselingSchedule> findByStudentIdAndStatus(Long studentId, ScheduleStatus status);
+    
+    List<CounselingSchedule> findByProfessorId(Long professorId);
+    List<CounselingSchedule> findByStudentId(Long studentId);
 }

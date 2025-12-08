@@ -106,4 +106,36 @@ public class CounselingScheduleService {
     public List<CounselingSchedule> getStudentSchedules(Long studentId) {
         return scheduleRepository.findByStudentIdAndStatus(studentId, ScheduleStatus.CONFIRMED);
     }
+    
+ // [6] 교수에게 신청된 모든 상담 요청 조회
+    public List<CounselingSchedule> getProfessorRequests(Long professorId) {
+        // CONFIRMED(승인 대기) 또는 COMPLETED(완료)된 일정을 모두 조회
+        return scheduleRepository.findByProfessorId(professorId); 
+    }
+    
+    // [7] 상담 일정 상태 변경 (교수 전용)
+    @Transactional
+    public CounselingSchedule updateScheduleStatus(Long scheduleId, Long professorId, ScheduleStatus newStatus) {
+        CounselingSchedule schedule = scheduleRepository.findById(scheduleId)
+            .orElseThrow(() -> new CustomRestfullException("해당 상담 일정이 존재하지 않습니다.", HttpStatus.NOT_FOUND));
+
+        // 권한 검사: 해당 상담의 교수가 현재 로그인한 교수인지 확인
+        if (!schedule.getProfessorId().equals(professorId)) {
+            throw new CustomRestfullException("해당 상담의 상태를 변경할 권한이 없습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        schedule.setStatus(newStatus);
+        
+        // 상태가 CANCELED로 바뀌면, Availability를 다시 예약 가능 상태로 돌려놓아야 함
+        if (newStatus == ScheduleStatus.CANCELED) {
+            ProfessorAvailability availability = schedule.getAvailability();
+            availability.setBooked(false);
+            availabilityRepository.save(availability);
+            notificationService.sendAppointmentAlert(schedule, "예약 취소됨");
+        } else if (newStatus == ScheduleStatus.COMPLETED) {
+            notificationService.sendAppointmentAlert(schedule, "상담 완료됨");
+        }
+        
+        return scheduleRepository.save(schedule);
+    }
 }
