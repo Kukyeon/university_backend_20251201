@@ -16,12 +16,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.university.home.dto.CollTuitFormDto;
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.DepartmentDto;
+import com.university.home.dto.RoomDto;
 import com.university.home.entity.CollTuit;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
+import com.university.home.entity.Room;
 import com.university.home.service.AdminService;
 import com.university.home.service.CollegeService;
 import com.university.home.service.DepartmentService;
+import com.university.home.service.RoomService;
 
 import jakarta.validation.Valid;
 
@@ -35,6 +38,8 @@ public class AdminController {
 	CollegeService collegeService;
 	@Autowired
 	DepartmentService departmentService;
+	@Autowired
+	RoomService roomService;
 	@GetMapping("/college")
 	public ResponseEntity<?> getCollegeList() {
 		List<College> colleges = collegeService.collegeList();
@@ -73,6 +78,22 @@ public class AdminController {
 	public ResponseEntity<?> deleteDepartment(@PathVariable(name = "id") Long id) {
         departmentService.deleteDepartment(id);
         return ResponseEntity.ok( "삭제 완료");
+    }
+	@GetMapping("/room")
+	public ResponseEntity<?> getRoomList() {
+		List<RoomDto> rooms = roomService.roomList();
+		return ResponseEntity.ok(rooms);
+	}
+
+    @PostMapping("/room")
+    public ResponseEntity<RoomDto> addRoom(@RequestBody RoomDto dto) {
+        return ResponseEntity.ok(roomService.createRoom(dto));
+    }
+
+    @DeleteMapping("/room/{id}")
+    public ResponseEntity<String> deleteRoom(@PathVariable(name = "id") String id) {
+        roomService.deleteRoom(id);
+        return ResponseEntity.ok("삭제 완료");
     }
 	@GetMapping("/tuition")
 	public ResponseEntity<?> getTuitionList() {
