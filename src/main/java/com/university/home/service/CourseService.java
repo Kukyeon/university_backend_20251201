@@ -1,6 +1,7 @@
 package com.university.home.service;
 
 import com.university.home.component.SubjectSpecification;
+import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -181,4 +183,13 @@ public class CourseService {
         
         stuSubRepository.delete(enrollment);
     }
+    
+    @Transactional
+    public ResponseEntity<SyllabusDto> Syllabus(Long subjectId) {
+    	return subjectRepository.findById(subjectId)
+    			.map(SyllabusDto::fromEntity) 
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
 }

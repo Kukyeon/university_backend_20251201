@@ -2,6 +2,7 @@ package com.university.home.controller;
 
 import com.university.home.service.CourseService;
 import com.university.home.service.CustomUserDetails; // 패키지명 확인 필요
+import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.Subject;
 
@@ -21,7 +22,6 @@ import java.util.Map;
 public class CourseController {
 
     private final CourseService courseService;
-
     // ============================ 조회 API ============================
 
     // 1. 강의 목록 조회 (학기 자동 감지)
@@ -96,5 +96,13 @@ public class CourseController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("❌ 취소 실패: " + e.getMessage());
         }
+    }
+    
+ // 6. 강의 상세 조회 (강의계획서용)
+    // GET /api/course/syllabus/101
+    @GetMapping("/syllabus/{subjectId}")
+    public ResponseEntity<SyllabusDto> getSyllabus(@PathVariable("subjectId") Long subjectId) {
+        // 기존 Repository 활용
+        return courseService.Syllabus(subjectId);
     }
 }
