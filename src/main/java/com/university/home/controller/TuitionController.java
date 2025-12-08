@@ -1,7 +1,9 @@
 package com.university.home.controller;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -79,7 +81,11 @@ public class TuitionController {
 		for (Long studentId : studentIds) {
 			createdCount += tuitionService.createTuition(studentId);
 		}
-		return ResponseEntity.ok("등록금 고지서 생성 완료 : " + createdCount + "건");
+		 Map<String, Object> response = new HashMap<>();
+		    response.put("createdCount", createdCount);
+		    response.put("message", createdCount + "건의 등록금 고지서가 생성되었습니다.");
+
+		    return ResponseEntity.ok(response);
 	}
 	
 }
