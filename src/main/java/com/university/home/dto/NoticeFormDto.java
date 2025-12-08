@@ -27,9 +27,8 @@ public class NoticeFormDto {
     private Long views;
     private LocalDateTime createdTime;
 
-    private MultipartFile file;    
-    private String originFilename;
-    private String uuidFilename;
+    private String imageUrl;
+    private MultipartFile file;
 
     // 시간 포맷 처리
     public String timeFormat() {

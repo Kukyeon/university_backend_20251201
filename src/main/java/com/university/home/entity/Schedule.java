@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 @Entity
 @Table(name = "schedule_tb")
 @Getter @Setter
@@ -17,9 +19,11 @@ public class Schedule {
     private Staff staff;
 
     @Column(name = "start_day")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime startDay;
 
     @Column(name = "end_day")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime endDay;
 
     private String information;

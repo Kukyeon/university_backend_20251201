@@ -36,7 +36,11 @@ public class SecurityConfig {
         	.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable()) // CSRF 비활성화
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/user/login", "/api/user/findId", "/api/user/findPw").permitAll() // 로그인, ID/PW 찾기 허용
+                .requestMatchers("/api/user/login", 
+                        "/api/user/findId", 
+                        "/api/user/findPw",
+                        "/api/notice/**", "/api/notice/list*", "/images/**"           // 공지목록 조회
+                        ).permitAll() // 로그인, ID/PW 찾기 허용
                 .anyRequest().authenticated() // 나머지는 인증 필요
             )
             .userDetailsService(customUserDetailService)
@@ -66,7 +70,8 @@ public class SecurityConfig {
         config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
-
+        config.addExposedHeader("Authorization");
+        config.addAllowedHeader("Authorization");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
