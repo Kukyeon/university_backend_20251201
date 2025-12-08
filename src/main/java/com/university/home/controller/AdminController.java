@@ -14,8 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.university.home.dto.CollTuitFormDto;
+import com.university.home.dto.CollegeDto;
+import com.university.home.dto.DepartmentDto;
 import com.university.home.entity.CollTuit;
+import com.university.home.entity.College;
+import com.university.home.entity.Department;
 import com.university.home.service.AdminService;
+import com.university.home.service.CollegeService;
+import com.university.home.service.DepartmentService;
 
 import jakarta.validation.Valid;
 
@@ -25,7 +31,49 @@ public class AdminController {
 	
 	@Autowired
 	AdminService adminService;
-	
+	@Autowired
+	CollegeService collegeService;
+	@Autowired
+	DepartmentService departmentService;
+	@GetMapping("/college")
+	public ResponseEntity<?> getCollegeList() {
+		List<College> colleges = collegeService.collegeList();
+		return ResponseEntity.ok(colleges);
+	}
+	@PostMapping("/college")
+	public ResponseEntity<?> addCollege(@RequestBody CollegeDto dto) {
+		College college = collegeService.createCollege(dto);
+		return ResponseEntity.ok(college);
+	}
+	@DeleteMapping("/college/{id}")
+	public ResponseEntity<?> deleteCollege(@PathVariable(name = "id") Long id) {
+		collegeService.deleteCollege(id);
+		return ResponseEntity.ok("삭제 완료");
+	}
+	@GetMapping("/department")
+	public ResponseEntity<?> getDepartmentList() {
+		List<Department> departments = departmentService.departmentList();
+		List<DepartmentDto> dtoList = departments.stream()
+                .map(departmentService::toDto)
+                .toList();
+		return ResponseEntity.ok(dtoList);
+	}
+	@PostMapping("/department")
+	public ResponseEntity<?> addDepartment(@RequestBody DepartmentDto dto) {
+		departmentService.createDepartment(dto, dto.getCollege().getId());
+		    
+		    return ResponseEntity.ok(dto);
+	}
+	@PutMapping("/department/{id}")
+	public ResponseEntity<?> updateDepartment(@PathVariable(name = "id") Long id, @RequestBody DepartmentDto dto) {
+		departmentService.updateDepartment(id, dto);
+		    return ResponseEntity.ok(dto);
+	}
+	@DeleteMapping("/department/{id}")
+	public ResponseEntity<?> deleteDepartment(@PathVariable(name = "id") Long id) {
+        departmentService.deleteDepartment(id);
+        return ResponseEntity.ok( "삭제 완료");
+    }
 	@GetMapping("/tuition")
 	public ResponseEntity<?> getTuitionList() {
 		List<CollTuitFormDto> tuits = adminService.getCollTuit();

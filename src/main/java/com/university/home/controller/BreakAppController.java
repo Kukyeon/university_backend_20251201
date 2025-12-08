@@ -62,10 +62,16 @@ public class BreakAppController {
 		if(role.equals("student")) {
 			Long studentId = loginUser.getUser().getId();
 			apps = breakAppService.getByStudent(studentId);
-		} else {
-			apps = breakAppService.getBreakApps();
-		}
-		return ResponseEntity.ok(apps != null ? apps : new ArrayList<>());
+		}else if(role.equals("staff")) {
+	        // 관리자는 처리중 신청만 조회
+	        apps = breakAppService.getBreakApps()
+	                              .stream()
+	                              .filter(a -> a.getStatus().equals("처리중"))
+	                              .toList();
+	    } else {
+	        apps = new ArrayList<>();
+	    }
+		return ResponseEntity.ok(apps);
 	}
 	@GetMapping("/detail/{id}")
 	public ResponseEntity<?> getAppDetail(@PathVariable(name = "id") Long id, @AuthenticationPrincipal CustomUserDetails loginUser) {
