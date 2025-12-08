@@ -7,10 +7,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.io.IOException;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.data.domain.*;
 import com.university.home.dto.NoticeFormDto;
 import com.university.home.dto.NoticePageFormDto;
 import com.university.home.entity.Notice;
@@ -72,16 +76,13 @@ public class NoticeService {
         }
     }
     // 공지사항 검색 / 목록
-    public List<Notice> getNotices(NoticePageFormDto dto) {
-        if (dto.getKeyword() == null || dto.getKeyword().isEmpty()) {
-            return noticeRepository.findAll();
-        }
+    public Page<Notice> getNoticeList(int page, String keyword, String searchType) {
+        Pageable pageable = PageRequest.of(page, 10, Sort.by("createdTime").descending());
 
-        if ("title".equals(dto.getType())) {
-            return noticeRepository.findByTitleContaining(dto.getKeyword());
-        } else {
-            return noticeRepository.findByTitleContainingOrContentContaining(dto.getKeyword(), dto.getKeyword());
+        if (searchType.equals("content")) {
+            return noticeRepository.findByTitleContainingOrContentContaining(keyword, keyword, pageable);
         }
+        return noticeRepository.findByTitleContaining(keyword, pageable);
     }
 
     // 공지사항 조회 (조회수 증가 포함)
