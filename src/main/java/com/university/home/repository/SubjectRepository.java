@@ -3,6 +3,7 @@ package com.university.home.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.university.home.entity.Subject;
 import java.util.List;
+import java.util.Optional;
 
 public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
@@ -30,4 +31,6 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
     
     // 해당년도, 학기의 모든 강좌 조회
     List<Subject> findBySubYearAndSemester(Long subYear, Long semester);
+    
+    Optional<Subject> findTopByOrderBySubYearDescSemesterDesc();
 }

@@ -19,7 +19,7 @@ public class Department {
     @JoinColumn(name = "college_id")
     private College college;
     
-    @OneToMany(mappedBy = "department")
-    @JsonManagedReference
-    private List<Professor> professors;
+//    @OneToMany(mappedBy = "department")
+//    @JsonManagedReference
+//    private List<Professor> professors;
 }

@@ -41,7 +41,7 @@ public class EnrollmentService {
         // 4. [수정됨] 최대 학점 체크 (Java 로직으로 변경)
         // (1) 이번 학기 수강 내역을 리스트로 다 가져옵니다.
         List<StuSub> mySubjects = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
-                studentId, 2025L, 1L); // 연도, 학기는 상황에 맞게 변경
+                studentId, 2023L, 1L); // 연도, 학기는 상황에 맞게 변경
         
      // (2) 자바 스트림으로 학점 합계 계산
         int currentCredits = mySubjects.stream()
