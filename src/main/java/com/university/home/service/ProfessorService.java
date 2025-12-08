@@ -40,6 +40,7 @@ public class ProfessorService {
 	    dto.setAddress(professor.getAddress());
 	    dto.setTel(professor.getTel());
 	    dto.setEmail(professor.getEmail());
+	    dto.setHireDate(professor.getHireDate());
 
 	    Department dep = professor.getDepartment();
 	    if (dep != null) {
@@ -69,6 +70,7 @@ public class ProfessorService {
 		professor.setEmail(dto.getEmail());
 		professor.setGender(dto.getGender());
 		professor.setTel(dto.getTel());
+		professor.setHireDate(dto.getHireDate());
 		//professor.setDepartment(dto.getDepartment());
 		Department dept = departmentRepository.findById(dto.getDepartment().getId())
         .orElseThrow(() -> new RuntimeException("Department not found"));
@@ -103,20 +105,21 @@ public class ProfessorService {
 				.orElseThrow(() -> new RuntimeException("Professor not found"));
 	}
 	// 전체 교수 조회
-	public Page<Professor> getProfessors(int page, int size) {
-		Pageable pageable = PageRequest.of(page, size);
-		return professorRepository.findAll(pageable);
+	public Page<ProfessorDto> getProfessors(Pageable pageable) {
+		return professorRepository.findAll(pageable)
+                .map(this::toDto);
 	}
 	// 학과별 교수 조회
-	public Page<Professor> getProfessorsByDep(Long deptId,int page, int size) {
+	public Page<ProfessorDto> getProfessorsByDep(Long deptId,Pageable pageable) {
 		Department dept = departmentRepository.findById(deptId)
                 .orElseThrow(() -> new RuntimeException("Department not found"));
-		Pageable pageable = PageRequest.of(page, size);
-		return professorRepository.findByDepartment(dept, pageable);
+		 return professorRepository.findByDepartment(dept, pageable)
+	                .map(this::toDto);
 	}
 	// id 교수 조회
-	public Professor getProfessorById(Long professorId) {
-        return professorRepository.findById(professorId)
+	public ProfessorDto getProfessorById(Long professorId) {
+		Professor professor = professorRepository.findById(professorId)
                 .orElseThrow(() -> new RuntimeException("Professor not found"));
+        return toDto(professor);
     }
 }

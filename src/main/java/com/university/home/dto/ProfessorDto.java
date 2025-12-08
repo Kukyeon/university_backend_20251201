@@ -31,4 +31,6 @@ public class ProfessorDto {
 	
 	@Email
 	private String email;
+	
+	private LocalDate hireDate;
 }

@@ -46,7 +46,7 @@ public class TuitionController {
 	public ResponseEntity<?> getTuitionPayment(@AuthenticationPrincipal CustomUserDetails loginUser) {
 	    // 학생 정보 확인
 		Long studentId = loginUser.getUser().getId();
-	    Student student = studentService.getStudentById(studentId);
+	    Student student = studentService.getStudentByIdEntity(studentId);
 
 	    // 학적 상태 + 휴학 체크
 	    StuStat stuStat = stuStatService.getCurrentStatus(student.getId());
