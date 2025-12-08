@@ -1,12 +1,19 @@
 package com.university.home.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.university.home.dto.CollegeDto;
+import com.university.home.dto.DepartmentDto;
+import com.university.home.dto.ProfessorDto;
 import com.university.home.dto.StaffDto;
 import com.university.home.dto.UserUpdateDto;
+import com.university.home.entity.College;
+import com.university.home.entity.Department;
+import com.university.home.entity.Professor;
 import com.university.home.entity.Staff;
 import com.university.home.entity.User;
 import com.university.home.repository.StaffRepository;
@@ -21,8 +28,22 @@ public class StaffService {
 	@Autowired
 	UserService userService;
 
+	public StaffDto toDto(Staff staff) {
+	    StaffDto dto = new StaffDto();
+	    dto.setId(staff.getId());
+	    dto.setName(staff.getName());
+	    dto.setBirthDate(staff.getBirthDate());
+	    dto.setGender(staff.getGender());
+	    dto.setAddress(staff.getAddress());
+	    dto.setTel(staff.getTel());
+	    dto.setEmail(staff.getEmail());
+	    dto.setHireDate(staff.getHireDate());
+
+
+	    return dto;
+	}
 	@Transactional
-	public Long createStaff(StaffDto staffDto) {
+	public StaffDto createStaff(StaffDto staffDto) {
 		Staff staff = new Staff();
 		staff.setName(staffDto.getName());
 		staff.setAddress(staffDto.getAddress());
@@ -30,14 +51,14 @@ public class StaffService {
 		staff.setEmail(staffDto.getEmail());
 		staff.setGender(staffDto.getGender());
 		staff.setTel(staffDto.getTel());
-		staff.setHireDate(staffDto.getHireDate());
+		staff.setHireDate(LocalDate.now());
 		staffRepository.save(staff);
 		
 		User user = userService.createUser(staff.getId(), "staff");
 		staff.setUser(user);
 		staffRepository.save(staff);
 		
-		return staff.getId();
+		return toDto(staff);
 		
 	}
 	@Transactional
