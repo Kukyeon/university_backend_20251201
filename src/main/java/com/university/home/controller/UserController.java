@@ -2,6 +2,7 @@ package com.university.home.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -23,7 +24,7 @@ import com.university.home.service.*;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/staff")
 public class UserController /*~~(Could not parse as Java)~~>*/{
 
 
@@ -79,19 +80,18 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 	public ResponseEntity<?> professorList(
 			 @RequestParam(name = "professorId", required = false) Long professorId,
 		        @RequestParam(name = "deptId", required = false) Long deptId,
-		        @RequestParam(name = "page", defaultValue = "0") int page,
-		        @RequestParam(name = "size", defaultValue = "20") int size) {
+		        Pageable pageable) {
 
 	    // 특정 교수 조회
 	    if (professorId != null) {
 	        return ResponseEntity.ok(
 	                professorService.getProfessorById(professorId));
 	    }
-	    Page<Professor> pageData;
+	    Page<ProfessorDto> pageData;
 	    if (deptId != null) {
-	        pageData = professorService.getProfessorsByDep(deptId, page, size);
+	        pageData = professorService.getProfessorsByDep(deptId,pageable);
 	    } else {
-	        pageData = professorService.getProfessors(page, size);
+	        pageData = professorService.getProfessors(pageable);
 	    }
 
 	    return ResponseEntity.ok(new PageResponse<>(pageData));
@@ -100,20 +100,19 @@ public class UserController /*~~(Could not parse as Java)~~>*/{
 	public ResponseEntity<?> studentList(
 	        @RequestParam(name = "studentId", required = false) Long studentId,
 	        @RequestParam(name = "deptId", required = false) Long deptId,
-	        @RequestParam(name = "page", defaultValue = "0") int page,
-	        @RequestParam(name = "size", defaultValue = "20") int size) {
+	        Pageable pageable) {
 
-	    // 특정 교수 조회
+	    // 특정 학생 조회
 	    if (studentId != null) {
 	        return ResponseEntity.ok(
 	                studentService.getStudentById(studentId));
 	    }
-	    Page<Student> pageData;
+	    Page<StudentDto> pageData;
 	    // 학과별 조회
 	    if (deptId != null) {
-	    	pageData = studentService.getStudentsByDep(deptId, page, size);
+	    	pageData = studentService.getStudentsByDep(deptId, pageable);
 	    } else {
-	    	pageData = studentService.getStudents(page, size);
+	    	pageData = studentService.getStudents(pageable);
 		}
 	    return ResponseEntity.ok(new PageResponse<>(pageData));
 	}
