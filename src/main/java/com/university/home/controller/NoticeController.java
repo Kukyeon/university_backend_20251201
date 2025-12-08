@@ -4,6 +4,7 @@ package com.university.home.controller;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -30,17 +31,12 @@ public class NoticeController {
 
     // 공지 리스트 조회
     @GetMapping("/list")
-    public List<Notice> getNoticeList(
-            @RequestParam(name = "page" , defaultValue = "0") Integer page,
+    public Page<Notice> getNoticeList(
+            @RequestParam(name = "page",defaultValue = "0") int page,
             @RequestParam(name = "keyword" ,defaultValue = "") String keyword,
-            @RequestParam(name = "type", defaultValue = "") String type
+            @RequestParam(name = "searchType",defaultValue = "title") String searchType
     ) {
-        NoticePageFormDto dto = new NoticePageFormDto();
-        dto.setPage(page);
-        dto.setKeyword(keyword);
-        dto.setType(type);
-
-        return noticeService.getNotices(dto);
+        return noticeService.getNoticeList(page, keyword, searchType);
     }
 
     // 공지 상세 조회
