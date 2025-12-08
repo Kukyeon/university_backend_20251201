@@ -22,4 +22,5 @@ public class Staff {
     private String address;
     private String tel;
     private String email;
+    private LocalDate hireDate;
 }

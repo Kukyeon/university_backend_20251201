@@ -30,6 +30,7 @@ public class StaffService {
 		staff.setEmail(staffDto.getEmail());
 		staff.setGender(staffDto.getGender());
 		staff.setTel(staffDto.getTel());
+		staff.setHireDate(staffDto.getHireDate());
 		staffRepository.save(staff);
 		
 		User user = userService.createUser(staff.getId(), "staff");
