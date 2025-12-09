@@ -18,7 +18,7 @@ public interface SubjectRepository extends JpaRepository<Subject, Long>, JpaSpec
     void deleteById(Long id);
 
     // 특정 강의실, 요일, 연도, 학기 조건 조회
-    List<Subject> findByRoom_IdAndSubDayAndSubYearAndSemester(Long roomId, String subDay, Long subYear, Long semester);
+    List<Subject> findByRoom_IdAndSubDayAndSubYearAndSemester(String roomId, String subDay, Long subYear, Long semester);
 
     // 최근 강의 ID 조회 (최신 순으로 정렬)
     List<Subject> findAllByOrderByIdDesc();
