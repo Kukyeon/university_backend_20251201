@@ -11,4 +11,5 @@ public interface CounselingRecordRepository extends JpaRepository<CounselingReco
 JpaSpecificationExecutor<CounselingRecord> {
 
 Optional<CounselingRecord> findByScheduleId(Long scheduleId);
+Optional<CounselingRecord> findByScheduleIdAndStudentId(Long scheduleId, Long studentId);
 }

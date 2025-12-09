@@ -1,6 +1,7 @@
 package com.university.home.service;
 
 import com.university.home.dto.BookingRequestDto;
+import com.university.home.dto.CounselingScheduleResponseDto;
 import com.university.home.entity.*;
 import com.university.home.repository.ProfessorAvailabilityRepository;
 import com.university.home.repository.CounselingScheduleRepository;
@@ -103,8 +104,16 @@ public class CounselingScheduleService {
     }
     
     // [5] 학생별 상담 기록 및 저장된 일정 조회
-    public List<CounselingSchedule> getStudentSchedules(Long studentId) {
-        return scheduleRepository.findByStudentIdAndStatus(studentId, ScheduleStatus.CONFIRMED);
+    public List<CounselingScheduleResponseDto> getStudentSchedules(Long studentId) {
+        return scheduleRepository.findByStudentId(studentId)
+        		.stream()
+        		.map(schedule -> {
+        			
+        			String professorName = studentService.getProfessorName(schedule.getProfessorId());
+        			String studentName = studentService.getStudentName(schedule.getStudentId());
+        			return new CounselingScheduleResponseDto(schedule, professorName, studentName);
+                })
+                .toList();
     }
     
  // [6] 교수에게 신청된 모든 상담 요청 조회
