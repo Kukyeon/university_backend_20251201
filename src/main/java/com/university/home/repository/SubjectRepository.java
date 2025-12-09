@@ -29,6 +29,8 @@ public interface SubjectRepository extends JpaRepository<Subject, Long>, JpaSpec
     // 교수 기준 해당 학기의 수업 조회
     List<Subject> findByProfessor_IdAndSubYearAndSemester(Long professorId, Long subYear, Long semester);
 
+    List<Subject> findByProfessor_Id(Long professorId);
+    
     // 연도-학기-개설학과-강의명 검색
     List<Subject> findBySubYearAndSemesterAndDepartment_IdAndNameContaining(Long subYear, Long semester, Long deptId, String name);
 
