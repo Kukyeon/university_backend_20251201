@@ -26,6 +26,9 @@ public interface ProfessorRepository extends JpaRepository< Professor, Long> {
 
 	    //학과 교수 모두 조회
 	    List<Professor> findByDepartmentId(Long deptId);
+	    
+	 // 2. 이름으로 교수님 찾기 (학생이 "김철수 교수님 어딨어?" 라고 물을 때 대비)
+	    List<Professor> findByNameContaining(String name);
 	    // 사번으로 교수 조회
 	    //Optional<Professor> findById(Long professorId);
 }
