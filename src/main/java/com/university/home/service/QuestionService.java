@@ -26,8 +26,7 @@ public class QuestionService {
         if (!questionsList.isEmpty()) {
             Question questionRecord = questionsList.get(0); // 첫 번째 레코드 사용
 
-            // ⭐️ 스키마의 question1 ~ question7 컬럼에서 직접 값을 가져와 DTO에 세팅
-            // 단, Question 엔티티에 question1~question7 필드가 정의되어 있어야 합니다!
+           
             
             // 만약 Question 엔티티에 question1~question7 필드가 있다면:
             dto.setQuestion1(questionRecord.getQuestion1());
