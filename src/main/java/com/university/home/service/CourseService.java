@@ -195,9 +195,9 @@ public class CourseService {
     public void cancel(Long studentId, Long subjectId) {
         int period = SugangController.SUGANG_PERIOD;
 
-        if (period == 2) {
-            throw new IllegalStateException("수강 취소 기간이 지났습니다.");
-        }
+//        if (period == 2) {
+//            throw new IllegalStateException("수강 취소 기간이 지났습니다.");
+//        }
 
         // === [기간 0] 예비 수강 취소 (장바구니 삭제) ===
         if (period == 0) {
@@ -209,7 +209,7 @@ public class CourseService {
         }
 
         // === [기간 1] 본 수강 취소 (실제 삭제) ===
-        else if (period == 1) {
+        else if (period == 1 || period == 2) {
             StuSub enrollment = stuSubRepository.findByStudentIdAndSubjectId(studentId, subjectId)
                     .orElseThrow(() -> new IllegalArgumentException("수강 내역이 없습니다."));
             
