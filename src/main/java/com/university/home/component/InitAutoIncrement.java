@@ -18,6 +18,7 @@ public class InitAutoIncrement implements CommandLineRunner {
         jdbcTemplate.execute("ALTER TABLE student_tb AUTO_INCREMENT = 2025000001");
         jdbcTemplate.execute("ALTER TABLE staff_tb AUTO_INCREMENT = 250001");
         jdbcTemplate.execute("ALTER TABLE professor_tb AUTO_INCREMENT = 25000001");
+        jdbcTemplate.execute("ALTER TABLE subject_tb AUTO_INCREMENT = 10000");
 
         // 대학 더미 데이터 (없으면 insert)
         insertIfNotExists(1, "공과대학");
