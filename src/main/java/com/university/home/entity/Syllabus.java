@@ -16,7 +16,7 @@ public class Syllabus {
     private Long subjectId; // Integer -> Long
 
     @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
+    @MapsId 
     @JsonIgnore
     @JoinColumn(name = "subject_id")
     private Subject subject;
