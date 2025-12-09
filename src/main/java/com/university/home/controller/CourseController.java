@@ -3,8 +3,10 @@ package com.university.home.controller;
 import com.university.home.service.CourseService;
 import com.university.home.service.CustomUserDetails; // 패키지명 확인 필요
 import com.university.home.dto.SyllabusDto;
+import com.university.home.entity.PreStuSub;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.Subject;
+import com.university.home.repository.PreStuSubRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +24,7 @@ import java.util.Map;
 public class CourseController {
 
     private final CourseService courseService;
+    private final PreStuSubRepository preStuSubRepository;
     // ============================ 조회 API ============================
 
     // 1. 강의 목록 조회 (학기 자동 감지)
@@ -30,8 +33,7 @@ public class CourseController {
     public ResponseEntity<Page<Subject>> getCourseList(
             @RequestParam(name = "year", required = false) Long year,
             @RequestParam(name = "semester", required = false) Long semester,
-            @RequestParam(name = "page", defaultValue = "0") int page, 
-        
+            @RequestParam(name = "page", defaultValue = "0") int page,        
             @RequestParam(name = "type", required = false) String type,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "deptId", required = false) Long deptId
@@ -42,8 +44,12 @@ public class CourseController {
     // 2. 내 수강 내역 조회
     // GET /api/course/history
     @GetMapping("/history")
-    public ResponseEntity<List<StuSub>> getMyHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
+    public ResponseEntity<List<?>> getMyHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
+        
         if (loginUser == null) return ResponseEntity.status(401).build();
+        
+        // Service에서 기간(0, 1)에 따라 List<PreStuSub> 또는 List<StuSub>를 줍니다.
+        // 이를 유연하게 받기 위해 와일드카드(?)를 사용합니다.
         return ResponseEntity.ok(courseService.getMyCourseHistory(loginUser.getUser().getId()));
     }
 
@@ -64,19 +70,29 @@ public class CourseController {
     @PostMapping("/register")
     public ResponseEntity<String> register(
             @AuthenticationPrincipal CustomUserDetails loginUser,
-            @RequestBody Map<String, Long> request) {
+            @RequestParam("subjectId") Long subjectId) { // ★ 변경됨
         
         if (loginUser == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         try {
             Long studentId = loginUser.getUser().getId();
-            Long subjectId = request.get("subjectId");
-
+            // request.get("subjectId") 할 필요 없이 바로 subjectId 사용 가능
+            
             courseService.enroll(studentId, subjectId);
             return ResponseEntity.ok("✅ 수강신청 성공!");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("❌ 실패: " + e.getMessage());
         }
+    }
+    
+ // 장바구니 목록 무조건 조회 (기간 상관없이 확인용)
+    // GET /api/course/basket
+    @GetMapping("/basket")
+    public ResponseEntity<List<PreStuSub>> getMyBasket(@AuthenticationPrincipal CustomUserDetails loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        
+        // Repository 직접 호출해서 장바구니(PreStuSub) 내용만 가져옴
+        return ResponseEntity.ok(preStuSubRepository.findByStudentId(loginUser.getUser().getId()));
     }
 
     // 5. 수강취소
