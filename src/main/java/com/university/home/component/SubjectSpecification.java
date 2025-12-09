@@ -12,7 +12,7 @@ public class SubjectSpecification {
                 cb.equal(root.get("semester"), semester)
         );
     }
-
+   
     // 2. [선택] 강의명 검색 (WHERE name LIKE %?%)
     public static Specification<Subject> likeName(String name) {
         return (root, query, cb) -> {
@@ -35,6 +35,22 @@ public class SubjectSpecification {
             if (deptId == null || deptId <= 0) return null; // 전체(-1 또는 null)면 무시
             // Subject 엔티티 안의 department 객체의 id를 비교
             return cb.equal(root.get("department").get("id"), deptId);
+        };
+    }
+    
+ // 2. [신규/선택] 연도만 검색 (예: 2024년 전체)
+    public static Specification<Subject> equalSubYear(Long year) {
+        return (root, query, cb) -> {
+            if (year == null || year == 0) return null;
+            return cb.equal(root.get("subYear"), year);
+        };
+    }
+
+    // 3. [신규/선택] 학기만 검색 (예: 모든 연도의 1학기)
+    public static Specification<Subject> equalSemester(Long semester) {
+        return (root, query, cb) -> {
+            if (semester == null || semester == 0) return null;
+            return cb.equal(root.get("semester"), semester);
         };
     }
 }
