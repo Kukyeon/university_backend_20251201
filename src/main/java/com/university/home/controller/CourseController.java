@@ -30,8 +30,7 @@ public class CourseController {
     public ResponseEntity<Page<Subject>> getCourseList(
             @RequestParam(name = "year", required = false) Long year,
             @RequestParam(name = "semester", required = false) Long semester,
-            @RequestParam(name = "page", defaultValue = "0") int page, 
-        
+            @RequestParam(name = "page", defaultValue = "0") int page,        
             @RequestParam(name = "type", required = false) String type,
             @RequestParam(name = "name", required = false) String name,
             @RequestParam(name = "deptId", required = false) Long deptId
@@ -42,8 +41,12 @@ public class CourseController {
     // 2. 내 수강 내역 조회
     // GET /api/course/history
     @GetMapping("/history")
-    public ResponseEntity<List<StuSub>> getMyHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
+    public ResponseEntity<List<?>> getMyHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
+        
         if (loginUser == null) return ResponseEntity.status(401).build();
+        
+        // Service에서 기간(0, 1)에 따라 List<PreStuSub> 또는 List<StuSub>를 줍니다.
+        // 이를 유연하게 받기 위해 와일드카드(?)를 사용합니다.
         return ResponseEntity.ok(courseService.getMyCourseHistory(loginUser.getUser().getId()));
     }
 
@@ -64,14 +67,14 @@ public class CourseController {
     @PostMapping("/register")
     public ResponseEntity<String> register(
             @AuthenticationPrincipal CustomUserDetails loginUser,
-            @RequestBody Map<String, Long> request) {
+            @RequestParam("subjectId") Long subjectId) { // ★ 변경됨
         
         if (loginUser == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
 
         try {
             Long studentId = loginUser.getUser().getId();
-            Long subjectId = request.get("subjectId");
-
+            // request.get("subjectId") 할 필요 없이 바로 subjectId 사용 가능
+            
             courseService.enroll(studentId, subjectId);
             return ResponseEntity.ok("✅ 수강신청 성공!");
         } catch (Exception e) {

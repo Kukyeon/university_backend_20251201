@@ -19,4 +19,13 @@ public interface PreStuSubRepository extends JpaRepository<PreStuSub, PreStuSub.
 
     // 3. 특정 과목 신청 리스트 조회
     List<PreStuSub> findByIdSubjectId(Long subjectId);
+    
+    // 학생 ID로 장바구니 목록 조회
+    List<PreStuSub> findByStudentId(Long studentId);
+    
+ // 중복 체크
+    boolean existsByStudentIdAndSubjectId(Long studentId, Long subjectId);
+    
+    // 학생+과목으로 삭제 조회
+    PreStuSub findByStudentIdAndSubjectId(Long studentId, Long subjectId);
 }
