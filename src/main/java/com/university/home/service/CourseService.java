@@ -1,10 +1,13 @@
 package com.university.home.service;
 
 import com.university.home.component.SubjectSpecification;
+import com.university.home.controller.SugangController; // ★ 기간 확인용 컨트롤러 import
 import com.university.home.dto.SyllabusDto;
+import com.university.home.entity.PreStuSub; // ★ 예비수강 엔티티
 import com.university.home.entity.StuSub;
 import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
+import com.university.home.repository.PreStuSubRepository;
 import com.university.home.repository.StuSubRepository;
 import com.university.home.repository.StudentRepository;
 import com.university.home.repository.SubjectRepository;
@@ -30,59 +33,56 @@ public class CourseService {
     private final StudentRepository studentRepository;
     private final StuSubRepository stuSubRepository;
     private final SubjectRepository subjectRepository;
+    private final PreStuSubRepository preStuSubRepository;
 
     // =================================================================================
     // 1. 조회 기능 (목록, 내역, AI 추천)
     // =================================================================================
 
-    // [조회] 개설된 전체 강의 목록 가져오기 (학기 자동 감지 포함)
+    // [조회] 개설된 전체 강의 목록 가져오기 (기존 유지)
     @Transactional(readOnly = true)
     public Page<Subject> getAvailableCourses(Long subYear, Long semester, int page, String type, String name, Long deptId) {
         
-        // 1. 연도/학기가 없으면 최신 학기 자동 감지
         if (subYear == null || semester == null) {
             Subject latestSubject = subjectRepository.findTopByOrderBySubYearDescSemesterDesc()
                     .orElse(null);
-
+            System.out.println(">>> 현재 조회 중인 학기: " + subYear + "년 " + semester + "학기");
             if (latestSubject != null) {
                 subYear = latestSubject.getSubYear();
                 semester = latestSubject.getSemester();
             } else {
-                // [개선 1] 하드코딩 대신 현재 날짜 기반으로 설정
-                subYear = 2023L;
+                subYear = 2023L; // 최신 연도로 수정
                 semester = 1L; 
             }
         }
-     // 2. 검색 조건 조립 (Specification)
-        // (1) 기본 조건: 연도와 학기는 무조건 일치해야 함
+
         Specification<Subject> spec = Specification.where(SubjectSpecification.equalYearAndSemester(subYear, semester));
 
-        // (2) 동적 조건: 값이 있을 때만 AND 조건 추가
-        if (type != null) {
-            spec = spec.and(SubjectSpecification.equalType(type));
-        }
-        if (name != null) {
-            spec = spec.and(SubjectSpecification.likeName(name));
-        }
-        if (deptId != null) {
-            spec = spec.and(SubjectSpecification.equalDeptId(deptId));
-        }
+        if (type != null && !type.isEmpty()) spec = spec.and(SubjectSpecification.equalType(type));
+        if (name != null && !name.isEmpty()) spec = spec.and(SubjectSpecification.likeName(name));
+        if (deptId != null) spec = spec.and(SubjectSpecification.equalDeptId(deptId));
 
-        // 2. 페이징 정보 생성
-        // [개선 2] 학생 보기 편하게 '과목명(name)' 오름차순(ASC) 정렬
         Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.ASC, "name"));
 
-        // 3. 조회
         return subjectRepository.findAll(spec, pageable);
     }
 
-    // [조회] 나의 수강 내역 가져오기
+    // [조회] 나의 수강 내역 가져오기 (★ 수정됨: 기간에 따라 다른 리스트 반환)
     @Transactional(readOnly = true)
-    public List<StuSub> getMyCourseHistory(Long studentId) {
-        return stuSubRepository.findByStudentId(studentId);
+    public List<?> getMyCourseHistory(Long studentId) {
+        int period = SugangController.SUGANG_PERIOD;
+
+        // 예비 수강신청 기간(0)이면 장바구니 목록 반환
+        if (period == 0) {
+            return preStuSubRepository.findByStudentId(studentId);
+        } 
+        // 본 수강신청 기간(1) 혹은 종료(2)면 실제 수강 목록 반환
+        else {
+            return stuSubRepository.findByStudentId(studentId);
+        }
     }
 
-    // [AI] 강의 추천 기능
+    // [AI] 강의 추천 기능 (기존 유지)
     @Transactional(readOnly = true)
     public String recommendCourses(Long studentId) {
         Student student = studentRepository.findById(studentId).orElseThrow();
@@ -92,7 +92,7 @@ public class CourseService {
                 .map(sub -> sub.getSubject().getName())
                 .collect(Collectors.joining(", "));
         
-        Long subYear = 2023L; 
+        Long subYear = 2025L; 
         Long semester = 1L;
         Subject latest = getLatestSubjectInfo();
         if (latest != null) {
@@ -100,8 +100,6 @@ public class CourseService {
             semester = latest.getSemester();
         }
 
-        // 현재 학기 과목 조회 (위의 메서드 재사용 불가능하므로 직접 조회하거나 로직 분리 필요. 여기선 간단히 2025-1 고정 혹은 동적 조회)
-        // 편의상 최신 학기 자동 감지 로직을 사용하여 가져옴
         List<Subject> openSubjects = subjectRepository.findBySubYearAndSemester(subYear, semester);
         
         String availableCourses = openSubjects.stream()
@@ -120,68 +118,106 @@ public class CourseService {
     }
 
     // =================================================================================
-    // 2. 수강신청 / 취소 기능 (검증 로직 강화)
+    // 2. 수강신청 / 취소 기능 (★ 핵심 수정: 기간별 로직 분기)
     // =================================================================================
 
-    // --- Helper Method: 최신 학기 정보 찾기 (중복 제거용) ---
     private Subject getLatestSubjectInfo() {
-        // Repository에 findTopByOrderBy... 메서드가 있어야 함 (Optional 반환)
-        // 없으면 null 리턴하도록 처리
         return subjectRepository.findTopByOrderBySubYearDescSemesterDesc().orElse(null);
     }
     
-    // [동작] 수강 신청
+    // [동작] 수강 신청 (기간별 분기)
     @Transactional
     public void enroll(Long studentId, Long subjectId) {
-        // 1. 정보 조회
+        // 현재 기간 확인
+        int period = SugangController.SUGANG_PERIOD;
+
+        // 기간 2: 종료됨 -> 신청 불가
+        if (period == 2) {
+            throw new IllegalStateException("지금은 수강신청 기간이 아닙니다.");
+        }
+
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("학생 정보가 없습니다."));
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new IllegalArgumentException("강의 정보가 없습니다."));
 
-        // 2. 중복 체크
-        if (stuSubRepository.existsByStudent_IdAndSubject_Id(studentId, subjectId)) {
-            throw new IllegalStateException("이미 수강신청한 강의입니다.");
+        // === [기간 0] 예비 수강 신청 (장바구니) ===
+        if (period == 0) {
+            // 중복 체크만 수행 (이미 담았는지)
+            if (preStuSubRepository.existsByStudentIdAndSubjectId(studentId, subjectId)) {
+                throw new IllegalStateException("이미 장바구니에 담은 강의입니다.");
+            }
+            
+            // 장바구니 저장 (정원 체크, 학점 체크 안 함, 인원수 증가 안 함)
+            PreStuSub pre = new PreStuSub();
+            pre.setStudent(student);
+            pre.setSubject(subject);
+            preStuSubRepository.save(pre);
         }
 
-        // 3. 정원 체크
-        if (subject.getNumOfStudent() >= subject.getCapacity()) {
-            throw new IllegalStateException("정원이 초과되었습니다.");
+        // === [기간 1] 본 수강 신청 (실제 신청) ===
+        else if (period == 1) {
+            // 1. 중복 체크
+            if (stuSubRepository.existsByStudent_IdAndSubject_Id(studentId, subjectId)) {
+                throw new IllegalStateException("이미 수강신청한 강의입니다.");
+            }
+
+            // 2. 정원 체크
+            if (subject.getNumOfStudent() >= subject.getCapacity()) {
+                throw new IllegalStateException("정원이 초과되었습니다.");
+            }
+
+            // 3. 최대 학점 체크
+            List<StuSub> currentSemesterSubjects = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+                    studentId, subject.getSubYear(), subject.getSemester());
+
+            int currentCredits = currentSemesterSubjects.stream()
+                    .mapToInt(ss -> ss.getSubject().getGrades() != null ? ss.getSubject().getGrades().intValue() : 0)
+                    .sum();
+
+            if (currentCredits + subject.getGrades().intValue() > 18) {
+                throw new IllegalStateException("신청 가능한 최대 학점(18학점)을 초과했습니다.");
+            }
+
+            // 4. 저장
+            StuSub newEnrollment = new StuSub();
+            newEnrollment.setStudent(student);
+            newEnrollment.setSubject(subject);
+            stuSubRepository.save(newEnrollment);
+
+            // 5. 인원 증가
+            subject.setNumOfStudent(subject.getNumOfStudent() + 1);
         }
-
-        // 4. 최대 학점 체크 (동적 학기 적용)
-        // 신청하려는 과목의 연도/학기를 기준으로 현재 수강 학점을 계산해야 정확함
-        List<StuSub> currentSemesterSubjects = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
-                studentId, subject.getSubYear(), subject.getSemester());
-
-        int currentCredits = currentSemesterSubjects.stream()
-                .mapToInt(ss -> ss.getSubject().getGrades() != null ? ss.getSubject().getGrades().intValue() : 0)
-                .sum();
-
-        if (currentCredits + subject.getGrades().intValue() > 18) {
-            throw new IllegalStateException("신청 가능한 최대 학점(18학점)을 초과했습니다.");
-        }
-
-        // 5. 저장
-        StuSub newEnrollment = new StuSub();
-        newEnrollment.setStudent(student);
-        newEnrollment.setSubject(subject);
-        stuSubRepository.save(newEnrollment);
-
-        // 6. 인원 증가
-        subject.setNumOfStudent(subject.getNumOfStudent() + 1);
     }
 
-    // [동작] 수강 취소
+    // [동작] 수강 취소 (기간별 분기)
     @Transactional
     public void cancel(Long studentId, Long subjectId) {
-        StuSub enrollment = stuSubRepository.findByStudentIdAndSubjectId(studentId, subjectId)
-                .orElseThrow(() -> new IllegalArgumentException("수강 내역이 없습니다."));
-        
-        Subject subject = enrollment.getSubject();
-        subject.setNumOfStudent(subject.getNumOfStudent() - 1);
-        
-        stuSubRepository.delete(enrollment);
+        int period = SugangController.SUGANG_PERIOD;
+
+//        if (period == 2) {
+//            throw new IllegalStateException("수강 취소 기간이 지났습니다.");
+//        }
+
+        // === [기간 0] 예비 수강 취소 (장바구니 삭제) ===
+        if (period == 0) {
+            PreStuSub pre = preStuSubRepository.findByStudentIdAndSubjectId(studentId, subjectId);
+            if (pre == null) {
+                throw new IllegalArgumentException("장바구니에 해당 과목이 없습니다.");
+            }
+            preStuSubRepository.delete(pre);
+        }
+
+        // === [기간 1] 본 수강 취소 (실제 삭제) ===
+        else if (period == 1 || period == 2) {
+            StuSub enrollment = stuSubRepository.findByStudentIdAndSubjectId(studentId, subjectId)
+                    .orElseThrow(() -> new IllegalArgumentException("수강 내역이 없습니다."));
+            
+            Subject subject = enrollment.getSubject();
+            subject.setNumOfStudent(subject.getNumOfStudent() - 1);
+            
+            stuSubRepository.delete(enrollment);
+        }
     }
     
     @Transactional
@@ -191,5 +227,4 @@ public class CourseService {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
 }

@@ -48,7 +48,7 @@ public class SugangController {
 
     // 2. 기간 상태 변경 API (PUT 메서드 사용)
     @PutMapping("/period")
-    public ResponseEntity<?> updateSugangPeriod(@RequestParam int type) {
+    public ResponseEntity<?> updateSugangPeriod(@RequestParam("type") int type) {
         
         if (type == 1) {
             // 예비 -> 본 수강 기간으로 변경
