@@ -41,14 +41,22 @@ public class AdminService {
 	        collTuitRepository.save(collTuit);
 	}
 	public List<CollTuitFormDto> getCollTuit() {
-		List<CollTuit> collTuitList =collTuitRepository.findAll();
+		List<College> colleges = collegeRepository.findAll();
+		    // 등록금 정보 가져오기
+		List<CollTuit> collTuitList = collTuitRepository.findAll();
 		
-		List<CollTuitFormDto> dtoList = collTuitList.stream()
+		List<CollTuitFormDto> dtoList = colleges.stream()
 				 .map(c -> {
 				        CollTuitFormDto dto = new CollTuitFormDto();
-				        dto.setCollegeId(c.getCollege().getId());
-				        dto.setAmount(c.getAmount());
-				        return dto;
+				        dto.setCollegeId(c.getId());
+			            dto.setCollegeName(c.getName());
+				        
+			            collTuitList.stream()
+		                .filter(t -> t.getCollege().getId().equals(c.getId()))
+		                .findFirst()
+		                .ifPresent(t -> dto.setAmount(t.getAmount()));
+
+			            return dto;
 				    })
 				    .collect(Collectors.toList());
 
