@@ -53,18 +53,33 @@ public class TuitionController {
 	    // 학적 상태 + 휴학 체크
 	    StuStat stuStat = stuStatService.getCurrentStatus(student.getId());
 	    List<BreakApp> breakAppList = breakAppService.getByStudent(studentId);
+	    
 	    if (stuStat.getStatus().equals("졸업") || stuStat.getStatus().equals("자퇴")) {
-            throw new CustomRestfullException("등록금 납부 대상이 아닙니다.", HttpStatus.BAD_REQUEST);
-        }
-        for (BreakApp b : breakAppList) {
-            if ("승인".equals(b.getStatus()) && b.getToYear() >= LocalDate.now().getYear()) {
-                throw new CustomRestfullException("현재 학기 휴학 중이므로 등록금 납부 불가", HttpStatus.BAD_REQUEST);
-            }
-        }
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("status", null);
+	        response.put("error", "등록금 납부 대상이 아닙니다.");
+	        return ResponseEntity.ok(response);
+	    }
+
+	    // 휴학 체크
+	    for (BreakApp b : breakAppList) {
+	        if ("승인".equals(b.getStatus()) && b.getToYear() >= LocalDate.now().getYear()) {
+	            Map<String, Object> response = new HashMap<>();
+	            response.put("status", null);
+	            response.put("error", "현재 학기 휴학 중이므로 등록금 납부 불가");
+	            return ResponseEntity.ok(response);
+	        }
+	    }
 
 	    // 등록금 고지서 조회
 	    Tuition tuition = tuitionService.getSemester(studentId,  (long) LocalDate.now().getYear(),
                 (LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
+	    if (tuition == null) {
+	        Map<String, Object> response = new HashMap<>();
+	        response.put("status", null);
+	        response.put("error", "등록금 고지서가 없습니다.");
+	        return ResponseEntity.ok(response);
+	    }
 	    return ResponseEntity.ok(tuition);
 	}
 	@PostMapping("/payment")

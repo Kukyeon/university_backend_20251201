@@ -1,5 +1,7 @@
 package com.university.home.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,6 +17,7 @@ public class Syllabus {
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId 
+    @JsonIgnore
     @JoinColumn(name = "subject_id")
     private Subject subject;
 
