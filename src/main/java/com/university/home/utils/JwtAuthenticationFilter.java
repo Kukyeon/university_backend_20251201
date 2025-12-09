@@ -44,26 +44,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	                Claims claims = jwtUtil.extractClaims(token);
 	                String userId = claims.getSubject();
 
-	                // UserDetails 가져오기
+	                // 1. UserDetails 가져오기 (기존 로직 유지)
 	                CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(userId);
+	                
+	                // 2. UserDetails 기반으로 Authentication 객체 생성
 	                UsernamePasswordAuthenticationToken auth =
 	                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-	                SecurityContextHolder.getContext().setAuthentication(auth);
 	                
-	                
+	                // 3. PrincipalDto 생성 (다른 곳에서 필요하므로 유지)
 	                PrincipalDto principalDto = new PrincipalDto();
 	                principalDto.setId(Long.valueOf(userId)); 
 	                principalDto.setUserRole(userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "")); 
-	                // userDetails에서 가져온 권한은 "ROLE_PROFESSOR" 형식이므로, "ROLE_"를 제거해야 합니다.
 
-	                // 3. Principal로 PrincipalDto를 사용하여 Authentication 생성
+	                // 4. PrincipalDto를 사용한 Authentication 객체 생성 (사용되지 않으므로 사실상 제거해도 무방하지만, 일단 로직 유지)
 	                UsernamePasswordAuthenticationToken auths =
 	                    new UsernamePasswordAuthenticationToken(principalDto, null, userDetails.getAuthorities()); 
 
-	                // 4. SecurityContext에 저장
+	                // 5. Authentication 객체에 WebDetails 설정 (선택 사항)
+	                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+	                
+	                // 6. SecurityContext에 저장: 
+                    // 💡 중복 저장을 제거하고, 다른 팀원이 사용하는 UserDetails 기반의 'auth' 객체만 최종 저장합니다.
 	                SecurityContextHolder.getContext().setAuthentication(auth);
+	                
 	            } catch (Exception e) {
 	                // 토큰이 유효하지 않으면 SecurityContext 비워둠
+	                System.err.println("JWT 인증 실패: " + e.getMessage()); // 디버깅용
 	                SecurityContextHolder.clearContext();
 	            }
 	        }
