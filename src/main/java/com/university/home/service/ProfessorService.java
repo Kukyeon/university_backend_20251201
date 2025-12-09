@@ -12,13 +12,16 @@ import org.springframework.stereotype.Service;
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.DepartmentDto;
 import com.university.home.dto.ProfessorDto;
+import com.university.home.dto.SubjectForProfessorDto;
 import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
+import com.university.home.entity.Subject;
 import com.university.home.entity.User;
 import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
+import com.university.home.repository.SubjectRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -31,6 +34,8 @@ public class ProfessorService {
 	UserService userService;
 	@Autowired
 	DepartmentRepository departmentRepository;
+	@Autowired
+	SubjectRepository subjectRepository;
 	
 	public ProfessorDto toDto(Professor professor) {
 	    ProfessorDto dto = new ProfessorDto();
@@ -123,4 +128,30 @@ public class ProfessorService {
                 .orElseThrow(() -> new RuntimeException("Professor not found"));
         return toDto(professor);
     }
+//	===============내 강의 조희 서비스!@!!@! ============
+	public SubjectForProfessorDto toDto(Subject subject) {
+	    SubjectForProfessorDto dto = new SubjectForProfessorDto();
+	    dto.setId(subject.getId());
+	    dto.setName(subject.getName());
+	    dto.setSubDay(subject.getSubDay());
+	    dto.setStartTime(subject.getStartTime());
+	    dto.setEndTime(subject.getEndTime());
+	    dto.setRoomId(subject.getRoom().getId());
+	    return dto;
+	}
+
+	public List<SubjectForProfessorDto> selectSubjectsByProfessor(Long professorId,Long subYear, Long semester) {
+	    List<Subject> subjects;
+	    
+	    if (subYear != null && semester != null) {
+	        subjects = subjectRepository.findByProfessor_IdAndSubYearAndSemester(professorId, subYear, semester);
+	    } else {
+	        subjects = subjectRepository.findByProfessor_Id(professorId);
+	    }
+	    
+	    return subjects.stream()
+	            .map(this::toDto)
+	            .toList();
+	}
+
 }
