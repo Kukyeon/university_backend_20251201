@@ -19,11 +19,14 @@ import com.university.home.entity.Professor;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
 import com.university.home.repository.DepartmentRepository;
+import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.StudentRepository;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class StudentService {
 
 	@Autowired
@@ -34,6 +37,14 @@ public class StudentService {
 	DepartmentRepository departmentRepository;
 	@Autowired
 	StuStatService stuStatService;
+	
+	private ProfessorRepository professorRepository;
+	
+	@Autowired 
+    public StudentService(ProfessorRepository professorRepository) {
+        this.professorRepository = professorRepository;
+    }
+	
 	@Transactional
 	public StudentDto createStudentWithStatus(StudentDto dto) {
 	    Student student = createStudent(dto);  // 학생 생성
@@ -164,5 +175,19 @@ public class StudentService {
 	        count++;
 	    }
 	    return count;
+	}
+	
+	
+	
+	
+	public String getProfessorName(Long professorId) {
+	    return professorRepository.findById(professorId)
+	            .map(Professor::getName)
+	            .orElse("Unknown Professor");
+	}
+	public String getStudentName(Long studentId) {
+	    return studentRepository.findById(studentId)
+	            .map(Student::getName)
+	            .orElse("Unknown Student");
 	}
 }
