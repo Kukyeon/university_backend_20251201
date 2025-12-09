@@ -3,8 +3,10 @@ package com.university.home.controller;
 import com.university.home.service.CourseService;
 import com.university.home.service.CustomUserDetails; // 패키지명 확인 필요
 import com.university.home.dto.SyllabusDto;
+import com.university.home.entity.PreStuSub;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.Subject;
+import com.university.home.repository.PreStuSubRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +24,7 @@ import java.util.Map;
 public class CourseController {
 
     private final CourseService courseService;
+    private final PreStuSubRepository preStuSubRepository;
     // ============================ 조회 API ============================
 
     // 1. 강의 목록 조회 (학기 자동 감지)
@@ -80,6 +83,16 @@ public class CourseController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("❌ 실패: " + e.getMessage());
         }
+    }
+    
+ // 장바구니 목록 무조건 조회 (기간 상관없이 확인용)
+    // GET /api/course/basket
+    @GetMapping("/basket")
+    public ResponseEntity<List<PreStuSub>> getMyBasket(@AuthenticationPrincipal CustomUserDetails loginUser) {
+        if (loginUser == null) return ResponseEntity.status(401).build();
+        
+        // Repository 직접 호출해서 장바구니(PreStuSub) 내용만 가져옴
+        return ResponseEntity.ok(preStuSubRepository.findByStudentId(loginUser.getUser().getId()));
     }
 
     // 5. 수강취소
