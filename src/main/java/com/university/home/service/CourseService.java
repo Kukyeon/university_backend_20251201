@@ -46,7 +46,7 @@ public class CourseService {
         if (subYear == null || semester == null) {
             Subject latestSubject = subjectRepository.findTopByOrderBySubYearDescSemesterDesc()
                     .orElse(null);
-            System.out.println(">>> 현재 조회 중인 학기: " + subYear + "년 " + semester + "학기");
+            
             if (latestSubject != null) {
                 subYear = latestSubject.getSubYear();
                 semester = latestSubject.getSemester();
@@ -55,7 +55,7 @@ public class CourseService {
                 semester = 1L; 
             }
         }
-
+        System.out.println(">>> [DEBUG] 현재 조회 조건: 연도=" + subYear + ", 학기=" + semester);
         Specification<Subject> spec = Specification.where(SubjectSpecification.equalYearAndSemester(subYear, semester));
 
         if (type != null && !type.isEmpty()) spec = spec.and(SubjectSpecification.equalType(type));
@@ -63,6 +63,45 @@ public class CourseService {
         if (deptId != null) spec = spec.and(SubjectSpecification.equalDeptId(deptId));
 
         Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.ASC, "name"));
+
+        return subjectRepository.findAll(spec, pageable);
+    }
+    
+ // =================================================================================
+    // [추가] 모든 강좌 조회 (년도, 학기 상관없이 전체 조회)
+    // =================================================================================
+    @Transactional(readOnly = true)
+    public Page<Subject> getAllCourses(int page, String type, String name, Long deptId, Long year, Long semester) {
+        
+        // ★ 1. Specification 초기화 에러 해결
+        // where(null) 대신 "조건 없음"을 뜻하는 람다식 사용
+        Specification<Subject> spec = (root, query, criteriaBuilder) -> null;
+
+        // 2. 동적 조건 추가
+        if (type != null && !type.isEmpty()) {
+            spec = spec.and(SubjectSpecification.equalType(type));
+        }
+        if (name != null && !name.isEmpty()) {
+            spec = spec.and(SubjectSpecification.likeName(name));
+        }
+        if (deptId != null) {
+            spec = spec.and(SubjectSpecification.equalDeptId(deptId));
+        }
+        
+        // ★ [추가] 연도와 학기도 선택적으로 검색 가능하게 변경
+        if (year != null) {
+            spec = spec.and(SubjectSpecification.equalSubYear(year));
+        }
+        if (semester != null) {
+            spec = spec.and(SubjectSpecification.equalSemester(semester));
+        }
+
+        // 3. 정렬 및 페이징 (최신순)
+        Pageable pageable = PageRequest.of(page, 20, 
+                Sort.by(Sort.Direction.DESC, "subYear")
+                    .and(Sort.by(Sort.Direction.DESC, "semester"))
+                    .and(Sort.by(Sort.Direction.ASC, "name"))
+        );
 
         return subjectRepository.findAll(spec, pageable);
     }

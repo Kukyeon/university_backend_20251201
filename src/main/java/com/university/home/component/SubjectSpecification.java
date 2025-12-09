@@ -12,7 +12,7 @@ public class SubjectSpecification {
                 cb.equal(root.get("semester"), semester)
         );
     }
-
+   
     // 2. [선택] 강의명 검색 (WHERE name LIKE %?%)
     public static Specification<Subject> likeName(String name) {
         return (root, query, cb) -> {
