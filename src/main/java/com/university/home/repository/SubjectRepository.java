@@ -52,5 +52,5 @@ public interface SubjectRepository extends JpaRepository<Subject, Long>, JpaSpec
     
     // (학기 자동감지 메서드 유지)
     // Optional<Subject> findTopByOrderBySubYearDescSemesterDesc();
-   
+ 
 }
