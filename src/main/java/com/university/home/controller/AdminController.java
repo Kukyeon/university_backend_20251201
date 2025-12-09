@@ -17,14 +17,17 @@ import com.university.home.dto.CollTuitFormDto;
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.DepartmentDto;
 import com.university.home.dto.RoomDto;
+import com.university.home.dto.SubjectDto;
 import com.university.home.entity.CollTuit;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Room;
+import com.university.home.entity.Subject;
 import com.university.home.service.AdminService;
 import com.university.home.service.CollegeService;
 import com.university.home.service.DepartmentService;
 import com.university.home.service.RoomService;
+import com.university.home.service.SubjectService;
 
 import jakarta.validation.Valid;
 
@@ -40,6 +43,8 @@ public class AdminController {
 	DepartmentService departmentService;
 	@Autowired
 	RoomService roomService;
+	@Autowired
+	SubjectService subjectService;
 	@GetMapping("/college")
 	public ResponseEntity<?> getCollegeList() {
 		List<College> colleges = collegeService.collegeList();
@@ -86,13 +91,33 @@ public class AdminController {
 	}
 
     @PostMapping("/room")
-    public ResponseEntity<RoomDto> addRoom(@RequestBody RoomDto dto) {
+    public ResponseEntity<?> addRoom(@RequestBody RoomDto dto) {
         return ResponseEntity.ok(roomService.createRoom(dto));
     }
 
     @DeleteMapping("/room/{id}")
-    public ResponseEntity<String> deleteRoom(@PathVariable(name = "id") String id) {
+    public ResponseEntity<?> deleteSubject(@PathVariable(name = "id") String id) {
         roomService.deleteRoom(id);
+        return ResponseEntity.ok("삭제 완료");
+    }
+    @GetMapping("/subject")
+	public ResponseEntity<?> getSubject() {
+		List<SubjectDto> subjects = subjectService.getSubjects();
+		return ResponseEntity.ok(subjects);
+	}
+    @PutMapping("/subject/{id}")
+    public ResponseEntity<?> updateSubject(@PathVariable(name = "id") Long id, @RequestBody SubjectDto dto){
+    	subjectService.updateSubject(id, dto);
+    	return ResponseEntity.ok(dto);
+    }
+    @PostMapping("/subject")
+    public ResponseEntity<?> addSubject(@RequestBody SubjectDto dto) {
+        return ResponseEntity.ok(subjectService.createSubject(dto));
+    }
+
+    @DeleteMapping("/subject/{id}")
+    public ResponseEntity<?> deleteRoom(@PathVariable(name = "id") Long id) {
+        subjectService.deleteSubject(id);
         return ResponseEntity.ok("삭제 완료");
     }
 	@GetMapping("/tuition")
