@@ -37,4 +37,20 @@ public class SubjectSpecification {
             return cb.equal(root.get("department").get("id"), deptId);
         };
     }
+    
+ // 2. [신규/선택] 연도만 검색 (예: 2024년 전체)
+    public static Specification<Subject> equalSubYear(Long year) {
+        return (root, query, cb) -> {
+            if (year == null || year == 0) return null;
+            return cb.equal(root.get("subYear"), year);
+        };
+    }
+
+    // 3. [신규/선택] 학기만 검색 (예: 모든 연도의 1학기)
+    public static Specification<Subject> equalSemester(Long semester) {
+        return (root, query, cb) -> {
+            if (semester == null || semester == 0) return null;
+            return cb.equal(root.get("semester"), semester);
+        };
+    }
 }

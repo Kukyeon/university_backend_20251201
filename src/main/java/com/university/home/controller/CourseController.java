@@ -40,6 +40,20 @@ public class CourseController {
     ) {
         return ResponseEntity.ok(courseService.getAvailableCourses(year, semester, page, type, name, deptId));
     }
+    
+ // [추가] 모든 강좌 조회 (년도/학기 무관)
+    // GET /api/course/all
+    @GetMapping("/all")
+    public ResponseEntity<Page<Subject>> getAllCourseList(
+    		@RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "type", required = false) String type,
+            @RequestParam(name = "name", required = false) String name,
+            @RequestParam(name = "deptId", required = false) Long deptId,
+            @RequestParam(name = "year", required = false) Long year, 
+            @RequestParam(name = "semester", required = false) Long semester 
+    ) {
+        return ResponseEntity.ok(courseService.getAllCourses(page, type, name, deptId, year, semester));
+    }
 
     // 2. 내 수강 내역 조회
     // GET /api/course/history
