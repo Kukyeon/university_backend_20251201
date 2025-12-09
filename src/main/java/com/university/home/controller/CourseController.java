@@ -43,7 +43,7 @@ public class CourseController {
     
  // [추가] 모든 강좌 조회 (년도/학기 무관)
     // GET /api/course/all
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<Page<Subject>> getAllCourseList(
     		@RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "type", required = false) String type,
