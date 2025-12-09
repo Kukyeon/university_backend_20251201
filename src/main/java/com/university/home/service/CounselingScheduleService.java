@@ -138,4 +138,9 @@ public class CounselingScheduleService {
         
         return scheduleRepository.save(schedule);
     }
+    
+    public List<ProfessorAvailability> getAllAvailableTimes() {
+        // isBooked가 false인 모든 Availability를 조회
+        return availabilityRepository.findByIsBooked(false);
+    }
 }
