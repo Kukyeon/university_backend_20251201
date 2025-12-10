@@ -23,4 +23,14 @@ public class StuSub {
     
     @Column(name = "complete_grade")
     private Long completeGrade; // Integer -> Long
+    
+ // 1:1 매핑
+    @OneToOne(mappedBy = "stuSub", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private StuSubDetail detail;
+
+    // helper method
+    public void setDetail(StuSubDetail detail) {
+        this.detail = detail;
+        detail.setStuSub(this); // 양방향 연결
+    }
 }

@@ -12,15 +12,21 @@ import org.springframework.stereotype.Service;
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.DepartmentDto;
 import com.university.home.dto.ProfessorDto;
+import com.university.home.dto.StudentInfoForProfessor;
 import com.university.home.dto.SubjectForProfessorDto;
 import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
+import com.university.home.entity.StuSub;
+import com.university.home.entity.StuSubDetail;
+import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
 import com.university.home.entity.User;
 import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
+import com.university.home.repository.StuSubDetailRepository;
+import com.university.home.repository.StuSubRepository;
 import com.university.home.repository.SubjectRepository;
 
 import jakarta.transaction.Transactional;
@@ -36,7 +42,10 @@ public class ProfessorService {
 	DepartmentRepository departmentRepository;
 	@Autowired
 	SubjectRepository subjectRepository;
-	
+	@Autowired
+	StuSubRepository stuSubRepository;
+	@Autowired
+	StuSubDetailRepository stuSubDetailRepository;
 	public ProfessorDto toDto(Professor professor) {
 	    ProfessorDto dto = new ProfessorDto();
 	    dto.setId(professor.getId());
@@ -139,7 +148,22 @@ public class ProfessorService {
 	    dto.setRoomId(subject.getRoom().getId());
 	    return dto;
 	}
-
+	public StudentInfoForProfessor toDto(StuSubDetail detail) {
+	    StudentInfoForProfessor dto = new StudentInfoForProfessor();
+	    
+	    dto.setStudentId(detail.getStudent().getId());
+	    dto.setStudentName(detail.getStudent().getName());
+	    dto.setDeptName(detail.getStudent().getDepartment().getName());
+	    
+	    dto.setAbsent(detail.getAbsent());
+	    dto.setLateness(detail.getLateness());
+	    dto.setHomework(detail.getHomework());
+	    dto.setMidExam(detail.getMidExam());
+	    dto.setFinalExam(detail.getFinalExam());
+	    dto.setConvertedMark(detail.getConvertedMark());
+	    
+	    return dto;
+	}
 	public List<SubjectForProfessorDto> selectSubjectsByProfessor(Long professorId,Long subYear, Long semester) {
 	    List<Subject> subjects;
 	    
@@ -152,6 +176,14 @@ public class ProfessorService {
 	    return subjects.stream()
 	            .map(this::toDto)
 	            .toList();
+	}
+	public List<StudentInfoForProfessor> selectStudentBySubject(Long subjectId){
+		
+		List<StuSubDetail> details = stuSubDetailRepository.findBySubject_Id(subjectId);
+	
+		return details.stream()
+                .map(this::toDto)
+                .toList();
 	}
 
 }
