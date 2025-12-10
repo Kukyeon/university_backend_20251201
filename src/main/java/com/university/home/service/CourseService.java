@@ -180,6 +180,7 @@ public class CourseService {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new IllegalArgumentException("강의 정보가 없습니다."));
 
+        validateTimeConflict(studentId, subject, period);
         // === [기간 0] 예비 수강 신청 (장바구니) ===
         if (period == 0) {
             // 중복 체크만 수행 (이미 담았는지)
@@ -190,6 +191,8 @@ public class CourseService {
             if (subject.getNumOfStudent() >= subject.getCapacity()) {
                 throw new IllegalStateException("장바구니 정원이 마감되었습니다.");
             }
+            
+            
          // 3. 최대 학점 체크
             List<StuSub> currentSemesterSubjects = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
                     studentId, subject.getSubYear(), subject.getSemester());
@@ -245,6 +248,44 @@ public class CourseService {
 
             // 5. 인원 증가
             subject.setNumOfStudent(subject.getNumOfStudent() + 1);
+        }
+    }
+ 
+    // 시간표 중복 검증 로직
+    private void validateTimeConflict(Long studentId, Subject targetSubject, int period) {
+        // 비교할 기존 강의 목록 가져오기
+        List<Subject> existingSubjects;
+
+        if (period == 0) {
+            // 기간 0: '장바구니'에 있는 과목들과 비교
+            existingSubjects = preStuSubRepository.findByStudentId(studentId).stream()
+                    .map(PreStuSub::getSubject)
+                    .collect(Collectors.toList());
+        } else {
+            // 기간 1: 실제 '수강신청 완료'된 과목들과 비교
+            existingSubjects = stuSubRepository.findByStudentId(studentId).stream()
+                    .map(StuSub::getSubject)
+                    .collect(Collectors.toList());
+        }
+
+        // 반복문으로 하나씩 시간 비교
+        for (Subject existing : existingSubjects) {
+            // 1. 요일이 같은지 확인
+            if (existing.getSubDay().equals(targetSubject.getSubDay())) {
+                
+                // 2. 교시(시간)가 겹치는지 확인 (Overlap Logic)
+                // (신청강의 시작 <= 기존강의 끝) AND (신청강의 끝 >= 기존강의 시작)
+                boolean isOverlap = 
+                    targetSubject.getStartTime() <= existing.getEndTime() && 
+                    targetSubject.getEndTime() >= existing.getStartTime();
+
+                if (isOverlap) {
+                    throw new IllegalStateException(
+                        String.format("시간표가 중복됩니다! \n기존: %s (%s %d~%d교시)", 
+                        existing.getName(), existing.getSubDay(), existing.getStartTime(), existing.getEndTime())
+                    );
+                }
+            }
         }
     }
 
