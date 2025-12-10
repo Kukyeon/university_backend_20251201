@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class StudentInfoForProfessor {
 
-	private Long id;
+	private Long stuSubId;
 	
 	private Long studentId;
 	
