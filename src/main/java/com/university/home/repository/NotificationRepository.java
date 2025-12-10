@@ -7,4 +7,6 @@ import java.util.List;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
     // 교수님의 읽지 않은 알림만 최신순 조회
     List<Notification> findByReceiverIdAndIsReadFalseOrderByCreatedAtDesc(Long receiverId);
+	
+	List<Notification> findByReceiverIdOrderByCreatedAtDesc(Long receiverId);
 }
