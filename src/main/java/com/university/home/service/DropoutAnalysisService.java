@@ -58,7 +58,7 @@ public class DropoutAnalysisService {
         // GradeService를 통해 학생의 실제 평균 학점을 가져옵니다.
         Double avgGrade = gradeService.calculateAverageGrade(student.getId());
         // 2. '결석 횟수' 자바로 계산하기 (기존 코드)
-        List<StuSubDetail> details = stuSubDetailRepository.findByStudentId(student.getId());
+        List<StuSubDetail> details = stuSubDetailRepository.findByStudent_Id(student.getId());
         int absenceCount = details.stream()
                 .mapToInt(detail -> detail.getAbsent() == null ? 0 : detail.getAbsent().intValue()) 
                 .sum();
