@@ -64,11 +64,11 @@ public class DropoutAnalysisService {
 
     private void analyzeStudentRisk(Student student) {
         // ... (데이터 수집 로직은 기존과 동일) ...
-        Double avgGrade = gradeService.calculateAverageGrade(student.getId());
-        List<StuSubDetail> details = stuSubDetailRepository.findByStudentId(student.getId());
-        int absenceCount = details.stream()
-                .mapToInt(detail -> detail.getAbsent() == null ? 0 : detail.getAbsent().intValue()) 
-                .sum();
+    	 Double avgGrade = gradeService.calculateAverageGrade(student.getId());
+         List<StuSubDetail> details = stuSubDetailRepository.findByStudent_Id(student.getId());
+         int absenceCount = details.stream()
+                 .mapToInt(detail -> detail.getAbsent() == null ? 0 : detail.getAbsent().intValue()) 
+                 .sum();
      
         List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
         String status = statHistory.isEmpty() ? "재학" : statHistory.get(0).getStatus();

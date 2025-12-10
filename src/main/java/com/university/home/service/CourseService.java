@@ -5,9 +5,11 @@ import com.university.home.controller.SugangController; // ★ 기간 확인용 
 import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.PreStuSub; // ★ 예비수강 엔티티
 import com.university.home.entity.StuSub;
+import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
 import com.university.home.repository.PreStuSubRepository;
+import com.university.home.repository.StuSubDetailRepository;
 import com.university.home.repository.StuSubRepository;
 import com.university.home.repository.StudentRepository;
 import com.university.home.repository.SubjectRepository;
@@ -34,6 +36,7 @@ public class CourseService {
     private final StuSubRepository stuSubRepository;
     private final SubjectRepository subjectRepository;
     private final PreStuSubRepository preStuSubRepository;
+    private final StuSubDetailRepository stuSubDetailRepository;
 
     // =================================================================================
     // 1. 조회 기능 (목록, 내역, AI 추천)
@@ -244,8 +247,15 @@ public class CourseService {
             StuSub newEnrollment = new StuSub();
             newEnrollment.setStudent(student);
             newEnrollment.setSubject(subject);
-            stuSubRepository.save(newEnrollment);
+            
 
+            StuSubDetail detail = new StuSubDetail();
+            detail.setStudent(student);
+            detail.setSubject(subject);
+           
+            newEnrollment.setDetail(detail);
+            
+            stuSubRepository.save(newEnrollment);
             // 5. 인원 증가
             subject.setNumOfStudent(subject.getNumOfStudent() + 1);
         }
