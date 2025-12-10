@@ -150,7 +150,7 @@ public class ProfessorService {
 	}
 	public StudentInfoForProfessor toDto(StuSubDetail detail) {
 	    StudentInfoForProfessor dto = new StudentInfoForProfessor();
-	    
+	    dto.setStuSubId(detail.getStuSub().getId());
 	    dto.setStudentId(detail.getStudent().getId());
 	    dto.setStudentName(detail.getStudent().getName());
 	    dto.setDeptName(detail.getStudent().getDepartment().getName());
@@ -184,6 +184,60 @@ public class ProfessorService {
 		return details.stream()
                 .map(this::toDto)
                 .toList();
+	}
+
+	@Transactional
+	public StudentInfoForProfessor updateStudentGrade(Long stuSubId, StudentInfoForProfessor dto) {
+	    StuSubDetail detail = stuSubDetailRepository.findById(stuSubId)
+	            .orElseThrow(() -> new IllegalArgumentException("해당 학생 성적 정보가 없습니다."));
+	    
+	    detail.setAbsent(dto.getAbsent());
+	    detail.setLateness(dto.getLateness());
+	    detail.setHomework(dto.getHomework());
+	    detail.setMidExam(dto.getMidExam());
+	    detail.setFinalExam(dto.getFinalExam());
+
+	    String grade;
+
+	    // 결석 5회 이상이면 무조건 F
+	    if (dto.getAbsent() != null && dto.getAbsent() >= 5) {
+	        grade = "F";
+	        detail.setConvertedMark(0L); // 환산점수도 0 처리
+	    } else {
+	        // 환산점수 계산
+	        Long converted = calculateConvertedMark(dto.getHomework(), dto.getMidExam(), dto.getFinalExam());
+	        detail.setConvertedMark(converted);
+
+	        // 등급 결정
+	        grade = calculateGrade(converted);
+	    }
+
+	    detail.getStuSub().setGrade(grade); // StuSub에 등급 저장
+	    stuSubDetailRepository.save(detail);
+
+	    return toDto(detail);
+	}
+
+	private Long calculateConvertedMark(Long homework, Long midExam, Long finalExam) {
+	    double hw = homework == null ? 0 : homework;
+	    double mid = midExam == null ? 0 : midExam;
+	    double fin = finalExam == null ? 0 : finalExam;
+
+	    double total = hw * 0.1 + mid * 0.4 + fin * 0.5;
+	    return Math.round(total);
+	}
+
+	private String calculateGrade(Long convertedMark) {
+	    if (convertedMark == null) return "F";
+	    if (convertedMark >= 90) return "A+";
+	    if (convertedMark >= 85) return "A0";
+	    if (convertedMark >= 80) return "B+";
+	    if (convertedMark >= 75) return "B0";
+	    if (convertedMark >= 70) return "C+";
+	    if (convertedMark >= 65) return "C0";
+	    if (convertedMark >= 60) return "D+";
+	    if (convertedMark >= 55) return "D0";
+	    return "F";
 	}
 
 }
