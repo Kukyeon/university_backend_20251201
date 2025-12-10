@@ -2,6 +2,8 @@ package com.university.home.controller;
 
 import com.university.home.dto.AvailabilityRequestDto;
 import com.university.home.dto.BookingRequestDto;
+import com.university.home.dto.CounselingRecordResponseDto;
+import com.university.home.dto.CounselingScheduleResponseDto;
 import com.university.home.dto.RecordSearchRequestDto;
 import com.university.home.service.CounselingScheduleService;
 import com.university.home.service.CustomUserDetails;
@@ -29,7 +31,7 @@ public class CounselingController {
 
     private final CounselingScheduleService scheduleService;
     private final CounselingRecordService recordService;
-    
+    private final CounselingRecordService counselingRecordService;
     // TODO: 실제 Spring Security에서 현재 로그인 사용자 ID를 가져오는 메서드로 대체해야 합니다.
 //    private Long getCurrentUserId() { return 1L; } // 임시 ID 반환
 
@@ -111,13 +113,13 @@ public class CounselingController {
     
     // GET /api/schedules/student/{studentId} : 학생별 상담 기록 및 저장된 일정 조회
     @GetMapping("/student")
-    public ResponseEntity<List<CounselingSchedule>> getStudentSchedules(@AuthenticationPrincipal CustomUserDetails principal) {
+    public ResponseEntity<List<CounselingScheduleResponseDto>> getStudentSchedules(@AuthenticationPrincipal CustomUserDetails principal) {
       
     	if (principal == null) {
             throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
         }
     	
-    	List<CounselingSchedule> list = scheduleService.getStudentSchedules(principal.getUser().getId());
+    	List<CounselingScheduleResponseDto> list = scheduleService.getStudentSchedules(principal.getUser().getId());
         return ResponseEntity.ok(list);
     }
 
@@ -142,9 +144,41 @@ public class CounselingController {
 
     // GET /api/schedules/records/{scheduleId} : 특정 상담 기록 조회
     @GetMapping("/records/{scheduleId}")
-    public ResponseEntity<CounselingRecord> getRecord(@PathVariable("scheduleId") Long scheduleId) {
-        CounselingRecord record = recordService.getRecordByScheduleId(scheduleId);
-        return ResponseEntity.ok(record);
+    public ResponseEntity<CounselingRecordResponseDto> getRecord(@PathVariable("scheduleId") Long scheduleId, 
+    		@RequestParam(value = "studentId") Long studentId,
+    		@AuthenticationPrincipal CustomUserDetails principal) {
+    	
+    	if (principal == null || principal.getUser() == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+       }
+    	
+    	Long currentUserId = principal.getUser().getId();
+        
+    	CounselingRecordResponseDto responseDto = counselingRecordService.getRecordForProfessor(
+    	        scheduleId, 
+    	        studentId, 
+    	        currentUserId
+    	    );
+    	    return ResponseEntity.ok(responseDto);
+    }
+    
+    @GetMapping("/records/student/{scheduleId}") // 학생용 상담조회
+    public ResponseEntity<CounselingRecordResponseDto> getStudentRecord(
+            @PathVariable("scheduleId") Long scheduleId, 
+            @AuthenticationPrincipal CustomUserDetails principal) {
+    	
+    	if (principal == null || principal.getUser() == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+       }
+    	
+    	Long currentStudentId = principal.getUser().getId();
+        
+        //
+    	CounselingRecordResponseDto responseDto = counselingRecordService.getRecordForStudent(
+    	        scheduleId, 
+    	        currentStudentId
+    	    );
+    	    return ResponseEntity.ok(responseDto);
     }
     
  // ⭐️ GET /api/schedules/requests : 로그인된 교수에게 신청된 상담 일정 조회
