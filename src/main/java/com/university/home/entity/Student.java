@@ -25,8 +25,8 @@ public class Student {
     private String tel;
     private String email;
     
-    private Long grade; // Integer -> Long (학년)
-    private Long semester; // Integer -> Long (학기)
+    private Long grade = 1L; // Integer -> Long (학년)
+    private Long semester = 1L; // Integer -> Long (학기)
     private LocalDate entranceDate;
     private LocalDate graduationDate;
 
