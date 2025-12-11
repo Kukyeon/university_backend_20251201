@@ -11,13 +11,22 @@ import java.util.List;
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 
     // 학생 기준 평가 조회
-    Evaluation findByStudent_Id(Long studentId);
+	List<Evaluation> findByStuSub_Student_Id(Long studentId);
+	boolean existsByStuSub_Id(Long stuSubId);
+	// 교수 기준 조회
+    @Query("SELECT e FROM Evaluation e " +
+           "WHERE e.stuSub.subject.professor.id = :professorId")
+    List<Evaluation> findByProfessorId(@Param("professorId") Long professorId);
 
-    // 교수 기준 전체 강의 평가 조회
-    List<Evaluation> findBySubject_Professor_Id(Long professorId);
-
-    // 교수 기준 과목별 강의 평가 조회111
-    @Query("SELECT e FROM Evaluation e WHERE e.subject.professor.id = :professorId AND e.subject.name = :subjectName")
+    // 교수+과목 기준 조회
+    @Query("SELECT e FROM Evaluation e " +
+           "WHERE e.stuSub.subject.professor.id = :professorId " +
+           "AND e.stuSub.subject.name = :subjectName")
     List<Evaluation> findByProfessorIdAndSubjectName(@Param("professorId") Long professorId,
                                                      @Param("subjectName") String subjectName);
+    @Query("SELECT DISTINCT e.stuSub.subject.name " +
+            "FROM Evaluation e " + 
+            "WHERE e.stuSub.subject.professor.id = :professorId")
+    List<String> findDistinctSubjectNameByProfessorId(@Param("professorId")Long professorId);
+
 }

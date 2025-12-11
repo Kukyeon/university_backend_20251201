@@ -13,6 +13,7 @@ import com.university.home.dto.PrincipalDto;
 import com.university.home.dto.QuestionDto;
 import com.university.home.entity.Evaluation; 
 import com.university.home.exception.CustomRestfullException;
+import com.university.home.service.CustomUserDetails;
 import com.university.home.service.EvaluationService;
 import com.university.home.service.QuestionService;
 import com.university.home.utils.Define;
@@ -42,13 +43,12 @@ public class EvaluationController {
     public ResponseEntity<?> evaluationProc(
     		@PathVariable("subjectId") Long subjectId, 
     		@RequestBody EvaluationDto evaluationDto,
-    		@AuthenticationPrincipal PrincipalDto principal) {
-    	if (principal == null) {
-            // JWT 필터가 실패하면 여기까지 오지 않지만, 혹시 모를 경우 대비
+    		@AuthenticationPrincipal  CustomUserDetails loginUser) {
+    	if (loginUser == null) {
             throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
-       }
-    	evaluationDto.setStudentId(principal.getId()); 
-        evaluationDto.setSubjectId(subjectId);
+        }
+    	 evaluationDto.setStudentId(loginUser.getUser().getId());
+         evaluationDto.setSubjectId(subjectId);
 
         if (evaluationDto.getAnswer1() == null || evaluationDto.getAnswer2() == null ||
             evaluationDto.getAnswer3() == null || evaluationDto.getAnswer4() == null ||
@@ -63,32 +63,41 @@ public class EvaluationController {
 
     //교수 기준 전체 강의 평가 조회
     @GetMapping("/professor")
-    public ResponseEntity<List<MyEvaluationDto>> getEvaluationByProfessor(@AuthenticationPrincipal PrincipalDto principal) {
-       
-    	if (principal == null) {
+    public ResponseEntity<List<EvaluationDto>> getEvaluationByProfessor(
+            @AuthenticationPrincipal CustomUserDetails loginUser) {
+
+        if (loginUser == null) {
             throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
-       }
-    	
-        List<MyEvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorId(principal.getId());
-        return new ResponseEntity<>(evaluations, HttpStatus.OK);
+        }
+
+        Long professorId = loginUser.getUser().getId();
+        List<EvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorId(professorId);
+
+        return ResponseEntity.ok(evaluations);
+    }
+    @GetMapping("/professor/subjects")
+    public List<String> getProfessorSubjectList(@AuthenticationPrincipal CustomUserDetails loginUser) {
+        Long professorId = loginUser.getUser().getId();
+        return evaluationService.getSubjectsByProfessor(professorId);
     }
 
     //교수 기준 과목별 강의 평가 조회
     @GetMapping("/subject/{subjectName}")
-    public ResponseEntity<List<MyEvaluationDto>> getEvaluationBySubject(@PathVariable("subjectName") String subjectName, @AuthenticationPrincipal PrincipalDto principal) {
-    	if (principal == null) {
-            throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
-       }
-        List<MyEvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorAndSubject(principal.getId(), subjectName);
-        return new ResponseEntity<>(evaluations, HttpStatus.OK);
+    public ResponseEntity<List<EvaluationDto>> getEvaluationBySubject(@PathVariable("subjectName") String subjectName, @AuthenticationPrincipal CustomUserDetails loginUser) {
+    	 if (loginUser == null) {
+             throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
+         }
+
+         Long professorId = loginUser.getUser().getId();
+         List<EvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorAndSubject(professorId, subjectName);
+
+         return ResponseEntity.ok(evaluations);
     }
-    
     // 단일 평가 상세 조회 (평가 ID 기준)
     @GetMapping("/{id}")
-    
-    public ResponseEntity<Evaluation> getEvaluationDetail(@PathVariable("id") Long id) {
-    
+
+    public ResponseEntity<Evaluation> getEvaluationDetail(@PathVariable Long id) {
         Evaluation evaluation = evaluationService.getEvaluationById(id);
-        return new ResponseEntity<>(evaluation, HttpStatus.OK);
+        return ResponseEntity.ok(evaluation);
     }
 }

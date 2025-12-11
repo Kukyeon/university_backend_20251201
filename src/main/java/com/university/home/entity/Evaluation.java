@@ -12,14 +12,6 @@ public class Evaluation {
     @Column(name = "evaluation_id")
     private Long id; // Integer -> Long
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id")
-    private Student student;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subject_id")
-    private Subject subject;
-
     private Long answer1; // Integer -> Long
     private Long answer2;
     private Long answer3;
@@ -28,4 +20,9 @@ public class Evaluation {
     private Long answer6;
     private Long answer7;
     private String improvements;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stu_sub_id")
+    private StuSub stuSub;
+
 }
