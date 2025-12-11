@@ -119,9 +119,13 @@ public class StuSubService {
             studentId, currentYear, currentSemester
         );
 
-        return stuSubs.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+        List<StuSub> filtered = stuSubs.stream()
+                .filter(s -> s.getGrade() != null) // 성적 입력된 항목만
+                .toList();
+
+            return filtered.stream()
+                    .map(this::toDto)
+                    .collect(Collectors.toList());
     }
  // 학기별 성적 조회
     public List<GradeDto> getGradeBySemester(Long studentId, Long year, Long semester, String type) {
@@ -140,15 +144,29 @@ public class StuSubService {
             );
         }
 
+        list = list.stream().filter(s -> s.getGrade() != null).toList();
+
         return list.stream().map(this::toDto).toList();
     }
  // 전체 누계 성적 조회
     public List<GradeTotalDto> readGradeInquiryList(Long studentId) {
         // 해당 학생의 모든 StuSub 조회
         List<StuSub> stuSubs = stuSubRepository.findByStudentId(studentId);
+        for (StuSub s : stuSubs) {
+            System.out.println(s.getCompleteGrade());
+        }
+     // 성적 입력된 항목만 필터 (completeGrade != null)
+        List<StuSub> gradedSubs = stuSubs.stream()
+            .filter(s -> s.getGrade() != null)
+            .toList();
+
+        // 성적이 없는 경우 빈 리스트 반환
+        if (gradedSubs.isEmpty()) {
+            return List.of();
+        }
 
         // 연도+학기별 그룹화
-        Map<String, List<StuSub>> grouped = stuSubs.stream()
+        Map<String, List<StuSub>> grouped = gradedSubs.stream()
             .collect(Collectors.groupingBy(
                 s -> s.getSubject().getSubYear() + "-" + s.getSubject().getSemester()
             ));
@@ -165,23 +183,44 @@ public class StuSubService {
                 .sum();
 
             Long earnedCredit = list.stream()
-                .mapToLong(s -> s.getCompleteGrade() != null ? s.getCompleteGrade() : 0) // 취득학점
-                .sum();
+        	    .mapToLong(s -> {
+        	        String grade = s.getGrade();
+        	        Long credit = s.getSubject().getGrades();
+        	        // F면 0, 나머지는 학점 그대로
+        	        return grade != null && !grade.equals("F") ? credit : 0;
+        	    })
+        	    .sum();
 
-            Double avgScore = list.stream()
-                .mapToDouble(s -> s.getCompleteGrade() != null ? s.getCompleteGrade() : 0)
-                .average()
-                .orElse(0.0);
 
+            double totalPoints = list.stream()
+        	    .mapToDouble(s -> {
+        	        double point = switch (s.getGrade()) {
+        	            case "A+" -> 4.5;
+        	            case "A0" -> 4.0;
+        	            case "B+" -> 3.5;
+        	            case "B0" -> 3.0;
+        	            case "C+" -> 2.5;
+        	            case "C0" -> 2.0;
+        	            case "D+" -> 1.5;
+        	            case "D0" -> 1.0;
+        	            default -> 0.0;
+        	        };
+        	        return point * s.getSubject().getGrades();
+        	    })
+        	    .sum();
+            double avgScore = totalCredit == 0 ? 0.0 : totalPoints / totalCredit;
+        	
             GradeTotalDto dto = new GradeTotalDto();
             dto.setSubYear(subYear);
             dto.setSemester(semester);
             dto.setTotalCredit(totalCredit);
             dto.setEarnedCredit(earnedCredit);
             dto.setAverageScore(avgScore);
-
+            
             return dto;
+            
         }).toList();
+        
     }
 
 

@@ -74,7 +74,7 @@ public class BreakAppService {
 	public void deleteApp(Long id) {
 		BreakApp app = getById(id);
 		
-		if (!app.getStatus().equals("처리중")) {
+		if (app.getStatus().equals("승인")) {
 			throw new CustomRestfullException("이미 처리가 완료되어 취소가 불가합니다.", HttpStatus.BAD_REQUEST);
 		}
 		breakAppRepository.deleteById(id);
@@ -97,4 +97,17 @@ public class BreakAppService {
 			stuStatService.updateStatus(student,"휴학", app.getId());
 		}
 	}
+	@Transactional
+	public void cancelBreakApp(Long id) {
+	    BreakApp app = getById(id);
+	    
+	    if ("승인".equals(app.getStatus())) {
+	        throw new CustomRestfullException("승인된 휴학은 취소할 수 없습니다.", HttpStatus.BAD_REQUEST);
+	    }
+	    
+	    Student student = app.getStudent();
+	    stuStatService.revertToRegular(student); // 재학 상태 복원
+	    breakAppRepository.delete(app); // 신청 내역 삭제
+	}
+
 }
