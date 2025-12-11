@@ -34,4 +34,8 @@ public class CounselingRecord {
     private String keywords; // 검색용 키워드
     
     private LocalDateTime recordDate = LocalDateTime.now();
+    
+ // 업로드된 음성 파일 경로
+    private String audioFilePath;
+
 }
