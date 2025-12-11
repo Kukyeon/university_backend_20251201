@@ -55,7 +55,9 @@ public class CounselingRecordService {
         
         // --- 학생 정보 및 일정 정보 매핑 ---
         // TODO: studentService.getStudentById(schedule.getStudentId())를 통해 학생 이름 획득
-        String studentName = "테스트 학생 이름"; // 임시 값
+        String studentName = studentRepository.findById(schedule.getStudentId())
+                .map(Student::getName)
+                .orElse("알 수 없는 학생"); // 임시 값
         
         record.setSchedule(schedule);
         record.setStudentId(schedule.getStudentId());
