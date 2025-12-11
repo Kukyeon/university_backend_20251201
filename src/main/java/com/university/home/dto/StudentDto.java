@@ -32,4 +32,7 @@ public class StudentDto {
 	private LocalDate entranceDate;
 	@Email
 	private String email;
+	
+	private StuStatDto currentStatus;
+
 }

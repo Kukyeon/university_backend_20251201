@@ -1,16 +1,23 @@
 package com.university.home.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
+import com.university.home.dto.GradeDto;
+import com.university.home.dto.GradeTotalDto;
 import com.university.home.entity.PreStuSub;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.Student; // Student 엔티티 import
 import com.university.home.entity.Subject;
+import com.university.home.repository.EvaluationRepository;
 import com.university.home.repository.PreStuSubRepository;
 import com.university.home.repository.StuSubRepository;
 import com.university.home.repository.SubjectRepository;
@@ -24,7 +31,7 @@ public class StuSubService {
     private final PreStuSubRepository preStuSubRepository;
     private final StuSubRepository stuSubRepository;
     private final StudentRepository studentRepository; // 학생 조회를 위해 추가
-
+    private final EvaluationRepository evaluationRepository;
     /**
      * 예비 수강 신청 -> 본 수강 신청 일괄 처리
      */
@@ -88,4 +95,94 @@ public class StuSubService {
             }
         }
     }
+    private GradeDto toDto(StuSub stuSub) {
+        GradeDto dto = new GradeDto();
+        dto.setStuSubId(stuSub.getId());
+        dto.setSubjectId(stuSub.getSubject().getId());
+        dto.setSubjectName(stuSub.getSubject().getName());
+        dto.setMajorType(stuSub.getSubject().getType());
+        dto.setCredit(stuSub.getSubject().getGrades());
+        dto.setGrade(stuSub.getGrade());
+        dto.setConvertedMark(stuSub.getCompleteGrade());
+
+        // 평가 완료 여부 조회
+        boolean evaluated = evaluationRepository.existsByStuSub_Id(stuSub.getId());
+        dto.setEvaluated(evaluated);
+
+        dto.setSubYear(stuSub.getSubject().getSubYear());
+        dto.setSemester(stuSub.getSubject().getSemester());
+        return dto;
+    }
+ // 금학기 성적 조회
+    public List<GradeDto> getThisSemesterGrades(Long studentId, Long currentYear, Long currentSemester) {
+        List<StuSub> stuSubs = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+            studentId, currentYear, currentSemester
+        );
+
+        return stuSubs.stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+    }
+ // 학기별 성적 조회
+    public List<GradeDto> getGradeBySemester(Long studentId, Long year, Long semester, String type) {
+
+        List<StuSub> list;
+
+        if (type == null || type.isEmpty()) {
+            // 전체 조회
+            list = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+                studentId, year, semester
+            );
+        } else {
+            // 전공/교양 필터 포함 조회
+            list = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemesterAndSubjectType(
+                studentId, year, semester, type
+            );
+        }
+
+        return list.stream().map(this::toDto).toList();
+    }
+ // 전체 누계 성적 조회
+    public List<GradeTotalDto> readGradeInquiryList(Long studentId) {
+        // 해당 학생의 모든 StuSub 조회
+        List<StuSub> stuSubs = stuSubRepository.findByStudentId(studentId);
+
+        // 연도+학기별 그룹화
+        Map<String, List<StuSub>> grouped = stuSubs.stream()
+            .collect(Collectors.groupingBy(
+                s -> s.getSubject().getSubYear() + "-" + s.getSubject().getSemester()
+            ));
+
+        // DTO 변환
+        return grouped.entrySet().stream().map(entry -> {
+            List<StuSub> list = entry.getValue();
+
+            Long subYear = list.get(0).getSubject().getSubYear();
+            Long semester = list.get(0).getSubject().getSemester();
+
+            Long totalCredit = list.stream()
+                .mapToLong(s -> s.getSubject().getGrades()) // 신청학점
+                .sum();
+
+            Long earnedCredit = list.stream()
+                .mapToLong(s -> s.getCompleteGrade() != null ? s.getCompleteGrade() : 0) // 취득학점
+                .sum();
+
+            Double avgScore = list.stream()
+                .mapToDouble(s -> s.getCompleteGrade() != null ? s.getCompleteGrade() : 0)
+                .average()
+                .orElse(0.0);
+
+            GradeTotalDto dto = new GradeTotalDto();
+            dto.setSubYear(subYear);
+            dto.setSemester(semester);
+            dto.setTotalCredit(totalCredit);
+            dto.setEarnedCredit(earnedCredit);
+            dto.setAverageScore(avgScore);
+
+            return dto;
+        }).toList();
+    }
+
+
 }
