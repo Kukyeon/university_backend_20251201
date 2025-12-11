@@ -34,5 +34,9 @@ public class StudentDto {
 	private String email;
 	
 	private StuStatDto currentStatus;
+	
+	private Long grade;
+	
+	private Long semester;
 
 }
