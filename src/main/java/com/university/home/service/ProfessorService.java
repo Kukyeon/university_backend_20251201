@@ -198,23 +198,26 @@ public class ProfessorService {
 	    detail.setFinalExam(dto.getFinalExam());
 
 	    String grade;
-
+	    Long converted;
 	    // 결석 5회 이상이면 무조건 F
 	    if (dto.getAbsent() != null && dto.getAbsent() >= 5) {
 	        grade = "F";
-	        detail.setConvertedMark(0L); // 환산점수도 0 처리
+	        converted = 0L; // 환산점수도 0 처리
 	    } else {
 	        // 환산점수 계산
-	        Long converted = calculateConvertedMark(dto.getHomework(), dto.getMidExam(), dto.getFinalExam());
+	        converted = calculateConvertedMark(dto.getHomework(), dto.getMidExam(), dto.getFinalExam());
 	        detail.setConvertedMark(converted);
 
 	        // 등급 결정
 	        grade = calculateGrade(converted);
 	    }
 
-	    detail.getStuSub().setGrade(grade); // StuSub에 등급 저장
+	    detail.setConvertedMark(converted); // detail에 환산점수 저장
+	    StuSub stuSub = detail.getStuSub();
+	    stuSub.setGrade(grade);             // 문자 학점 저장
+	    stuSub.setCompleteGrade(converted); // 숫자 점수 저장
+	    stuSubRepository.save(stuSub);
 	    stuSubDetailRepository.save(detail);
-
 	    return toDto(detail);
 	}
 

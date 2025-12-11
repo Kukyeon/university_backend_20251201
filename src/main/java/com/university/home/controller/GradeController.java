@@ -35,7 +35,7 @@ public class GradeController {
 
 		    Map<String, Object> result = new HashMap<>();
 		    result.put("gradeList", list);       // 🔥 프론트 요구 형식
-		    result.put("mygradeList", List.of()); // 필요하면 나중에 채우면 됨
+		    result.put("submitted", !list.isEmpty()); // 필요하면 나중에 채우면 됨
 		    return ResponseEntity.ok(result);
     }
 	@GetMapping("/semester")
@@ -51,7 +51,7 @@ public class GradeController {
 
 	    Map<String, Object> result = new HashMap<>();
 	    result.put("gradeList", list);
-	    result.put("mygradeList", List.of()); // 필요 시 추가
+	    result.put("submitted", !list.isEmpty()); // 필요 시 추가
 
 	    return ResponseEntity.ok(result);
 	}
@@ -63,7 +63,7 @@ public class GradeController {
 
 	    Map<String, Object> result = new HashMap<>();
 	    result.put("gradeList", totalGrades);
-	    result.put("mygradeList", List.of()); // 필요 시 추가
+	    result.put("submitted", !totalGrades.isEmpty()); // 필요 시 추가
 	    return ResponseEntity.ok(result);
 	}
 
