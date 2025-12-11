@@ -43,8 +43,20 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-websocket-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	// AWS SDK (S3, SQS, Transcribe)
+	implementation 'com.amazonaws:aws-java-sdk-core:1.12.700'
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.12.700'
+    implementation 'com.amazonaws:aws-java-sdk-sqs:1.12.700'
+    implementation 'com.amazonaws:aws-java-sdk-transcribe:1.12.700'
+    
+    // Spring Cloud AWS Messaging (SQS Listener를 위해 필요)
+    implementation 'org.springframework.cloud:spring-cloud-aws-messaging:2.2.6.RELEASE'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
+	
+    
+    
