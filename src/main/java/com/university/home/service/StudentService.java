@@ -63,6 +63,8 @@ public class StudentService {
 	    dto.setAddress(student.getAddress());
 	    dto.setTel(student.getTel());
 	    dto.setEmail(student.getEmail());
+	    dto.setGrade(student.getGrade());
+	    dto.setSemester(student.getSemester());
 	  
 	    Department dep = student.getDepartment();
 	    if (dep != null) {
@@ -165,6 +167,10 @@ public class StudentService {
 		List<Student> students = studentRepository.findAll();
 		int count = 0;
 	    for (Student student : students) {
+	    	StuStat currentStatus = stuStatService.getCurrentStatus(student.getId());
+	        if (currentStatus != null && "휴학".equals(currentStatus.getStatus())) {
+	            continue; // 휴학생이면 건너뛰기
+	        }
 	        int grade = student.getGrade().intValue();
 	        int semester = student.getSemester().intValue();
 
