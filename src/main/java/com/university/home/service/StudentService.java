@@ -11,11 +11,13 @@ import org.springframework.stereotype.Service;
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.DepartmentDto;
 import com.university.home.dto.ProfessorDto;
+import com.university.home.dto.StuStatDto;
 import com.university.home.dto.StudentDto;
 import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
+import com.university.home.entity.StuStat;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
 import com.university.home.repository.DepartmentRepository;
@@ -57,10 +59,11 @@ public class StudentService {
 	    dto.setName(student.getName());
 	    dto.setBirthDate(student.getBirthDate());
 	    dto.setGender(student.getGender());
+	    dto.setEntranceDate(student.getEntranceDate());
 	    dto.setAddress(student.getAddress());
 	    dto.setTel(student.getTel());
 	    dto.setEmail(student.getEmail());
-
+	  
 	    Department dep = student.getDepartment();
 	    if (dep != null) {
 	        DepartmentDto depDto = new DepartmentDto();
@@ -77,7 +80,17 @@ public class StudentService {
 
 	        dto.setDepartment(depDto);
 	    }
-
+	 // 학적 상태
+	    StuStat currentStatus = stuStatService.getCurrentStatus(student.getId());
+	    if (currentStatus != null) {
+	        StuStatDto statDto = new StuStatDto();
+	        statDto.setId(currentStatus.getId());
+	        statDto.setStatus(currentStatus.getStatus());
+	        statDto.setFromDate(currentStatus.getFromDate());
+	        statDto.setToDate(currentStatus.getToDate());
+	        statDto.setBreakAppId(currentStatus.getBreakAppId());
+	        dto.setCurrentStatus(statDto);
+	    }
 	    return dto;
 	}
 	@Transactional

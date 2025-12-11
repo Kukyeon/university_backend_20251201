@@ -20,4 +20,9 @@ public interface StuSubRepository extends JpaRepository<StuSub, Long> {
     List<StuSub> findByStudentIdAndSubjectSubYearAndSubjectSemester(Long studentId, Long subYear, Long semester);
 
     List<StuSub> findBySubject_Id(Long subjectId);
+    
+    List<StuSub> findByStudentIdAndSubjectSubYearAndSubjectSemesterAndSubjectType(
+    	    Long studentId, Long year, Long semester, String type
+    	);
+
 }
