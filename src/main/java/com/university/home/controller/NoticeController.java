@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -43,6 +44,13 @@ public class NoticeController {
     @GetMapping("/read/{id}")
     public Notice getNoticeDetail(@PathVariable("id") Long id) {
         return noticeService.getNoticeById(id);
+    }
+    
+    //공지사항 조회수 증가
+    @PostMapping("/views/{id}")
+    public ResponseEntity<Void> incrementNoticeViews(@PathVariable("id") Long id){
+    	noticeService.incrementViews(id);
+    	return ResponseEntity.ok().build();
     }
 
     // 공지 등록 (파일 포함)

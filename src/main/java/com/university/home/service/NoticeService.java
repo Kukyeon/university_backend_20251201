@@ -85,16 +85,20 @@ public class NoticeService {
         return noticeRepository.findByTitleContaining(keyword, pageable);
     }
 
-    // 공지사항 조회 (조회수 증가 포함)
+    // 공지사항 조회 (조회수 증가 미포함)
     @Transactional
     public Notice getNoticeById(Long id) {
         Notice notice = noticeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("공지사항이 없습니다."));
 
-        if (notice.getViews() == null) notice.setViews(0L);
-        noticeRepository.incrementViews(id);
-
         return notice;
+    }
+    
+    //공지사항 조회수 증가
+    
+    @Transactional
+    public void incrementViews(Long id) {
+    	noticeRepository.incrementViews(id);
     }
 
     // 공지사항 수정
