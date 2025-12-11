@@ -18,4 +18,6 @@ public interface StuSubRepository extends JpaRepository<StuSub, Long> {
     
     //이번 학기 수강 신청 내역 리스트 조회
     List<StuSub> findByStudentIdAndSubjectSubYearAndSubjectSemester(Long studentId, Long subYear, Long semester);
+
+    List<StuSub> findBySubject_Id(Long subjectId);
 }

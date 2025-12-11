@@ -5,9 +5,11 @@ import com.university.home.controller.SugangController; // ★ 기간 확인용 
 import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.PreStuSub; // ★ 예비수강 엔티티
 import com.university.home.entity.StuSub;
+import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
 import com.university.home.repository.PreStuSubRepository;
+import com.university.home.repository.StuSubDetailRepository;
 import com.university.home.repository.StuSubRepository;
 import com.university.home.repository.StudentRepository;
 import com.university.home.repository.SubjectRepository;
@@ -34,6 +36,7 @@ public class CourseService {
     private final StuSubRepository stuSubRepository;
     private final SubjectRepository subjectRepository;
     private final PreStuSubRepository preStuSubRepository;
+    private final StuSubDetailRepository stuSubDetailRepository;
 
     // =================================================================================
     // 1. 조회 기능 (목록, 내역, AI 추천)
@@ -180,11 +183,29 @@ public class CourseService {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new IllegalArgumentException("강의 정보가 없습니다."));
 
+        validateTimeConflict(studentId, subject, period);
         // === [기간 0] 예비 수강 신청 (장바구니) ===
         if (period == 0) {
             // 중복 체크만 수행 (이미 담았는지)
             if (preStuSubRepository.existsByStudentIdAndSubjectId(studentId, subjectId)) {
                 throw new IllegalStateException("이미 장바구니에 담은 강의입니다.");
+            }
+         // 2. 정원 체크
+            if (subject.getNumOfStudent() >= subject.getCapacity()) {
+                throw new IllegalStateException("장바구니 정원이 마감되었습니다.");
+            }
+            
+            
+         // 3. 최대 학점 체크
+            List<StuSub> currentSemesterSubjects = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+                    studentId, subject.getSubYear(), subject.getSemester());
+
+            int currentCredits = currentSemesterSubjects.stream()
+                    .mapToInt(ss -> ss.getSubject().getGrades() != null ? ss.getSubject().getGrades().intValue() : 0)
+                    .sum();
+
+            if (currentCredits + subject.getGrades().intValue() > 18) {
+                throw new IllegalStateException("신청 가능한 최대 학점(18학점)을 초과했습니다.");
             }
             
             // 장바구니 저장 (정원 체크, 학점 체크 안 함, 인원수 증가 안 함)
@@ -192,6 +213,10 @@ public class CourseService {
             pre.setStudent(student);
             pre.setSubject(subject);
             preStuSubRepository.save(pre);
+            
+         // 5. 인원 증가
+            subject.setNumOfStudent(subject.getNumOfStudent() + 1);
+        
         }
 
         // === [기간 1] 본 수강 신청 (실제 신청) ===
@@ -222,10 +247,55 @@ public class CourseService {
             StuSub newEnrollment = new StuSub();
             newEnrollment.setStudent(student);
             newEnrollment.setSubject(subject);
-            stuSubRepository.save(newEnrollment);
+            
 
+            StuSubDetail detail = new StuSubDetail();
+            detail.setStudent(student);
+            detail.setSubject(subject);
+           
+            newEnrollment.setDetail(detail);
+            
+            stuSubRepository.save(newEnrollment);
             // 5. 인원 증가
             subject.setNumOfStudent(subject.getNumOfStudent() + 1);
+        }
+    }
+ 
+    // 시간표 중복 검증 로직
+    private void validateTimeConflict(Long studentId, Subject targetSubject, int period) {
+        // 비교할 기존 강의 목록 가져오기
+        List<Subject> existingSubjects;
+
+        if (period == 0) {
+            // 기간 0: '장바구니'에 있는 과목들과 비교
+            existingSubjects = preStuSubRepository.findByStudentId(studentId).stream()
+                    .map(PreStuSub::getSubject)
+                    .collect(Collectors.toList());
+        } else {
+            // 기간 1: 실제 '수강신청 완료'된 과목들과 비교
+            existingSubjects = stuSubRepository.findByStudentId(studentId).stream()
+                    .map(StuSub::getSubject)
+                    .collect(Collectors.toList());
+        }
+
+        // 반복문으로 하나씩 시간 비교
+        for (Subject existing : existingSubjects) {
+            // 1. 요일이 같은지 확인
+            if (existing.getSubDay().equals(targetSubject.getSubDay())) {
+                
+                // 2. 교시(시간)가 겹치는지 확인 (Overlap Logic)
+                // (신청강의 시작 <= 기존강의 끝) AND (신청강의 끝 >= 기존강의 시작)
+                boolean isOverlap = 
+                    targetSubject.getStartTime() <= existing.getEndTime() && 
+                    targetSubject.getEndTime() >= existing.getStartTime();
+
+                if (isOverlap) {
+                    throw new IllegalStateException(
+                        String.format("시간표가 중복됩니다! \n기존: %s (%s %d~%d교시)", 
+                        existing.getName(), existing.getSubDay(), existing.getStartTime(), existing.getEndTime())
+                    );
+                }
+            }
         }
     }
 
@@ -234,15 +304,19 @@ public class CourseService {
     public void cancel(Long studentId, Long subjectId) {
         int period = SugangController.SUGANG_PERIOD;
 
-//        if (period == 2) {
-//            throw new IllegalStateException("수강 취소 기간이 지났습니다.");
-//        }
+        if (period == 2) {
+            throw new IllegalStateException("수강 취소 기간이 지났습니다.");
+        }
 
         // === [기간 0] 예비 수강 취소 (장바구니 삭제) ===
         if (period == 0) {
             PreStuSub pre = preStuSubRepository.findByStudentIdAndSubjectId(studentId, subjectId);
             if (pre == null) {
                 throw new IllegalArgumentException("장바구니에 해당 과목이 없습니다.");
+            }
+            Subject subject = pre.getSubject();
+            if (subject.getNumOfStudent() > 0) {
+                subject.setNumOfStudent(subject.getNumOfStudent() - 1);
             }
             preStuSubRepository.delete(pre);
         }
@@ -253,7 +327,9 @@ public class CourseService {
                     .orElseThrow(() -> new IllegalArgumentException("수강 내역이 없습니다."));
             
             Subject subject = enrollment.getSubject();
-            subject.setNumOfStudent(subject.getNumOfStudent() - 1);
+            if (subject.getNumOfStudent() > 0) {
+                subject.setNumOfStudent(subject.getNumOfStudent() - 1);
+            }
             
             stuSubRepository.delete(enrollment);
         }
