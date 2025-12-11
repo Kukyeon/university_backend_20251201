@@ -20,6 +20,7 @@ public class Notice {
     private Long id;
 
     private String title;
+    @Column(name = "content", length = 2000)
     private String content;
 
     @Builder.Default
