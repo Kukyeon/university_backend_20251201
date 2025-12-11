@@ -131,8 +131,8 @@ public class CounselingRecordService {
         String professorName = professor.getName(); 
 
         // 3. 학생 이름 조회 (Record에 의존하지 않고 Schedule에서 학생 ID로 조회)
-        // TODO: studentService.getStudentById(studentId)에서 실제 학생 이름 획득 로직 필요
-        String studentName = "테스트 학생 이름"; // 임시 값
+        // TODO: studentService.getStudentById(studentId)
+        String studentName = studentService.getStudentName(studentId);
 
         // 4. Record 조회 (Optional 사용)
         Optional<CounselingRecord> optionalRecord = recordRepository.findByScheduleIdAndStudentId(scheduleId, studentId);

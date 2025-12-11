@@ -1,57 +1,63 @@
 package com.university.home.config;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.transcribe.AmazonTranscribe;
-import com.amazonaws.services.transcribe.AmazonTranscribeClientBuilder;
+
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client; // v2 S3 클라이언트
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.SqsClient; // v2 SQS 클라이언트
+import software.amazon.awssdk.services.transcribe.TranscribeClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import com.amazonaws.services.sqs.AmazonSQS; 
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+
 
 @Configuration
 public class AwsConfig {
 
-    @Value("${cloud.aws.credentials.access-key}")
-    private String accessKey;
 
-    @Value("${cloud.aws.credentials.secret-key}")
-    private String secretKey;
-
-    @Value("${cloud.aws.region.static}")
-    private String region;
-
-    private AWSStaticCredentialsProvider getCredentialsProvider() {
-        return new AWSStaticCredentialsProvider(
-                new BasicAWSCredentials(accessKey, secretKey)
+	@Value("${cloud.aws.credentials.access-key}")
+	private String accessKey;
+	
+	
+	@Value("${cloud.aws.credentials.secret-key}")
+	private String secretKey;
+	
+	
+	@Value("${cloud.aws.region.static}")
+	private String region;
+	
+	// ⭐️ [v2 변경] Credential Provider 생성 방식 변경
+	private StaticCredentialsProvider getCredentialsProvider() {
+		return StaticCredentialsProvider.create(
+            AwsBasicCredentials.create(accessKey, secretKey)
         );
-    }
-
-    @Bean
-    public AmazonS3 amazonS3Client() {
-        return AmazonS3ClientBuilder.standard()
-                .withRegion(Regions.fromName(region))
-                .withCredentials(getCredentialsProvider())
+	}
+	
+	
+	@Bean
+    public S3Client amazonS3Client() {
+        return S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(getCredentialsProvider())
                 .build();
     }
+	
     
-    @Bean
-    public AmazonSQS amazonSqsClient() {
-        return AmazonSQSClientBuilder.standard()
-                .withRegion(Regions.fromName(region))
-                .withCredentials(getCredentialsProvider())
+	@Bean
+    public SqsAsyncClient amazonSqsClient() { 
+        return SqsAsyncClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(getCredentialsProvider())
                 .build();
     }
-    
-    @Bean
-    public AmazonTranscribe amazonTranscribeClient() {
-        return AmazonTranscribeClientBuilder.standard()
-                .withRegion(Regions.fromName(region))
-                .withCredentials(getCredentialsProvider())
-                .build();
-    }
+	
+	 @Bean
+	    public TranscribeClient amazonTranscribeClient() {
+	        return TranscribeClient.builder()
+	                .region(Region.of(region))
+	                .credentialsProvider(getCredentialsProvider())
+	                .build();
+	    }
 }

@@ -1,20 +1,34 @@
 package com.university.home.service;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.S3Object;
+
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+import software.amazon.awssdk.services.sqs.model.GetQueueUrlRequest;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.university.home.entity.CounselingRecord;
+import com.university.home.entity.CounselingSchedule;
 import com.university.home.repository.CounselingRecordRepository;
+import com.university.home.repository.CounselingScheduleRepository;
 
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.aws.messaging.listener.annotation.SqsListener;
+import org.springframework.context.event.EventListener;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.io.IOException;
 
@@ -22,71 +36,155 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class TranscriptionResultListener {
 
-    private final AmazonS3 s3Client;
-    private final CounselingRecordRepository recordRepository; // JPA Repository 가정
+    private final S3Client s3Client; 
+    private final SqsAsyncClient sqsAsyncClient; // ⭐️ 비동기 클라이언트 주입
+    private final CounselingRecordRepository recordRepository;
+    private final CounselingScheduleRepository scheduleRepository;
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
     
-    // ⭐️ SQS Queue 이름 리스너 설정
-    @SqsListener("${aws.sqs.transcribe-queue-name}") 
-    public void receiveTranscriptionResult(String message) {
+    @Value("${aws.sqs.transcribe-queue-name}")
+    private String queueName;
+
+    private String queueUrl;
+    
+    // ⭐️ 비동기 메시지 수신을 위한 스케줄러
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+
+    // ⭐️ [v2 리스너 로직] ApplicationReadyEvent 발생 시 SQS 리스너 시작
+    @EventListener(ApplicationReadyEvent.class)
+    public void startSqsListener() {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            // Transcribe 알림은 SNS를 거쳐 SQS에 오므로, 메시지 본문을 파싱
-            Map<String, Object> snsMessage = mapper.readValue(message, Map.class);
-            String rawMessage = (String) snsMessage.get("Message"); 
+            // 1. Queue URL 조회 (비동기)
+            GetQueueUrlRequest getQueueUrlRequest = GetQueueUrlRequest.builder().queueName(queueName).build();
+            this.queueUrl = sqsAsyncClient.getQueueUrl(getQueueUrlRequest).get().queueUrl();
             
-            // 실제 Transcribe 결과 JSON 파싱
-            Map<String, Object> notification = mapper.readValue(rawMessage, Map.class);
+            System.out.println("SQS Listener 시작됨. Queue URL: " + this.queueUrl);
 
-            // Transcribe Job 이름 추출 (실제 SQS 메시지 구조를 확인하여 정확한 키를 사용해야 함)
-            // AWS 기본 형식에서 jobName을 추출하는 키는 'TranscriptionJobName'일 수 있습니다.
-            String jobName = (String) notification.get("TranscriptionJobName"); 
-            
-            if (jobName == null) {
-                 // 🚨 오류 발생 가능성이 높은 부분. 실제 메시지 구조 확인 후 키 변경 필요
-                 System.err.println("경고: 메시지에서 TranscriptionJobName 키를 찾을 수 없습니다. 메시지 구조 확인 필요.");
-                 return; 
-            }
-            
-            // Job 이름에서 상담 ID 추출 (예: "12345-uuid")
-            Long counselingId = Long.parseLong(jobName.split("-")[0]);
-            
-            // ⭐️ Transcribe 결과 파일 경로 구성 (AWS 기본 규칙: output-bucket/stt-results-prefix/jobName.json)
-            String resultKey = "stt-results/" + jobName + ".json"; 
-            
-            // 1. S3에서 Transcribe 결과 JSON 파일 다운로드
-            S3Object object = s3Client.getObject(bucketName, resultKey); 
-            String fullTranscript = parseTranscriptFromS3(object); 
-            
-            // 2. DB 업데이트 (JPA 사용)
-            CounselingRecord record = recordRepository.findByScheduleId(counselingId)
-                .orElse(new CounselingRecord()); 
-                
-            // ⭐️ CounselingRecord 엔티티의 notes 필드에 저장
-            record.setNotes(fullTranscript); 
-            recordRepository.save(record);
-
+            // 2. 주기적으로 메시지 수신 작업 예약 (polling)
+            scheduler.scheduleWithFixedDelay(this::pollAndProcessMessages, 5, 5, TimeUnit.SECONDS);
 
         } catch (Exception e) {
-            System.err.println("Error processing transcription result: " + e.getMessage());
+            System.err.println("SQS Listener 초기화 오류: " + e.getMessage());
+            // 애플리케이션 시작을 막지 않기 위해 오류 발생해도 예외 throw 안 함
         }
     }
+
+    private void pollAndProcessMessages() {
+        if (queueUrl == null) return;
+        
+        ReceiveMessageRequest receiveMessageRequest = ReceiveMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(10)
+                .waitTimeSeconds(10) // Long Polling 활성화
+                .build();
+
+        // 3. 메시지 수신 (비동기) 및 처리
+        sqsAsyncClient.receiveMessage(receiveMessageRequest)
+            .thenAccept(response -> {
+                response.messages().forEach(message -> {
+                    try {
+                        processTranscriptionResult(message.body());
+                        
+                        // 4. 메시지 처리 완료 후 삭제 (비동기)
+                        DeleteMessageRequest deleteMessageRequest = DeleteMessageRequest.builder()
+                                .queueUrl(queueUrl)
+                                .receiptHandle(message.receiptHandle())
+                                .build();
+                        sqsAsyncClient.deleteMessage(deleteMessageRequest);
+                        
+                    } catch (Exception e) {
+                        System.err.println("메시지 처리 오류: " + e.getMessage());
+                        // 메시지 삭제는 생략하여 Visibility Timeout 후 재시도
+                    }
+                });
+            })
+            .exceptionally(e -> {
+                System.err.println("SQS 메시지 수신 오류: " + e.getMessage());
+                return null;
+            });
+    }
+
+
+    private void processTranscriptionResult(String message) throws Exception {
+        // 기존 SQS Listener의 내부 로직 (SNS Envelope 처리)
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> snsEnvelope = mapper.readValue(message, Map.class);
+        String rawMessage = (String) snsEnvelope.get("Message");
+        if (rawMessage == null) {
+            System.err.println("SQS 메시지에 Message 필드 없음: " + message);
+            return;
+        }
+
+        Map<String, Object> notification = mapper.readValue(rawMessage, Map.class);
+        Map<String, Object> transcriptionJob = (Map<String, Object>) notification.get("TranscriptionJob");
+        if (transcriptionJob == null) {
+            System.err.println("TranscriptionJob 정보 없음");
+            return;
+        }
+
+        String jobName = (String) transcriptionJob.get("TranscriptionJobName");
+        if (jobName == null) {
+            System.err.println("TranscriptionJobName 없음");
+            return;
+        }
+
+        // jobName == schedule-{id}-{uuid}
+        String[] parts = jobName.split("-");
+        if (parts.length < 2) {
+            System.err.println("jobName 포맷 오류: " + jobName);
+            return;
+        }
+        Long scheduleId = Long.parseLong(parts[1]);
+
+        // S3 결과 파일 경로
+        String resultKey = "stt-results/" + jobName + ".json";
+        String fullTranscript = parseTranscriptFromS3(resultKey);
+
+        // schedule 조회
+        CounselingSchedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalStateException("존재하지 않는 scheduleId: " + scheduleId));
+
+        // 기존 record 조회 또는 새 생성 및 저장
+        CounselingRecord record = recordRepository.findByScheduleId(scheduleId)
+                .orElseGet(() -> {
+                    CounselingRecord r = new CounselingRecord();
+                    r.setSchedule(schedule);
+                    r.setConsultationDate(schedule.getStartTime());
+                    r.setStudentId(schedule.getStudentId());
+                    r.setStudentName(""); 
+                    return r;
+                });
+
+        record.setNotes(fullTranscript);
+        recordRepository.save(record);
+        System.out.println("STT 결과 저장 완료 scheduleId=" + scheduleId);
+    }
     
-    private String parseTranscriptFromS3(S3Object object) throws IOException {
-        // Transcribe JSON 파일을 읽어서 최종 텍스트만 추출하는 로직
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(object.getObjectContent(), "UTF-8"))) {
-            String jsonContent = reader.lines().collect(Collectors.joining("\n"));
+    // ⭐️ [v2 변경] parseTranscriptFromS3 메서드 수정
+    private String parseTranscriptFromS3(String resultKey) throws IOException { 
+        
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+            .bucket(bucketName)
+            .key(resultKey)
+            .build();
             
+        // ResponseInputStream<GetObjectResponse> 객체를 반환합니다.
+        try (ResponseInputStream<GetObjectResponse> objectData = s3Client.getObject(getObjectRequest);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(objectData, "UTF-8"))) {
+
+            String json = reader.lines().collect(Collectors.joining("\n"));
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> result = mapper.readValue(jsonContent, Map.class);
-            
-            // Transcribe JSON 구조에 따라 파싱
+            Map<String, Object> result = mapper.readValue(json, Map.class);
             Map<String, Object> results = (Map<String, Object>) result.get("results");
-            java.util.List<Map<String, Object>> transcripts = (java.util.List<Map<String, Object>>) results.get("transcripts");
-            
-            return (String) transcripts.get(0).get("transcript"); 
+            var transcripts = (java.util.List<Map<String, Object>>) results.get("transcripts");
+            if (transcripts == null || transcripts.isEmpty()) return "";
+            return (String) transcripts.get(0).get("transcript");
+        } catch (S3Exception e) {
+             System.err.println("S3에서 결과 파일 읽기 실패: " + e.getMessage());
+             throw new IOException("S3 결과 파일 읽기 실패", e);
         }
     }
 }
