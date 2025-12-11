@@ -91,7 +91,7 @@ public class BreakAppController {
 	        throw new CustomRestfullException("본인 신청만 취소할 수 있습니다.", HttpStatus.FORBIDDEN);
 	    }
 
-	    breakAppService.deleteApp(id);
+	    breakAppService.cancelBreakApp(id);
 		return ResponseEntity.ok("신청 취소 완료");
 	}
 	@PutMapping("/update/{id}")

@@ -43,6 +43,29 @@ public class StuStatService {
         stuStat.setToDate(LocalDate.parse("9999-01-01"));
         stuStatRepository.save(stuStat);
     }
+    @Transactional
+    public void revertToRegular(Student student) {
+        List<StuStat> stats = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
+        
+        // 휴학 상태 삭제 또는 상태 변경
+        for (StuStat s : stats) {
+            if ("휴학".equals(s.getStatus())) {
+                stuStatRepository.delete(s); // 삭제하거나
+                // s.setStatus("재학"); s.setBreakAppId(null); stuStatRepository.save(s);
+            }
+        }
+        
+        // 재학 상태 확인
+        boolean hasRegular = stats.stream().anyMatch(s -> "재학".equals(s.getStatus()));
+        if (!hasRegular) {
+            StuStat re = new StuStat();
+            re.setStudent(student);
+            re.setStatus("재학");
+            re.setFromDate(LocalDate.now());
+            re.setToDate(LocalDate.parse("9999-01-01"));
+            stuStatRepository.save(re);
+        }
+    }
 
     // 학적 상태 업데이트
     @Transactional
