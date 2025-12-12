@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,7 +43,7 @@ public class CourseService {
     // 1. 조회 기능 (목록, 내역, AI 추천)
     // =================================================================================
 
-    // [조회] 개설된 전체 강의 목록 가져오기 (기존 유지)
+    // [조회] 개설된 최신 학년 학기 강의 목록 가져오기 (기존 유지)
     @Transactional(readOnly = true)
     public Page<Subject> getAvailableCourses(Long subYear, Long semester, int page, String type, String name, Long deptId) {
         
@@ -114,13 +115,27 @@ public class CourseService {
     public List<?> getMyCourseHistory(Long studentId) {
         int period = SugangController.SUGANG_PERIOD;
 
-        // 예비 수강신청 기간(0)이면 장바구니 목록 반환
+        // 기간 0: 장바구니 목록 반환
         if (period == 0) {
             return preStuSubRepository.findByStudentId(studentId);
         } 
-        // 본 수강신청 기간(1) 혹은 종료(2)면 실제 수강 목록 반환
+        // 기간 1(본수강) 혹은 2(종료): 실제 수강 목록 반환
         else {
-            return stuSubRepository.findByStudentId(studentId);
+            // (1) 현재 기준이 되는 최신 연도와 학기를 찾습니다.
+            Subject latestSubject = getLatestSubjectInfo();
+
+            if (latestSubject == null) {
+                return Collections.emptyList(); // 데이터 없으면 빈 리스트
+            }
+
+            Long targetYear = latestSubject.getSubYear();
+            Long targetSemester = latestSubject.getSemester();
+
+            // (2) ★ 학생의 전체 기록이 아닌, "이번 학기" 내역만 조회합니다.
+            // 그래야 과거 내역이 딸려오지 않고, 현재 신청한 것만 깔끔하게 나옵니다.
+            return stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+                    studentId, targetYear, targetSemester
+            );
         }
     }
 
@@ -134,7 +149,7 @@ public class CourseService {
                 .map(sub -> sub.getSubject().getName())
                 .collect(Collectors.joining(", "));
         
-        Long subYear = 2025L; 
+        Long subYear = 2023L; 
         Long semester = 1L;
         Subject latest = getLatestSubjectInfo();
         if (latest != null) {
@@ -190,10 +205,10 @@ public class CourseService {
             if (preStuSubRepository.existsByStudentIdAndSubjectId(studentId, subjectId)) {
                 throw new IllegalStateException("이미 장바구니에 담은 강의입니다.");
             }
-         // 2. 정원 체크
-            if (subject.getNumOfStudent() >= subject.getCapacity()) {
-                throw new IllegalStateException("장바구니 정원이 마감되었습니다.");
-            }
+//         // 2. 정원 체크
+//            if (subject.getNumOfStudent() >= subject.getCapacity()) {
+//                throw new IllegalStateException("장바구니 정원이 마감되었습니다.");
+//            }
             
             
          // 3. 최대 학점 체크
@@ -215,7 +230,11 @@ public class CourseService {
             preStuSubRepository.save(pre);
             
          // 5. 인원 증가
-            subject.setNumOfStudent(subject.getNumOfStudent() + 1);
+            //subject.setNumOfStudent(subject.getNumOfStudent() + 1);
+            
+         // ★ [핵심] 실제 인원(numOfStudent)은 건드리지 않고, 장바구니 카운트만 증가
+            if (subject.getBasketCount() == null) subject.setBasketCount(0);
+            subject.setBasketCount(subject.getBasketCount() + 1);    
         
         }
 
@@ -263,28 +282,24 @@ public class CourseService {
  
     // 시간표 중복 검증 로직
     private void validateTimeConflict(Long studentId, Subject targetSubject, int period) {
-        // 비교할 기존 강의 목록 가져오기
         List<Subject> existingSubjects;
 
         if (period == 0) {
-            // 기간 0: '장바구니'에 있는 과목들과 비교
+            // 기간 0: 장바구니 목록과 비교
             existingSubjects = preStuSubRepository.findByStudentId(studentId).stream()
                     .map(PreStuSub::getSubject)
                     .collect(Collectors.toList());
         } else {
-            // 기간 1: 실제 '수강신청 완료'된 과목들과 비교
-            existingSubjects = stuSubRepository.findByStudentId(studentId).stream()
-                    .map(StuSub::getSubject)
-                    .collect(Collectors.toList());
+            // 기간 1: ★ 과거 내역이 아닌 "이번 학기" 수강신청 내역과 비교해야 함!
+            existingSubjects = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+                    studentId, targetSubject.getSubYear(), targetSubject.getSemester()
+            ).stream()
+             .map(StuSub::getSubject)
+             .collect(Collectors.toList());
         }
 
-        // 반복문으로 하나씩 시간 비교
         for (Subject existing : existingSubjects) {
-            // 1. 요일이 같은지 확인
             if (existing.getSubDay().equals(targetSubject.getSubDay())) {
-                
-                // 2. 교시(시간)가 겹치는지 확인 (Overlap Logic)
-                // (신청강의 시작 <= 기존강의 끝) AND (신청강의 끝 >= 기존강의 시작)
                 boolean isOverlap = 
                     targetSubject.getStartTime() <= existing.getEndTime() && 
                     targetSubject.getEndTime() >= existing.getStartTime();
@@ -315,8 +330,13 @@ public class CourseService {
                 throw new IllegalArgumentException("장바구니에 해당 과목이 없습니다.");
             }
             Subject subject = pre.getSubject();
-            if (subject.getNumOfStudent() > 0) {
-                subject.setNumOfStudent(subject.getNumOfStudent() - 1);
+            
+//            if (subject.getNumOfStudent() > 0) {
+//                subject.setNumOfStudent(subject.getNumOfStudent() - 1);
+//            }           
+            // ★ 장바구니 카운트 감소
+            if (subject.getBasketCount() > 0) {
+                subject.setBasketCount(subject.getBasketCount() - 1);
             }
             preStuSubRepository.delete(pre);
         }
@@ -342,4 +362,56 @@ public class CourseService {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    
+    // 기간 변경 및 장바구니 초기화 로직
+    @Transactional
+    public void updateSugangPeriod(int newPeriod) {
+        
+        // 1. 기간 상태 변경
+        SugangController.SUGANG_PERIOD = newPeriod;
+        System.out.println(">>> 수강신청 기간이 변경되었습니다: " + newPeriod);
+
+        // 2. 기간 1(본수강)이 될 때:
+        // ★ 중요: 아무 작업도 하지 않습니다.
+        // 기존 코드에 있던 'createStuSubByPreStuSub()' 같은 자동 복사 로직을 제거했으므로
+        // 예비신청 목록이 자동으로 본수강으로 넘어가지 않습니다.
+        // 학생이 직접 장바구니에서 "신청" 버튼을 눌러야 합니다.
+
+        // 3. 기간 2(종료)가 될 때:
+        if (newPeriod == 2) {
+            // 장바구니 비우기 + 카운트 리셋
+            resetBasketData();
+            System.out.println(">>> [기간 종료] 장바구니 데이터가 초기화되었습니다.");
+        }
+    }
+
+    private void resetBasketData() {
+        preStuSubRepository.deleteAll();
+        List<Subject> allSubjects = subjectRepository.findAll();
+        for (Subject s : allSubjects) {
+            s.setBasketCount(0);
+        }
+    }
 }
+
+// // [핵심 로직] 장바구니 비우기 + 인원수 차감
+//    private void resetBasketData() {
+//        // 1. 현재 장바구니에 남아있는 모든 내역 조회
+//        List<PreStuSub> remainingBaskets = preStuSubRepository.findAll();
+//
+//        // 2. 각 내역을 순회하며 과목 인원수 차감
+////        for (PreStuSub basket : remainingBaskets) {
+////            Subject subject = basket.getSubject();
+////            
+////            // 인원이 0보다 클 때만 감소 (음수 방지)
+////            if (subject.getNumOfStudent() > 0) {
+////                subject.setNumOfStudent(subject.getNumOfStudent() - 1);
+////                // JPA의 Dirty Checking 기능으로 인해, 값만 변경하면 트랜잭션 종료 시 자동 update 쿼리가 나갑니다.
+////            }
+////        }
+//
+//        // 3. 장바구니 테이블 데이터 전체 삭제
+//        preStuSubRepository.deleteAll();
+//    }
+    
+    

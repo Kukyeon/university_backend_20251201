@@ -33,7 +33,8 @@ public class Subject {
     private Long grades; // Integer -> Long (학점)
     private Long capacity; // Integer -> Long (정원)
     private Long numOfStudent = 0L; // Integer -> Long (신청인원)
-    
+    @Column(columnDefinition = "integer default 0")
+    private Integer basketCount = 0; //예비 수강신청인원
     @OneToOne(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Syllabus syllabus;
 }
