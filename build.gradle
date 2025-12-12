@@ -44,15 +44,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-websocket-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	
-	// AWS SDK (S3, SQS, Transcribe)
-	implementation platform('software.amazon.awssdk:bom:2.25.10') // 최신 버전 확인 후 적용
-    implementation 'software.amazon.awssdk:s3'
-    implementation 'software.amazon.awssdk:sqs'
-    implementation 'software.amazon.awssdk:sqs-netty-nio-client' // 비동기 클라이언트 사용을 위해 추가
-    implementation 'software.amazon.awssdk:transcribe'
-    
-    // Spring Cloud AWS Messaging (SQS Listener를 위해 필요)
-    //implementation 'org.springframework.cloud:spring-cloud-aws-messaging:2.2.6.RELEASE'
+	
 }
 
 tasks.named('test') {

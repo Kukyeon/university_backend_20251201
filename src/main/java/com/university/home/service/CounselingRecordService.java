@@ -44,10 +44,13 @@ public class CounselingRecordService {
     
     // [1] 상담 기록 저장 (STT 완료 또는 교수자 메모 입력 시)
     @Transactional
-    public CounselingRecord saveRecord(Long scheduleId, String notes, String keywords) {
+    public CounselingRecord saveRecord(Long scheduleId,Long professorId, String notes, String keywords) {
         CounselingSchedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new CustomRestfullException("상담 일정이 존재하지 않아 기록할 수 없습니다.", HttpStatus.NOT_FOUND));
 
+        if (!schedule.getProfessorId().equals(professorId)) {
+            throw new CustomRestfullException("해당 상담 기록을 저장/수정할 권한이 없습니다. (담당 교수가 아님)", HttpStatus.FORBIDDEN);
+        }
         // 이미 기록이 있다면 업데이트, 없다면 새로 생성
         Optional<CounselingRecord> existingRecord = recordRepository.findByScheduleId(scheduleId);
         
@@ -66,6 +69,7 @@ public class CounselingRecordService {
         
         // --- 기록 내용 업데이트 ---
         record.setNotes(notes);
+        
         record.setKeywords(keywords); 
         record.setRecordDate(LocalDateTime.now());
         
@@ -75,7 +79,36 @@ public class CounselingRecordService {
         
         return recordRepository.save(record);
     }
-
+    public List<CounselingRecordResponseDto> getProfessorRecordList(Long professorId) {
+        // 1. 해당 교수의 완료된(COMPLETED) 상담 일정을 모두 조회
+        List<CounselingSchedule> completedSchedules = scheduleRepository.findByProfessorIdAndStatus(professorId, ScheduleStatus.COMPLETED);
+        
+        return completedSchedules.stream()
+                .map(schedule -> {
+                    // 2. Schedule ID로 해당 Record를 조회 (Optional)
+                    Optional<CounselingRecord> optionalRecord = recordRepository.findByScheduleId(schedule.getId());
+                    
+                    // 3. 교수 이름 및 학생 이름 조회 (기존 로직 활용)
+                    String professorName = professorRepository.findById(professorId).map(Professor::getName).orElse("교수");
+                    String studentName = studentRepository.findById(schedule.getStudentId()).map(Student::getName).orElse("학생");
+                    
+                    // 4. Schedule DTO 생성
+                    CounselingScheduleResponseDto scheduleDto = new CounselingScheduleResponseDto(
+                        schedule, 
+                        professorName, 
+                        studentName
+                    );
+                    
+                    // 5. Record 존재 여부에 따라 DTO 반환
+                    if (optionalRecord.isPresent()) {
+                        return CounselingRecordResponseDto.fromEntity(optionalRecord.get(), scheduleDto);
+                    } else {
+                        // 기록은 없지만 COMPLETED 상태인 경우 (예외적인 상황)
+                        return CounselingRecordResponseDto.fromEmptyRecord(scheduleDto, studentName, schedule.getStudentId());
+                    }
+                })
+                .toList();
+    }
     // [2] 상담 내용 검색 (학생 이름, 상담 날짜, 키워드 등)
     public List<CounselingRecord> searchRecords(RecordSearchRequestDto request) {
         

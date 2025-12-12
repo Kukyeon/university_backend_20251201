@@ -152,4 +152,5 @@ public class CounselingScheduleService {
         // isBooked가 false인 모든 Availability를 조회
         return availabilityRepository.findByIsBooked(false);
     }
+    
 }
