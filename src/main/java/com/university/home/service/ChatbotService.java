@@ -114,7 +114,7 @@ public class ChatbotService {
         String siteMap = """
                 [주요 서비스 링크]
                 - 수강 신청: /enrollment
-                - 성적 조회: /student/grade
+                - 성적 조회: /grade
                 - 휴학 신청/조회: /student/leave
                 - 마이 페이지: /student/my
                 - 강의 목록: /course/list
@@ -184,8 +184,7 @@ public class ChatbotService {
     private String makeStudentInfoString(Student student) {
         // ... (기존 코드와 동일) ...
         Integer totalCredits = gradeService.calculateTotalCredits(student.getId());
-        Double avgGrade = gradeService.calculateAverageGrade(student.getId());
-        
+        Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());      
         String dept = (student.getDepartment() != null) ? student.getDepartment().getName() : "학부 미배정";
         String entrance = (student.getEntranceDate() != null) ? student.getEntranceDate().toString() : "정보없음";
         String birth = (student.getBirthDate() != null) ? student.getBirthDate().toString() : "정보 없음";
@@ -201,7 +200,7 @@ public class ChatbotService {
                 - 학년/학기: %d학년 %d학기
                 - 연락처: %s
                 - 총 이수 학점: %d학점
-                - 전체 평균 평점: %.2f점
+                - 이번 학기 평점: %.2f점
                 """.formatted(
                     student.getId(), student.getName(), gender, dept, 
                     student.getGrade(), student.getSemester(), 
