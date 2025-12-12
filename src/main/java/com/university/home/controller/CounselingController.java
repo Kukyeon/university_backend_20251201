@@ -7,6 +7,9 @@ import com.university.home.dto.CounselingScheduleResponseDto;
 import com.university.home.dto.RecordSearchRequestDto;
 import com.university.home.service.CounselingScheduleService;
 import com.university.home.service.CustomUserDetails;
+
+import java.io.IOException;
+
 import com.university.home.service.CounselingRecordService;
 import com.university.home.entity.ProfessorAvailability;
 import com.university.home.entity.ScheduleStatus;
@@ -21,6 +24,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -131,14 +137,24 @@ public class CounselingController {
         return ResponseEntity.ok(results);
     }
     
-    // POST /api/schedules/records/save/{scheduleId} : 상담 기록 저장
-    // (STT 기능 또는 교수자 수동 메모 저장)
-    @PostMapping("/records/save/{scheduleId}")
-    public ResponseEntity<CounselingRecord> saveRecord(@PathVariable("scheduleId") Long scheduleId, @RequestBody Map<String, String> body) {
-        String notes = body.get("notes"); // STT 결과 또는 메모
-        String keywords = body.get("keywords"); // 사용자 입력 키워드 (선택 사항)
+    @PutMapping("/records/{scheduleId}/memo")
+    public ResponseEntity<CounselingRecord> saveOrUpdateRecordMemo(
+            @PathVariable("scheduleId") Long scheduleId, 
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal CustomUserDetails principal) {
+
+        if (principal == null || principal.getUser() == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
         
-        CounselingRecord record = recordService.saveRecord(scheduleId, notes, keywords);
+        // 💡 현재 로그인한 사용자 ID (교수 ID로 사용)
+        Long professorId = principal.getUser().getId(); 
+        String notes = body.get("notes"); 
+        String keywords = body.get("keywords");
+
+        // 💡 Service 호출 시 professorId를 함께 전달하여 권한 검증을 위임합니다.
+        CounselingRecord record = counselingRecordService.saveRecord(scheduleId, professorId, notes, keywords); 
+        
         return ResponseEntity.ok(record);
     }
 
@@ -229,5 +245,16 @@ public class CounselingController {
         // (인증 필요 없음 또는 단순 조회)
         List<ProfessorAvailability> list = scheduleService.getAllAvailableTimes();
         return ResponseEntity.ok(list);
+    }
+    
+    @GetMapping("/records/list")
+    public ResponseEntity<List<CounselingRecordResponseDto>> getProfessorRecordList(@AuthenticationPrincipal CustomUserDetails principal) {
+        if (principal == null) {
+            throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
+        }
+        
+        // 💡 [추가] CounselingRecordService에 교수 ID를 전달하여 완료된 기록 리스트를 요청하는 메서드를 구현합니다.
+        List<CounselingRecordResponseDto> records = counselingRecordService.getProfessorRecordList(principal.getUser().getId());
+        return ResponseEntity.ok(records);
     }
 }

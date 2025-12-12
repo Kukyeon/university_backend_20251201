@@ -13,6 +13,7 @@ import lombok.Setter;
 public class CounselingScheduleResponseDto {
 
     private Long scheduleId;
+    private Long professorId;
     private String professorName;
     private String studentName;
     private LocalDateTime startTime;
@@ -21,6 +22,7 @@ public class CounselingScheduleResponseDto {
 
     public CounselingScheduleResponseDto(CounselingSchedule schedule, String professorName, String studentName) {
         this.scheduleId = schedule.getId();
+        this.professorId = schedule.getProfessorId();
         this.professorName = professorName;
         this.studentName = studentName; // ⭐️ 추가
         this.startTime = schedule.getStartTime();

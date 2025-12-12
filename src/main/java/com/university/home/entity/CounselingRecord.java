@@ -35,7 +35,4 @@ public class CounselingRecord {
     
     private LocalDateTime recordDate = LocalDateTime.now();
     
- // 업로드된 음성 파일 경로
-    private String audioFilePath;
-
 }
