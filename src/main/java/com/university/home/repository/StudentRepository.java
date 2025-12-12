@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.university.home.entity.Department;
@@ -28,4 +29,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     // 학번으로 학생 조회
     //Page<Student> findById(Long id, Pageable pageable);
+    @Override
+    @EntityGraph(attributePaths = {"department"}) 
+    List<Student> findAll();
 }
