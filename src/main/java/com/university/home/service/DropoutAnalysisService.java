@@ -13,11 +13,13 @@ import com.university.home.entity.Professor;
 import com.university.home.entity.StuStat;
 import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
+import com.university.home.entity.User;
 import com.university.home.repository.DropoutRiskRepository;
 import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.StuStatRepository;
 import com.university.home.repository.StuSubDetailRepository;
 import com.university.home.repository.StudentRepository;
+import com.university.home.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +40,7 @@ public class DropoutAnalysisService {
     
     private final StuSubDetailRepository stuSubDetailRepository;
     private final StuStatRepository stuStatRepository;
-
+    private final UserRepository userRepository;
    
     public void analyzeAllStudents() {
         List<Student> students = studentRepository.findAll();
@@ -57,9 +59,30 @@ public class DropoutAnalysisService {
                 log.error("학생({}) 건너뜀: {}", student.getName(), e.getMessage());
             }
         }
+     // ★ [추가] 모든 분석이 끝난 후 직원들에게 '실행 완료' 알림 발송
+        sendAnalysisCompletionAlertToStaff();
     }
+ // ★ [신규 메서드] 직원 알림 전송 로직
+    private void sendAnalysisCompletionAlertToStaff() {
+        try {
+            // 1. 'STAFF' 권한을 가진 모든 사용자 조회
+            // (DB의 user_tb 테이블 role 컬럼값이 'STAFF'인 사용자를 찾습니다)
+            // UserRepository에 List<User> findByRole(String role); 메서드가 있어야 합니다.
+        	List<User> staffList = userRepository.findByUserRole("STAFF");
+            
+            String message = "✅ 전체 학생 위험군 분석이 완료되었습니다.";
+            String targetUrl = "/admin/dashboard"; // 직원이 이동할 대시보드 URL
 
-private void analyzeStudentRisk(Student student) {
+            for (User staff : staffList) {
+                notificationService.send(staff.getId(), message, targetUrl);
+            }
+            log.info("직원 {}명에게 분석 완료 알림 전송 완료", staffList.size());
+            
+        } catch (Exception e) {
+            log.error("직원 알림 전송 중 오류 발생", e);
+        }
+    }
+    	private void analyzeStudentRisk(Student student) {
         
         // 1. 데이터 조회 (기존 로직 유지)
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());
@@ -75,16 +98,7 @@ private void analyzeStudentRisk(Student student) {
         // ★ [수정] 프롬프트 고도화: 성적, 학점, 출결을 구체적인 판단 기준으로 제시
         String analysisPrompt = """
                 당신은 대학교의 '중도 이탈(자퇴) 위험 분석 AI'입니다.
-                아래의 [학생 데이터]를 기반으로, [분석 기준]에 맞춰 위험도를 0~100점으로 예측하세요.
-                
-                [분석 기준]
-                1. 성적(학점): 4.5 만점 기준입니다. 
-                   - 2.0 미만은 '위험', 1.5 미만은 '매우 위험'으로 간주하세요.
-                   - 성적이 낮을수록 학업 흥미를 잃었을 가능성이 큽니다.
-                2. 출결(결석): 
-                   - 결석이 0회에 가까우면 성실한 학생입니다.
-                   - 과목당 결석이 누적되어 총 결석이 많아질수록 학교 생활 부적응 확률이 매우 높습니다.
-                3. 종합 판단: 성적과 출결이 모두 나쁘면 90점 이상을 부여하세요.
+                아래의 [학생 데이터]를 기반으로 위험도를 예측하세요.
 
                 [학생 데이터]
                 - 이름: %s
@@ -92,13 +106,21 @@ private void analyzeStudentRisk(Student student) {
                 - 총 누적 결석 횟수: %d회
                 - 현재 학적 상태: %s
                 
+                [⚠️ 절대 평가 규칙 (최우선 적용)]
+                1. 학점이 1.0 미만인 경우: 다른 요소(출결 등)가 좋더라도 **무조건 95점 이상**을 부여하세요. (즉시 이탈 위험)
+                2. 학점이 2.0 미만인 경우: **무조건 90점 이상**을 부여하세요.
+                3. 결석이 5회 이상인 경우: 학점이 높아도 **80점 이상**을 부여하세요.
+
+                [분석 기준]
+                - 95점 이상 (심각): 당장 자퇴할 확률이 매우 높음 (학사 경고 등)
+                - 70~89점 (경고): 학업에 흥미를 잃어가는 단계
+                - 50~69점 (주의): 성적 하락세이거나 결석이 생기기 시작함
+                - 50점 미만 (정상): 안정적인 학교 생활 중
+
                 [요청사항]
-                1. 첫 번째 줄에는 위험도 점수(0~100 사이 정수)만 적으세요.
-                2. 두 번째 줄에는 판단의 근거를 '성적'과 '출결' 수치를 언급하며 한 줄로 요약하세요.
-                
-                (출력 예시: 
-                88
-                평점 1.8점으로 학사 경고 위험이 있고, 결석이 15회로 잦아 이탈 위험이 매우 높음)
+                1. 첫 번째 줄: 위험도 점수(0~100) 숫자만 작성
+                2. 두 번째 줄: "평점 X.X점(F등급 수준)으로 인한 자동 위험 분류" 와 같이 핵심 원인을 한 줄로 요약
+
                 """.formatted(student.getName(), avgGrade, absenceCount, status);
 
         try {
@@ -148,7 +170,7 @@ private void analyzeStudentRisk(Student student) {
     }
 
     private String determineLevel(Double score) {
-        if (score >= 90) return "심각";
+        if (score >= 95) return "심각";
         if (score >= 70) return "경고";
         if (score >= 50) return "주의";
         return "정상";
@@ -171,6 +193,7 @@ private void analyzeStudentRisk(Student student) {
                         student.getName(), student.getDepartment().getName(), level, reason);
                 notificationService.send(prof.getId(), content, "/professor/dashboard");
             }
+            
         }
     }
 }
