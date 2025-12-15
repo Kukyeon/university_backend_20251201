@@ -1,7 +1,9 @@
 package com.university.home.service;
 
+import com.university.home.dto.AvailableTimeResponseDto;
 import com.university.home.dto.BookingRequestDto;
 import com.university.home.dto.CounselingScheduleResponseDto;
+import com.university.home.dto.ProfessorScheduleRequestDto;
 import com.university.home.entity.*;
 import com.university.home.repository.ProfessorAvailabilityRepository;
 import com.university.home.repository.CounselingScheduleRepository;
@@ -117,9 +119,15 @@ public class CounselingScheduleService {
     }
     
  // [6] 교수에게 신청된 모든 상담 요청 조회
-    public List<CounselingSchedule> getProfessorRequests(Long professorId) {
-        // CONFIRMED(승인 대기) 또는 COMPLETED(완료)된 일정을 모두 조회
-        return scheduleRepository.findByProfessorId(professorId); 
+    public List<ProfessorScheduleRequestDto> getProfessorRequests(Long professorId) {
+    	 return scheduleRepository.findByProfessorId(professorId)
+    		        .stream()
+    		        .map(schedule -> {
+    		            String studentName =
+    		                studentService.getStudentName(schedule.getStudentId());
+    		            return new ProfessorScheduleRequestDto(schedule, studentName);
+    		        })
+    		        .toList();
     }
     
     // [7] 상담 일정 상태 변경 (교수 전용)
@@ -148,9 +156,22 @@ public class CounselingScheduleService {
         return scheduleRepository.save(schedule);
     }
     
-    public List<ProfessorAvailability> getAllAvailableTimes() {
-        // isBooked가 false인 모든 Availability를 조회
-        return availabilityRepository.findByIsBooked(false);
+    public List<AvailableTimeResponseDto> getAllAvailableTimes() {
+        return availabilityRepository.findByIsBooked(false)
+            .stream()
+            .map(a -> {
+                String professorName =
+                    studentService.getProfessorName(a.getProfessorId());
+
+                return new AvailableTimeResponseDto(
+                    a.getId(),
+                    a.getProfessorId(),
+                    professorName,
+                    a.getStartTime(),
+                    a.getEndTime()
+                );
+            })
+            .toList();
     }
     
 }

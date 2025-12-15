@@ -1,6 +1,7 @@
 package com.university.home.controller;
 
 import com.university.home.dto.AvailabilityRequestDto;
+import com.university.home.dto.AvailableTimeResponseDto;
 import com.university.home.dto.BookingRequestDto;
 import com.university.home.dto.CounselingRecordResponseDto;
 import com.university.home.dto.CounselingScheduleResponseDto;
@@ -17,7 +18,9 @@ import com.university.home.exception.CustomRestfullException;
 import com.university.home.entity.CounselingSchedule;
 import com.university.home.entity.CounselingRecord;
 import lombok.RequiredArgsConstructor;
-import com.university.home.dto.PrincipalDto; 
+import com.university.home.dto.PrincipalDto;
+import com.university.home.dto.ProfessorScheduleRequestDto;
+
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -199,20 +202,22 @@ public class CounselingController {
     
  // ⭐️ GET /api/schedules/requests : 로그인된 교수에게 신청된 상담 일정 조회
     @GetMapping("/requests")
-    public ResponseEntity<List<CounselingSchedule>> getProfessorRequests(@AuthenticationPrincipal CustomUserDetails principal) {
-    	if (principal == null) {
+    public ResponseEntity<List<ProfessorScheduleRequestDto>> getProfessorRequests(
+            @AuthenticationPrincipal CustomUserDetails principal) {
+
+        if (principal == null) {
             throw new CustomRestfullException("로그인이 필요합니다.", HttpStatus.UNAUTHORIZED);
-       }
-    	
-        String userRole = principal.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
-        Long professorId = principal.getUser().getId();
-        
-        if (!userRole.toUpperCase().trim().equals("PROFESSOR")) {
+        }
+
+        String userRole = principal.getAuthorities()
+            .iterator().next().getAuthority().replace("ROLE_", "");
+
+        if (!userRole.equalsIgnoreCase("PROFESSOR")) {
             throw new CustomRestfullException("교수만 접근 가능합니다.", HttpStatus.FORBIDDEN);
         }
-        // ⭐️ 교수 ID를 서비스로 전달
-        List<CounselingSchedule> list = scheduleService.getProfessorRequests(professorId); 
-        return ResponseEntity.ok(list);
+
+        Long professorId = principal.getUser().getId();
+        return ResponseEntity.ok(scheduleService.getProfessorRequests(professorId));
     }
     
     // ⭐️ PUT /api/schedules/status/{scheduleId} : 상담 일정 상태 변경 (승인/거절/완료)
@@ -241,10 +246,8 @@ public class CounselingController {
     
  // GET /api/schedules/available-list : 모든 교수님의 예약 가능한 시간 조회
     @GetMapping("/available-list")
-    public ResponseEntity<List<ProfessorAvailability>> getAllAvailableTimes() {
-        // (인증 필요 없음 또는 단순 조회)
-        List<ProfessorAvailability> list = scheduleService.getAllAvailableTimes();
-        return ResponseEntity.ok(list);
+    public ResponseEntity<List<AvailableTimeResponseDto>> getAllAvailableTimes() {
+    	return ResponseEntity.ok(scheduleService.getAllAvailableTimes());
     }
     
     @GetMapping("/records/list")
