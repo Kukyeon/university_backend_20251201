@@ -57,22 +57,24 @@ public class GradeService {
         if (list.isEmpty()) return 0.0;
 
         // 3. 평균 학점 계산 로직 (기존과 동일)
-        double sumScore = 0.0;
-        int count = 0;
+        double totalPoints = 0.0;
+        long totalCredits = 0;
 
         for (StuSub sub : list) {
-            double score = convertGradeToScore(sub.getGrade());
-            // F학점도 포함해서 계산할지 여부는 정책에 따름 (여기서는 포함해서 평균을 깎음)
-            // 성적이 아직 안 나온 과목(null)은 계산에서 제외
-            if (sub.getGrade() != null) { 
-                sumScore += score;
-                count++;
+            String grade = sub.getGrade();
+            Long credit = sub.getSubject().getGrades();
+
+            if (grade != null) {
+                double point = convertGradeToScore(grade); // 기존 보조 메서드 사용
+                totalPoints += point * credit;
+                totalCredits += credit;
             }
         }
 
-        if (count == 0) return 0.0;
+        if (totalCredits == 0) return 0.0;
         
-        return Math.round((sumScore / count) * 100) / 100.0;
+        double gpa = totalPoints / totalCredits;
+        return Math.round(gpa * 100) / 100.0;
     }
 
     // [보조] 등급 -> 점수 변환
