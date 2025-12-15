@@ -134,7 +134,7 @@ public class ChatbotService {
         // 실제 리액트 라우터(App.js)에 정의된 경로와 일치시켜야 합니다.
         String siteMap = """
                 [주요 서비스 링크]
-                - 수강 신청: /enrollment
+                - 수강 신청: /sugang
                 - 성적 조회: /grade
                 - 휴학 신청/조회: /student/leave
                 - 마이 페이지: /student/my
