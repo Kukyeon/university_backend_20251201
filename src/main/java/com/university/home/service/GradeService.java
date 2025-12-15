@@ -1,7 +1,9 @@
 package com.university.home.service;
 
 import com.university.home.entity.StuSub;
+import com.university.home.entity.Subject; // 추가
 import com.university.home.repository.StuSubRepository;
+import com.university.home.repository.SubjectRepository; // 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,16 +15,14 @@ import java.util.List;
 public class GradeService {
 
     private final StuSubRepository stuSubRepository;
+    private final SubjectRepository subjectRepository; // ★ [추가] 학기 정보 조회를 위해 필요
 
     /**
-     * [기능 1] 학생의 '총 이수 학점' 계산 (졸업 요건 확인용)
+     * [기능 1] 학생의 '총 이수 학점' (기존 유지 - 졸업요건은 누적이어야 하므로)
      */
     @Transactional(readOnly = true)
     public Integer calculateTotalCredits(Long studentId) {
-        // 1. DB에서 학생의 모든 수강 내역 가져오기 (SQL 아님!)
         List<StuSub> list = stuSubRepository.findByStudentId(studentId);
-
-        // 2. 자바 반복문으로 더하기
         int total = 0;
         for (StuSub sub : list) {
             if (sub.getCompleteGrade() != null) {
@@ -33,21 +33,38 @@ public class GradeService {
     }
 
     /**
-     * [기능 2] 학생의 '평균 학점(GPA)' 계산 (위험 분석용)
+     * [기능 2] 위험 분석용: '최신 학기' 평균 학점만 계산 (★ 수정됨)
+     * - 전체 평균이 아니라, 가장 최근 학기의 성적 부진 여부를 판단하기 위함
      */
     @Transactional(readOnly = true)
-    public Double calculateAverageGrade(Long studentId) {
-        List<StuSub> list = stuSubRepository.findByStudentId(studentId);
+    public Double calculateCurrentSemesterAverageGrade(Long studentId) {
+        
+        // 1. DB에서 가장 최신(현재) 학년도와 학기 정보를 가져옴
+        Subject latestSubject = subjectRepository.findTopByOrderBySubYearDescSemesterDesc()
+                .orElse(null);
+
+        // 개설된 과목이 아예 없으면 0.0 리턴
+        if (latestSubject == null) return 0.0;
+
+        Long targetYear = latestSubject.getSubYear();
+        Long targetSemester = latestSubject.getSemester();
+
+        // 2. 해당 학생의 "이번 학기(또는 직전 학기)" 수강 내역만 조회
+        List<StuSub> list = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+                studentId, targetYear, targetSemester
+        );
 
         if (list.isEmpty()) return 0.0;
 
+        // 3. 평균 학점 계산 로직 (기존과 동일)
         double sumScore = 0.0;
         int count = 0;
 
         for (StuSub sub : list) {
-            // 등급(A+, B0)을 점수(4.5, 3.0)로 변환
             double score = convertGradeToScore(sub.getGrade());
-            if (score > 0) { // F학점이나 성적 없는 건 제외하고 계산할 경우
+            // F학점도 포함해서 계산할지 여부는 정책에 따름 (여기서는 포함해서 평균을 깎음)
+            // 성적이 아직 안 나온 과목(null)은 계산에서 제외
+            if (sub.getGrade() != null) { 
                 sumScore += score;
                 count++;
             }
@@ -55,11 +72,10 @@ public class GradeService {
 
         if (count == 0) return 0.0;
         
-        // 소수점 둘째 자리까지만 예쁘게 잘라서 반환
         return Math.round((sumScore / count) * 100) / 100.0;
     }
 
-    // [보조] 등급 문자열 -> 점수 변환기 (if문 노가다)
+    // [보조] 등급 -> 점수 변환
     private double convertGradeToScore(String grade) {
         if (grade == null) return 0.0;
         switch (grade) {
@@ -71,8 +87,8 @@ public class GradeService {
             case "C0": return 2.0;
             case "D+": return 1.5;
             case "D0": return 1.0;
-            case "F":  return 0.0; // F는 0점 처리 (필요시 로직 수정)
-            default:   return 0.0; // P/F 과목 등은 0점 처리
+            case "F":  return 0.0; 
+            default:   return 0.0; // P/F 과목 등
         }
     }
 }

@@ -11,6 +11,7 @@ import com.university.home.entity.ChatLog;
 import com.university.home.entity.DropoutRisk;
 import com.university.home.entity.Professor;
 import com.university.home.entity.StuSub;
+import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
 import com.university.home.repository.ChatLogRepository;
@@ -61,6 +62,16 @@ public class ChatbotService {
         Long currentYear = 2023L;
         Long currentSemester = 1L;
 
+        Subject latestSubject = subjectRepository.findTopByOrderBySubYearDescSemesterDesc()
+                .orElse(null);
+
+        if (latestSubject != null) {
+            currentYear = latestSubject.getSubYear();
+            currentSemester = latestSubject.getSemester();
+        }
+        
+        // AI에게 알려줄 기준 시점 문자열 생성
+        String semesterInfo = String.format("현재 학사 기준: %d년 %d학기 (최신 개설 강의 기준)", currentYear, currentSemester);
         //교수님 정보 조회
         String professorInfo = "정보 없음";
         if (student.getDepartment() != null) {
@@ -76,31 +87,41 @@ public class ChatbotService {
         // 3. 학생 및 수강 내역 조회 (재료 수집)
         List<StuSub> history = stuSubRepository.findByStudentId(studentId);
         
+     // A. 과거 수강 (현재 학기가 아닌 것)
+        // effectively final 문제 해결을 위해 로컬 변수 재할당
+        Long finalCurrentYear = currentYear;
+        Long finalCurrentSemester = currentSemester;
+        
         
      // A. 과거 수강 과목 (현재 학기가 아닌 것들)
         String pastCourses = history.stream()
-                .filter(sub -> !sub.getSubject().getSubYear().equals(currentYear) 
-                            || !sub.getSubject().getSemester().equals(currentSemester))
+                .filter(sub -> !sub.getSubject().getSubYear().equals(finalCurrentYear) 
+                            || !sub.getSubject().getSemester().equals(finalCurrentSemester))
                 .map(sub -> sub.getSubject().getName())
                 .collect(Collectors.joining(", "));
+        if (pastCourses.isEmpty()) pastCourses = "없음";
 
-        // B. 이번 학기 신청 과목 (현재 학기와 일치하는 것들)
+     // B. 이번 학기 수강 (현재 학기와 일치하는 것)
         String currentCourses = history.stream()
-                .filter(sub -> sub.getSubject().getSubYear().equals(currentYear) 
-                            && sub.getSubject().getSemester().equals(currentSemester))
+                .filter(sub -> sub.getSubject().getSubYear().equals(finalCurrentYear) 
+                            && sub.getSubject().getSemester().equals(finalCurrentSemester))
                 .map(sub -> sub.getSubject().getName())
                 .collect(Collectors.joining(", "));
+        if (currentCourses.isEmpty()) currentCourses = "없음 (아직 신청 안 함)";
 
         // (만약 비어있으면 "없음" 처리)
-        if (pastCourses.isEmpty()) pastCourses = "없음";
-        if (currentCourses.isEmpty()) currentCourses = "없음 (아직 신청 안 함)";
+//        if (pastCourses.isEmpty()) pastCourses = "없음";
+//        if (currentCourses.isEmpty()) currentCourses = "없음 (아직 신청 안 함)";
         // 수강했던 과목명 문자열 변환
         String takenCourses = history.stream()
                 .map(sub -> sub.getSubject().getName())
                 .collect(Collectors.joining(", "));
+        
+     // ★ [추가] C. 상세 성적/출석 정보 생성
+        String detailedGradeInfo = makeDetailedGradeInfo(history);
 
      // 3. 이번 학기 개설된 강의 목록 조회 (수강신청 안 한 과목들 중 추천용)
-        List<Subject> openSubjects = subjectRepository.findBySubYearAndSemester(currentYear, currentSemester);
+        List<Subject> openSubjects = subjectRepository.findBySubYearAndSemester(finalCurrentYear, finalCurrentSemester);
         String availableCourses = openSubjects.stream()
                 .map(Subject::getName)
                 .limit(10) 
@@ -114,7 +135,7 @@ public class ChatbotService {
         String siteMap = """
                 [주요 서비스 링크]
                 - 수강 신청: /enrollment
-                - 성적 조회: /student/grade
+                - 성적 조회: /grade
                 - 휴학 신청/조회: /student/leave
                 - 마이 페이지: /student/my
                 - 강의 목록: /course/list
@@ -123,9 +144,12 @@ public class ChatbotService {
 
         // 7. 프롬프트 작성
         String systemPrompt = """
-                당신은 '우리대학교'의 학사 행정 챗봇입니다.
+               당신은 '우리대학교'의 학사 행정 챗봇입니다.
                 아래 정보를 바탕으로 학생의 질문에 친절하게 답변해주세요.
 
+        		[🕒 현재 학사 일정 기준]
+                %s
+        		
                 [학생 상세 프로필]
                 %s
                 
@@ -139,29 +163,34 @@ public class ChatbotService {
                 
                 [📅 이번 학기 수강신청 내역 (현재 듣고 있는 중)]
                 %s
+
+                [📊 상세 성적 및 출석/태도 현황 (중요)]
+                %s
                 
                 [이번 학기 전체 개설 강의 목록 (참고용)]
                 %s
 
                 [답변 작성 지침]
-                1. 학생이 [주요 서비스 링크]에 있는 기능을 물어보면, 답변 중에 **마크다운 링크 형식**으로 바로가기를 제공하세요.
-                2. "추천해줘" 질문 시 [기수강 과목]과 [이번 학기 수강신청 내역]을 모두 고려하여, 중복되지 않게 [전체 개설 강의] 중에서 추천하세요.
-                3. 학생이 "나 뭐 신청했어?"라고 물으면 [이번 학기 수강신청 내역]을 알려주세요.
-                4. 학생의 개인정보(학점, 학과 등)를 물어보면 [학생 상세 프로필]을 참고하여 정확히 대답하세요.
-                5. 강의 추천 요청 시, 과거 수강 과목과 개설 강의를 비교하여 3가지를 추천하고 이유를 설명하세요.
-                6. 답변은 간결하고 명확하게 요약해서 작성하세요.
+                1. 답변 시 반드시 위 [🕒 현재 학사 일정 기준]의 연도와 학기를 기준으로 대답하세요.
+                2. 학생이 [주요 서비스 링크]에 있는 기능을 물어보면, 마크다운 링크를 제공하세요.
+                3. "추천해줘" 질문 시 기수강 과목을 제외하고 추천하세요.
+                4. 학생이 "중간고사 점수 어때?"나 "결석 얼마나 했어?" 같이 구체적인 성적/태도를 물어보면 [상세 성적 및 출석/태도 현황] 데이터를 확인하여 정확한 수치로 답해주세요.
+                5. 개인정보(학점, 학과 등)는 [학생 상세 프로필]을 참고하세요.
+                6. 답변은 간결하고 명확하게 작성하세요.
                 %s
                 
                 [질문]: %s
                 """.formatted(
-                        studentProfile,   // 1. 학생 프로필
-                        professorInfo,    // 2. ★ 교수님 정보 (여기에 매칭됨)
-                        siteMap,          // 3. 사이트맵
-                        pastCourses,      // 4. 과거 수강
-                        currentCourses,   // 5. 현재 수강
-                        availableCourses, // 6. 개설 강의
-                        riskGuidance,     // 7. 위험군 안내
-                        question          // 8. ★ 질문 (마지막에 질문이 들어가야 함)
+                		semesterInfo,      // 1
+                        studentProfile,    // 2
+                        professorInfo,     // 3
+                        siteMap,           // 4
+                        pastCourses,       // 5
+                        currentCourses,    // 6
+                        detailedGradeInfo, // 7
+                        availableCourses,  // 8
+                        riskGuidance,      // 9
+                        question           // 10
                 );
 //질문쪽 인자 [질문]: %s가 없었기에 마지막인 교수님 질문으로 들어가짐 -> 프롬포트 유의사항, 순서 맞춰야함
         // 8. Gemini 호출
@@ -179,13 +208,51 @@ public class ChatbotService {
 
         return answer;
     }
+    
+ // ★ [신규 메서드] 상세 성적 정보를 문자열로 변환
+    private String makeDetailedGradeInfo(List<StuSub> history) {
+        if (history == null || history.isEmpty()) {
+            return "수강 이력이 없습니다.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (StuSub sub : history) {
+            Subject subject = sub.getSubject();
+            StuSubDetail detail = sub.getDetail(); // 상세 정보 가져오기
+
+            // 과목명 헤더
+            sb.append(String.format("- [%d-%d학기] %s: ", 
+                    subject.getSubYear(), subject.getSemester(), subject.getName()));
+
+            // 최종 등급 (있는 경우)
+            if (sub.getGrade() != null) {
+                sb.append(String.format("최종성적 %s, ", sub.getGrade()));
+            }
+
+            // 상세 점수 (StuSubDetail이 존재하는 경우)
+            if (detail != null) {
+//                sb.append(String.format("중간고사 %d점, 기말고사 %d점, 과제 %d점, 출석(결석 %d회 / 지각 %d회), 환산총점 %d점",
+                sb.append(String.format("중간고사 %d점, 기말고사 %d점, 과제 %d점, 출석(결석 %d회 / 지각 %d회)",
+                        detail.getMidExam() != null ? detail.getMidExam() : 0,
+                        detail.getFinalExam() != null ? detail.getFinalExam() : 0,
+                        detail.getHomework() != null ? detail.getHomework() : 0,
+                        detail.getAbsent() != null ? detail.getAbsent() : 0,
+                        detail.getLateness() != null ? detail.getLateness() : 0
+//                      detail.getConvertedMark() != null ? detail.getConvertedMark() : 0
+                ));
+            } else {
+                sb.append("상세 점수 데이터 없음");
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
 
     // (makeStudentInfoString 등 나머지 메서드는 기존 유지)
     private String makeStudentInfoString(Student student) {
         // ... (기존 코드와 동일) ...
         Integer totalCredits = gradeService.calculateTotalCredits(student.getId());
-        Double avgGrade = gradeService.calculateAverageGrade(student.getId());
-        
+        Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());      
         String dept = (student.getDepartment() != null) ? student.getDepartment().getName() : "학부 미배정";
         String entrance = (student.getEntranceDate() != null) ? student.getEntranceDate().toString() : "정보없음";
         String birth = (student.getBirthDate() != null) ? student.getBirthDate().toString() : "정보 없음";
@@ -201,7 +268,7 @@ public class ChatbotService {
                 - 학년/학기: %d학년 %d학기
                 - 연락처: %s
                 - 총 이수 학점: %d학점
-                - 전체 평균 평점: %.2f점
+                - 이번 학기 평점: %.2f점
                 """.formatted(
                     student.getId(), student.getName(), gender, dept, 
                     student.getGrade(), student.getSemester(), 
