@@ -72,4 +72,10 @@ public class NoticeController {
         noticeService.deleteNotice(id);
         return "deleted";
     }
+    @GetMapping("/latest")
+    public ResponseEntity<?> latestList(){
+    	List<Notice> latestList = noticeService.getLatest5Notices();
+    	
+    	return ResponseEntity.ok(latestList);
+    }
 }
