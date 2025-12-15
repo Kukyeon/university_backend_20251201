@@ -40,7 +40,7 @@ public class SecurityConfig {
                         "/api/user/findId", 
                         "/api/user/findPw",
                         "/api/notice/**", "/api/notice/list*", "/images/**","/api/**",
-                        "/api/notification/**"// 공지목록 조회
+                        "/api/notification/**, \"/ws/signaling/**\"  "// 공지목록 조회
                         ).permitAll() // 로그인, ID/PW 찾기 허용
                 .anyRequest().authenticated() // 나머지는 인증 필요
             )
