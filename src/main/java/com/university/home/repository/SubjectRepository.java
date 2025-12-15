@@ -41,6 +41,7 @@ public interface SubjectRepository extends JpaRepository<Subject, Long>, JpaSpec
     // 해당년도, 학기의 모든 강좌 조회
     List<Subject> findBySubYearAndSemester(Long subYear, Long semester);
     
+    // (학기 자동감지 메서드 유지)
     Optional<Subject> findTopByOrderBySubYearDescSemesterDesc();
     
     // 페이징 적용된 버전
@@ -52,7 +53,6 @@ public interface SubjectRepository extends JpaRepository<Subject, Long>, JpaSpec
     @EntityGraph(attributePaths = {"professor", "department", "department.college"})
     Page<Subject> findAll(@Nullable Specification<Subject> spec, Pageable pageable);
     
-    // (학기 자동감지 메서드 유지)
-    // Optional<Subject> findTopByOrderBySubYearDescSemesterDesc();
+  
  
 }
