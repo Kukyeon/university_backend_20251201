@@ -136,7 +136,7 @@ public class PersonalController {
             id = staffService.findByNameEmail(dto.getName(), dto.getEmail());
             break;
         default:
-            throw new CustomRestfullException("Invalid role", HttpStatus.BAD_REQUEST);
+            throw new CustomRestfullException("아이디 또는 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
     }
 		return ResponseEntity.ok(Map.of("id", id, "message", "ID 조회 성공"));
 	}
