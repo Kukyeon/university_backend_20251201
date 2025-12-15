@@ -1,7 +1,11 @@
 package com.university.home.controller;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +14,7 @@ import com.university.home.dto.ScheduleFormDto;
 import com.university.home.entity.Schedule;
 import com.university.home.dto.PrincipalDto;
 import com.university.home.exception.CustomRestfullException;
+import com.university.home.repository.ScheduleRepository;
 import com.university.home.service.ScheduleService;
 import com.university.home.utils.Define;
 
@@ -17,13 +22,17 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 
+
 @RestController
 @RequestMapping("/api/schedule")
 @RequiredArgsConstructor
 public class ScheduleController {
 
+    private final ScheduleRepository scheduleRepository;
+
     private final HttpSession session;
     private final ScheduleService scheduleService;
+
 
     //  일정 등록
     @PostMapping("/write")
@@ -78,4 +87,23 @@ public class ScheduleController {
         scheduleService.deleteSchedule(id, principal.getId());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 No Content
     }
+    @GetMapping("/latest")
+    public ResponseEntity<?> getLatestSchedules() {
+        Pageable top5 = PageRequest.of(0, 5, Sort.by("startDay"));
+        
+        List<ScheduleFormDto> latest = scheduleRepository.findAll(top5)
+                                                         .stream()
+                                                         .map(schedule -> {
+                                                             ScheduleFormDto dto = new ScheduleFormDto();
+                                                             dto.setId(schedule.getId());
+                                                             dto.setInformation(schedule.getInformation());
+                                                             dto.setStartDay(schedule.getStartDay());
+                                                             dto.setEndDay(schedule.getEndDay());
+                                                             dto.setInformation(schedule.getInformation());
+                                                             return dto;
+                                                         })
+                                                         .collect(Collectors.toList());
+        return ResponseEntity.ok(latest);
+    }
+
 }
