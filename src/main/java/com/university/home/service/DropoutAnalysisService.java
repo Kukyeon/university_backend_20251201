@@ -59,13 +59,11 @@ public class DropoutAnalysisService {
         }
     }
 
-    private void analyzeStudentRisk(Student student) {
+private void analyzeStudentRisk(Student student) {
         
-        // ★ [수정 1] "이번 학기(최신)" 평균 학점 가져오기
-        // (GradeService에서 최신 년도/학기를 자동으로 조회해서 계산함)
+        // 1. 데이터 조회 (기존 로직 유지)
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());
 
-        // 결석 횟수 등 다른 데이터 조회
         List<StuSubDetail> details = stuSubDetailRepository.findByStudent_Id(student.getId());
         int absenceCount = details.stream()
                 .mapToInt(detail -> detail.getAbsent() == null ? 0 : detail.getAbsent().intValue()) 
@@ -74,22 +72,33 @@ public class DropoutAnalysisService {
         List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
         String status = statHistory.isEmpty() ? "재학" : statHistory.get(0).getStatus();
         
-        // 프롬프트 구성 (최신 학기 성적임을 명시해주면 AI 판단에 더 도움이 됨)
+        // ★ [수정] 프롬프트 고도화: 성적, 학점, 출결을 구체적인 판단 기준으로 제시
         String analysisPrompt = """
-                다음 학생의 데이터를 분석하여 '중도 이탈(자퇴) 위험도'를 예측해주세요.
+                당신은 대학교의 '중도 이탈(자퇴) 위험 분석 AI'입니다.
+                아래의 [학생 데이터]를 기반으로, [분석 기준]에 맞춰 위험도를 0~100점으로 예측하세요.
                 
+                [분석 기준]
+                1. 성적(학점): 4.5 만점 기준입니다. 
+                   - 2.0 미만은 '위험', 1.5 미만은 '매우 위험'으로 간주하세요.
+                   - 성적이 낮을수록 학업 흥미를 잃었을 가능성이 큽니다.
+                2. 출결(결석): 
+                   - 결석이 0회에 가까우면 성실한 학생입니다.
+                   - 과목당 결석이 누적되어 총 결석이 많아질수록 학교 생활 부적응 확률이 매우 높습니다.
+                3. 종합 판단: 성적과 출결이 모두 나쁘면 90점 이상을 부여하세요.
+
                 [학생 데이터]
                 - 이름: %s
                 - 이번 학기 평균 학점: %.2f / 4.5
-                - 최근 결석 횟수: %d회
-                - 학적 상태: %s
+                - 총 누적 결석 횟수: %d회
+                - 현재 학적 상태: %s
                 
                 [요청사항]
-                1. 위험도를 0~100 사이의 숫자로만 답하세요. (높을수록 위험)
-                2. 위험도(숫자) 뒤에 줄바꿈을 하고 원인을 한 줄로 요약해주세요.
-                (형식 예시: 
-                85
-                최근 학기 성적 부진 및 잦은 결석으로 학업 흥미 상실 의심)
+                1. 첫 번째 줄에는 위험도 점수(0~100 사이 정수)만 적으세요.
+                2. 두 번째 줄에는 판단의 근거를 '성적'과 '출결' 수치를 언급하며 한 줄로 요약하세요.
+                
+                (출력 예시: 
+                88
+                평점 1.8점으로 학사 경고 위험이 있고, 결석이 15회로 잦아 이탈 위험이 매우 높음)
                 """.formatted(student.getName(), avgGrade, absenceCount, status);
 
         try {
