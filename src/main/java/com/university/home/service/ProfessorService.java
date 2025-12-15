@@ -239,7 +239,7 @@ public class ProfessorService {
 	    if (convertedMark >= 70) return "C+";
 	    if (convertedMark >= 65) return "C0";
 	    if (convertedMark >= 60) return "D+";
-	    if (convertedMark >= 55) return "D0";
+	    if (convertedMark >= 50) return "D0";
 	    return "F";
 	}
 

@@ -12,29 +12,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.university.home.service.StuSubService;
+import com.university.home.service.CourseService; // ★ CourseService를 사용해야 합니다.
 
-
-
-// React와 통신하기 위해 RestController 사용
 @RestController
 @RequestMapping("/api/sugang") 
 public class SugangController {
 
+    // ★ StuSubService 대신(혹은 추가로) CourseService를 주입받습니다.
+    // 방금 만든 updateSugangPeriod 메서드가 CourseService에 있기 때문입니다.
     @Autowired
-    private StuSubService stuSubService;
+    private CourseService courseService; 
 
-    // 서버 메모리에 상태 저장 (0: 예비, 1: 본수강, 2: 종료)
-    // 실제 서비스에선 DB의 'SystemSettings' 같은 테이블에서 관리하는 것을 권장합니다.
+    // 전역 변수 유지 (Service에서 이 값을 변경함)
     public static int SUGANG_PERIOD = 0;
 
-    // 1. 현재 기간 상태 조회 API
+    // 1. 현재 기간 상태 조회 API (기존 유지)
     @GetMapping("/period")
     public ResponseEntity<?> getSugangPeriod() {
         Map<String, Object> response = new HashMap<>();
         response.put("period", SUGANG_PERIOD);
         
-        // 상태에 따른 메시지도 같이 보내주면 프론트에서 편함
         String message = "";
         switch(SUGANG_PERIOD) {
             case 0: message = "현재 예비 수강 신청 기간입니다."; break;
@@ -46,23 +43,20 @@ public class SugangController {
         return ResponseEntity.ok(response);
     }
 
-    // 2. 기간 상태 변경 API (PUT 메서드 사용)
+    // 2. 기간 상태 변경 API (★ 여기가 핵심 수정 부분입니다)
     @PutMapping("/period")
     public ResponseEntity<?> updateSugangPeriod(@RequestParam("type") int type) {
-        
-        if (type == 1) {
-            // 예비 -> 본 수강 기간으로 변경
-            SUGANG_PERIOD = 1;
-            // 예비 신청 내역을 본 신청 내역으로 이관하는 핵심 로직 실행
-            stuSubService.createStuSubByPreStuSub();
-            return ResponseEntity.ok("수강 신청 기간이 시작되었습니다. (예비 신청 이관 완료)");
-            
-        } else if (type == 2) {
-            // 수강 -> 종료로 변경
-            SUGANG_PERIOD = 2;
-            return ResponseEntity.ok("수강 신청 기간이 종료되었습니다.");
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("잘못된 요청입니다.");
-        }
+        if (type < 0 || type > 2) return ResponseEntity.badRequest().body("잘못된 타입");
+
+        // Service 호출 (자동 이관 안 함, 기간만 변경됨)
+        courseService.updateSugangPeriod(type);
+
+        String msg = "";
+        if (type == 0) msg = "예비 수강신청(장바구니) 기간 시작";
+        else if (type == 1) msg = "본 수강신청 기간 시작 (선착순 진입 가능)";
+        else if (type == 2) msg = "수강신청 종료 (장바구니 초기화)";
+
+        return ResponseEntity.ok(msg);
     }
+
 }
