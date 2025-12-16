@@ -83,13 +83,7 @@ public class PersonalController {
 	            ));
 	    }
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@RequestBody @Valid UserDto dto, BindingResult bindingResult) {
-	    if (bindingResult.hasErrors()) {
-	        StringBuilder sb = new StringBuilder();
-	        bindingResult.getAllErrors().forEach(error -> sb.append(error.getDefaultMessage()).append("\n"));
-	        throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
-	    }
-
+	public ResponseEntity<?> login(@RequestBody @Valid UserDto dto) {
 	    
 	    User user = userService.login(dto.getId(), dto.getPassword());
 	    String role = user.getUserRole();
@@ -118,12 +112,7 @@ public class PersonalController {
 	        ));
 	}
 	@PostMapping("/findId")
-	public ResponseEntity<?> findId(@RequestBody @Valid FindUserDto dto, BindingResult bindingResult) {
-		if (bindingResult.hasErrors()) {
-	        StringBuilder sb = new StringBuilder();
-	        bindingResult.getAllErrors().forEach(error -> sb.append(error.getDefaultMessage()).append("\n"));
-	        throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
-	    }
+	public ResponseEntity<?> findId(@RequestBody @Valid FindUserDto dto) {
 		Long id;
 		switch(dto.getUserRole().toLowerCase()) {
         case "student":
@@ -136,17 +125,12 @@ public class PersonalController {
             id = staffService.findByNameEmail(dto.getName(), dto.getEmail());
             break;
         default:
-            throw new CustomRestfullException("Invalid role", HttpStatus.BAD_REQUEST);
+            throw new CustomRestfullException("아이디 또는 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
     }
 		return ResponseEntity.ok(Map.of("id", id, "message", "ID 조회 성공"));
 	}
 	@PostMapping("/findPw")
-	public ResponseEntity<?> findPw(@RequestBody @Valid FindUserDto dto, BindingResult bindingResult) {
-		if (bindingResult.hasErrors()) {
-	        StringBuilder sb = new StringBuilder();
-	        bindingResult.getAllErrors().forEach(error -> sb.append(error.getDefaultMessage()).append("\n"));
-	        throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
-	    }
+	public ResponseEntity<?> findPw(@RequestBody @Valid FindUserDto dto) {
 		 boolean exists = switch(dto.getUserRole()) {
 	        case "student" -> studentService.checkExistsForPasswordReset(dto.getId(), dto.getName(), dto.getEmail());
 	        case "professor" -> professorService.checkExistsForPasswordReset(dto.getId(), dto.getName(), dto.getEmail());
@@ -166,14 +150,7 @@ public class PersonalController {
 	    return ResponseEntity.ok(Map.of("message", "임시 비밀번호 발급 완료", "tempPassword", tempPassword));
 	}
 	@PutMapping("/update")
-	public ResponseEntity<?> updateUser(@RequestBody @Valid UserUpdateDto dto, BindingResult bindingResult, @AuthenticationPrincipal CustomUserDetails loginUser) {
-		if (bindingResult.hasErrors()) {
-			StringBuilder sb = new StringBuilder();
-			bindingResult.getAllErrors().forEach(error -> {
-				sb.append(error.getDefaultMessage()).append("\\n");
-			});
-			throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
-		}
+	public ResponseEntity<?> updateUser(@RequestBody @Valid UserUpdateDto dto, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		dto.setId(loginUser.getUser().getId());
 		 Object updatedUser = userService.updateUser(dto);
 
@@ -181,12 +158,7 @@ public class PersonalController {
 		    return ResponseEntity.ok(updatedUser);
 	}
 	@PutMapping("/update/pw")
-	public ResponseEntity<?> updatePassword(@RequestBody@Valid UserPwDto dto, BindingResult bindingResult, @AuthenticationPrincipal CustomUserDetails loginUser ){
-	if (bindingResult.hasErrors()) {
-        StringBuilder sb = new StringBuilder();
-        bindingResult.getAllErrors().forEach(error -> sb.append(error.getDefaultMessage()).append("\n"));
-        throw new CustomRestfullException(sb.toString(), HttpStatus.BAD_REQUEST);
-    }
+	public ResponseEntity<?> updatePassword(@RequestBody@Valid UserPwDto dto, @AuthenticationPrincipal CustomUserDetails loginUser ){
 	dto.setUserId(loginUser.getUser().getId());
 	userService.updatePw(dto);
 	return ResponseEntity.ok("비밀번ㄴ호 변경!");

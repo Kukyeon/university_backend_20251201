@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.university.home.dto.StuSchDto;
 import com.university.home.service.StuSchService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/stusch")
 public class StuSchController {
@@ -31,7 +33,7 @@ public class StuSchController {
     
     @PreAuthorize("hasRole('STAFF')")
     @PostMapping("/create")
-    public ResponseEntity<StuSchDto> createStuSch(@RequestBody StuSchDto dto) {
+    public ResponseEntity<StuSchDto> createStuSch(@RequestBody @Valid StuSchDto dto) {
         return ResponseEntity.ok(
             stuSchService.createStuSch(dto.getStudentId(), dto.getScholarshipTypeId(), dto.getSchYear(), dto.getSemester())
         );
