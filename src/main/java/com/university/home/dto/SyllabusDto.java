@@ -1,32 +1,42 @@
 package com.university.home.dto;
 
-import com.university.home.entity.Room;
 import com.university.home.entity.Subject;
+import com.university.home.entity.Syllabus; // Syllabus 엔티티 import
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class SyllabusDto {
     private Long subjectId;
-    private String name;        // 강의명
-    private Long subYear;       // 연도
-    private Long semester;      // 학기
-    private Long grades;        // 학점
-    private String type;        // 이수구분
-    private String subDay;      // 요일
-    private Long startTime;  // 시작시간
-    private Long endTime;    // 종료시간
-    private String roomId;      // 강의실
-    private String collegeName; // 단과대학명
+    private String name;        
+    private Long subYear;       
+    private Long semester;      
+    private Long grades;        
+    private String type;        
+    private String subDay;      
+    private Long startTime;  
+    private Long endTime;    
+    private String roomId;      
+    private String collegeName; 
     
     // 교수 정보
-    private String deptName;       // 소속 학과
-    private String professorName;  // 교수명
-    private String tel;            // 연락처
-    private String email;          // 이메일
+    private Long professorId;
+    private String deptName;       
+    private String professorName;  
+    private String tel;            
+    private String email;          
     
-    // 상세 내용 (DB에 컬럼이 없다면 임시 텍스트라도 넣어줘야 함)
+    // 상세 내용
     private String overview;    // 강의 개요
     private String objective;   // 강의 목표
     private String textbook;    // 교재
@@ -34,6 +44,9 @@ public class SyllabusDto {
 
     // Entity -> DTO 변환 메서드
     public static SyllabusDto fromEntity(Subject subject) {
+        // Subject와 1:1 연결된 Syllabus 가져오기
+        Syllabus syllabus = subject.getSyllabus();
+
         return SyllabusDto.builder()
                 .subjectId(subject.getId())
                 .name(subject.getName())
@@ -44,20 +57,20 @@ public class SyllabusDto {
                 .subDay(subject.getSubDay())
                 .startTime(subject.getStartTime())
                 .endTime(subject.getEndTime())
-                .roomId(subject.getRoom().getId())
-                // Null Check 중요!
+                .roomId(subject.getRoom() != null ? String.valueOf(subject.getRoom().getId()) : "미정")
                 .collegeName(subject.getDepartment() != null && subject.getDepartment().getCollege() != null 
                         ? subject.getDepartment().getCollege().getName() : "")
+                .professorId(subject.getProfessor() != null ? subject.getProfessor().getId() : null)
                 .deptName(subject.getDepartment() != null ? subject.getDepartment().getName() : "")
                 .professorName(subject.getProfessor() != null ? subject.getProfessor().getName() : "미정")
                 .email(subject.getProfessor() != null ? subject.getProfessor().getEmail() : "")
-                .tel("02-123-4567") // 임시 데이터 (Professor 엔티티에 tel이 없어서)
+                .tel("02-123-4567") 
                 
-                // 아래 필드들이 Subject 엔티티에 없다면 임시 텍스트 반환
-//                .overview("본 강의는 " + subject.getName() + "에 대한 심화 학습을 진행합니다.")
-//                .objective("1. 기초 이론 습득\n2. 실무 능력 배양")
-//                .textbook("자체 교재")
-//                .program("1주차: OT\n2주차: 기초\n8주차: 중간고사\n15주차: 기말고사")
+                // ★ [핵심] Syllabus가 존재하면 내용을 넣고, 없으면 빈 문자열("") 반환
+                .overview(syllabus != null ? syllabus.getOverview() : "")
+                .objective(syllabus != null ? syllabus.getObjective() : "")
+                .textbook(syllabus != null ? syllabus.getTextbook() : "")
+                .program(syllabus != null ? syllabus.getProgram() : "")
                 .build();
     }
 }
