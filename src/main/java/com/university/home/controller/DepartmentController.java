@@ -1,7 +1,10 @@
 package com.university.home.controller;
 
+import com.university.home.dto.DepartmentDto;
 import com.university.home.entity.Department;
 import com.university.home.repository.DepartmentRepository; // Repository 필요
+import com.university.home.service.DepartmentService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +19,7 @@ import java.util.List;
 public class DepartmentController {
 
     private final DepartmentRepository departmentRepository;
+    private final DepartmentService departmentService;
 
     // 학과 전체 목록 조회 API
     // GET /api/department/list
@@ -23,5 +27,10 @@ public class DepartmentController {
     public ResponseEntity<List<Department>> getDepartmentList() {
         // 모든 학과를 이름순으로 가져오기 (Sort 안 해도 되지만 하면 좋음)
         return ResponseEntity.ok(departmentRepository.findAll());
+    }
+    
+    @GetMapping
+    public List<DepartmentDto> getDepartments() {
+        return departmentService.getDepartments();
     }
 }
