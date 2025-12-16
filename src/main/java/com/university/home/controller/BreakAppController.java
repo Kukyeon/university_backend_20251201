@@ -25,6 +25,8 @@ import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.BreakAppService;
 import com.university.home.service.CustomUserDetails;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/break")
 public class BreakAppController {
@@ -34,7 +36,7 @@ public class BreakAppController {
 	BreakAppService breakAppService;
 
 	@PostMapping("/app")
-	public ResponseEntity<?> createBreakApp(@RequestBody BreakAppDto dto, @AuthenticationPrincipal CustomUserDetails loginUser) {
+	public ResponseEntity<?> createBreakApp(@RequestBody @Valid BreakAppDto dto, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		Long studentId = loginUser.getUser().getId();
 		
 		dto.setStudentId(studentId);

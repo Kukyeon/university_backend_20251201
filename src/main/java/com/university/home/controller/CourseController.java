@@ -93,9 +93,9 @@ public class CourseController {
             // request.get("subjectId") 할 필요 없이 바로 subjectId 사용 가능
             
             courseService.enroll(studentId, subjectId);
-            return ResponseEntity.ok("✅ 수강신청 성공!");
+            return ResponseEntity.ok("수강신청 성공!");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("❌ 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     
@@ -122,9 +122,9 @@ public class CourseController {
             Long studentId = loginUser.getUser().getId();
             
             courseService.cancel(studentId, subjectId);
-            return ResponseEntity.ok("🗑️ 수강취소 완료");
+            return ResponseEntity.ok("수강신청 취소 완료");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("❌ 취소 실패: " + e.getMessage());
+            return ResponseEntity.badRequest().body( e.getMessage());
         }
     }
     

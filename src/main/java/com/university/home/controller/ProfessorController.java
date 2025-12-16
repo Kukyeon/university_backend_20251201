@@ -18,6 +18,8 @@ import com.university.home.dto.SubjectForProfessorDto;
 import com.university.home.service.CustomUserDetails;
 import com.university.home.service.ProfessorService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/prof")
 public class ProfessorController {
@@ -44,7 +46,7 @@ public class ProfessorController {
 	@PutMapping("/student/{stuSubId}")
 	public ResponseEntity<?> updateGrade(
 	        @PathVariable(name = "stuSubId") Long stuSubId,
-	        @RequestBody StudentInfoForProfessor dto) {
+	        @RequestBody @Valid StudentInfoForProfessor dto) {
 	   
 	   return ResponseEntity.ok(professorService.updateStudentGrade(stuSubId, dto));
 	}
