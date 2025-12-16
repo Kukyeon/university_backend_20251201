@@ -39,13 +39,18 @@ public class SecurityConfig {
                 .requestMatchers("/api/user/login", 
                         "/api/user/findId", 
                         "/api/user/findPw",
+
                         "/api/notice/**",
                         "/api/notice/list*",
                         "/images/**","/api/**",
                         "/api/notification/**" ,
                         "/ws/signaling/**" ,
                          "/api/schedules/**",
-                         "/api/schedules/available/professor/*"
+                         "/api/schedules/available/professor/*",
+
+                        "/api/notice/**", "/api/notice/list*", "/images/**",
+                        "/api/notification/**, \"/ws/signaling/**\"  "// 공지목록 조회
+
                         ).permitAll() // 로그인, ID/PW 찾기 허용
                 .requestMatchers(
                         "/api/schedules/professor",         // 🚨 401 발생 A

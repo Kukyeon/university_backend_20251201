@@ -1,5 +1,6 @@
 package com.university.home.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -7,7 +8,7 @@ import lombok.Data;
 public class ScheduleFormDto {
     private Long id;
     private Long staffId;
-    private LocalDateTime startDay;
-    private LocalDateTime endDay;
+    private LocalDate startDay;
+    private LocalDate endDay;
     private String information;
 }

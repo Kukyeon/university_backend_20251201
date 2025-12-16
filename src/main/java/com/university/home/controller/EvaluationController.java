@@ -19,6 +19,7 @@ import com.university.home.service.QuestionService;
 import com.university.home.utils.Define;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 // ⭐️ @RestController 사용
@@ -42,7 +43,7 @@ public class EvaluationController {
     @PostMapping("/write/{subjectId}")
     public ResponseEntity<?> evaluationProc(
     		@PathVariable("subjectId") Long subjectId, 
-    		@RequestBody EvaluationDto evaluationDto,
+    		@RequestBody @Valid EvaluationDto evaluationDto,
     		@AuthenticationPrincipal  CustomUserDetails loginUser) {
     	if (loginUser == null) {
             throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);

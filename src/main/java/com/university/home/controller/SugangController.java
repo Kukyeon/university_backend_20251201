@@ -52,9 +52,9 @@ public class SugangController {
         courseService.updateSugangPeriod(type);
 
         String msg = "";
-        if (type == 0) msg = "예비 수강신청(장바구니) 기간 시작";
-        else if (type == 1) msg = "본 수강신청 기간 시작 (선착순 진입 가능)";
-        else if (type == 2) msg = "수강신청 종료 (장바구니 초기화)";
+        if (type == 0) msg = "예비 수강신청 기간 시작";
+        else if (type == 1) msg = "본 수강신청 기간 시작";
+        else if (type == 2) msg = "수강신청 종료";
 
         return ResponseEntity.ok(msg);
     }
