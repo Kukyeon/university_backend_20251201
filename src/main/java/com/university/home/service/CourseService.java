@@ -203,7 +203,7 @@ public class CourseService {
         if (period == 0) {
             // 중복 체크만 수행 (이미 담았는지)
             if (preStuSubRepository.existsByStudentIdAndSubjectId(studentId, subjectId)) {
-                throw new IllegalStateException("이미 장바구니에 담은 강의입니다.");
+                throw new IllegalStateException("이미 수강목록에 담은 강의입니다.");
             }
 //         // 2. 정원 체크
 //            if (subject.getNumOfStudent() >= subject.getCapacity()) {
@@ -306,7 +306,7 @@ public class CourseService {
 
                 if (isOverlap) {
                     throw new IllegalStateException(
-                        String.format("시간표가 중복됩니다! \n기존: %s (%s %d~%d교시)", 
+                        String.format("시간표가 중복됩니다. \n기존: %s (%s %d~%d교시)", 
                         existing.getName(), existing.getSubDay(), existing.getStartTime(), existing.getEndTime())
                     );
                 }
@@ -327,7 +327,7 @@ public class CourseService {
         if (period == 0) {
             PreStuSub pre = preStuSubRepository.findByStudentIdAndSubjectId(studentId, subjectId);
             if (pre == null) {
-                throw new IllegalArgumentException("장바구니에 해당 과목이 없습니다.");
+                throw new IllegalArgumentException("신청목록에 해당 과목이 없습니다.");
             }
             Subject subject = pre.getSubject();
             
@@ -344,7 +344,7 @@ public class CourseService {
         // === [기간 1] 본 수강 취소 (실제 삭제) ===
         else if (period == 1 || period == 2) {
             StuSub enrollment = stuSubRepository.findByStudentIdAndSubjectId(studentId, subjectId)
-                    .orElseThrow(() -> new IllegalArgumentException("수강 내역이 없습니다."));
+                    .orElseThrow(() -> new IllegalArgumentException("수강신청 내역이 없습니다."));
             
             Subject subject = enrollment.getSubject();
             if (subject.getNumOfStudent() > 0) {

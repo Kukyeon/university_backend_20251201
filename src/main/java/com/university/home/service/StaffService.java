@@ -4,18 +4,13 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.university.home.dto.CollegeDto;
-import com.university.home.dto.DepartmentDto;
-import com.university.home.dto.ProfessorDto;
 import com.university.home.dto.StaffDto;
-import com.university.home.dto.UserUpdateDto;
-import com.university.home.entity.College;
-import com.university.home.entity.Department;
-import com.university.home.entity.Professor;
 import com.university.home.entity.Staff;
 import com.university.home.entity.User;
+import com.university.home.exception.CustomRestfullException;
 import com.university.home.repository.StaffRepository;
 import jakarta.transaction.Transactional;
 
@@ -64,13 +59,15 @@ public class StaffService {
 	@Transactional
 	public Staff readStaff(Long id) {
 		return staffRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Staff not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "직원 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 	}
 	@Transactional
 	public Long findByNameEmail(String name, String email) {
 		return staffRepository.findByNameAndEmail(name, email)
 				.map(Staff::getId)
-				.orElseThrow(() -> new RuntimeException("Staff not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "직원 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 	}
 	@Transactional
 	public boolean checkExistsForPasswordReset(Long id, String name, String email) {

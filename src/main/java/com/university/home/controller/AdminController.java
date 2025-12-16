@@ -69,13 +69,13 @@ public class AdminController {
 		return ResponseEntity.ok(dtoList);
 	}
 	@PostMapping("/department")
-	public ResponseEntity<?> addDepartment(@RequestBody DepartmentDto dto) {
+	public ResponseEntity<?> addDepartment(@RequestBody @Valid DepartmentDto dto) {
 		departmentService.createDepartment(dto, dto.getCollege().getId());
 		    
 		    return ResponseEntity.ok(dto);
 	}
 	@PutMapping("/department/{id}")
-	public ResponseEntity<?> updateDepartment(@PathVariable(name = "id") Long id, @RequestBody DepartmentDto dto) {
+	public ResponseEntity<?> updateDepartment(@PathVariable(name = "id") Long id, @RequestBody @Valid DepartmentDto dto) {
 		departmentService.updateDepartment(id, dto);
 		    return ResponseEntity.ok(dto);
 	}
@@ -106,12 +106,12 @@ public class AdminController {
 		return ResponseEntity.ok(subjects);
 	}
     @PutMapping("/subject/{id}")
-    public ResponseEntity<?> updateSubject(@PathVariable(name = "id") Long id, @RequestBody SubjectDto dto){
+    public ResponseEntity<?> updateSubject(@PathVariable(name = "id") Long id, @RequestBody @Valid SubjectDto dto){
     	subjectService.updateSubject(id, dto);
     	return ResponseEntity.ok(dto);
     }
     @PostMapping("/subject")
-    public ResponseEntity<?> addSubject(@RequestBody SubjectDto dto) {
+    public ResponseEntity<?> addSubject(@RequestBody @Valid SubjectDto dto) {
         return ResponseEntity.ok(subjectService.createSubject(dto));
     }
 
