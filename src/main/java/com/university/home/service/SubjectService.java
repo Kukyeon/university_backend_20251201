@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.SubjectDto;
+import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.Subject;
 import com.university.home.entity.Syllabus;
 import com.university.home.repository.DepartmentRepository;
@@ -139,6 +140,38 @@ public class SubjectService {
 
 	    return toDto(subject);
 	}
+	
+	@Transactional
+    public void updateSyllabus(Long subjectId, Long loginUserId, SyllabusDto dto) {
+        
+        // 1. 과목 조회
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 과목입니다."));
+
+        // 2. [권한 검증] 과목의 담당 교수 ID와 로그인한 유저 ID가 일치하는지 확인
+        // 담당 교수가 없거나, ID가 다르면 예외 발생 -> Controller에서 403 처리
+        if (subject.getProfessor() == null || !subject.getProfessor().getId().equals(loginUserId)) {
+            throw new SecurityException("본인의 강의계획서만 수정할 수 있습니다.");
+        }
+
+        // 3. Syllabus 객체 조회 (없으면 생성)
+        Syllabus syllabus = subject.getSyllabus();
+
+        if (syllabus == null) {
+            syllabus = new Syllabus();
+            syllabus.setSubject(subject); // @MapsId 사용 시 관계 설정 중요
+            // subject.setSyllabus(syllabus); // 양방향 관계일 경우 필요
+        }
+
+        // 4. 내용 업데이트 (DTO -> Entity)
+        syllabus.setOverview(dto.getOverview());
+        syllabus.setObjective(dto.getObjective());
+        syllabus.setTextbook(dto.getTextbook());
+        syllabus.setProgram(dto.getProgram());
+
+        // 5. 저장
+        syllabusRepository.save(syllabus);
+    }
 
 
 }
