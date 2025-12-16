@@ -4,22 +4,21 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.DepartmentDto;
-import com.university.home.dto.ProfessorDto;
 import com.university.home.dto.StuStatDto;
 import com.university.home.dto.StudentDto;
-import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
 import com.university.home.entity.StuStat;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
+import com.university.home.exception.CustomRestfullException;
 import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.StudentRepository;
@@ -105,9 +104,9 @@ public class StudentService {
 		student.setGender(dto.getGender());
 		student.setTel(dto.getTel());
 		student.setEntranceDate(dto.getEntranceDate());
-		//student.setDepartment(dto.getDepartment());
 		Department dept = departmentRepository.findById(dto.getDepartment().getId())
-        .orElseThrow(() -> new RuntimeException("Department not found"));
+				 .orElseThrow(() -> new CustomRestfullException(
+	                        "학과 정보를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST));
 		student.setDepartment(dept);
 		studentRepository.save(student);
 		
@@ -120,7 +119,8 @@ public class StudentService {
 	@Transactional
 	public StudentDto readStudent(Long id) {
 		Student student =  studentRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Student not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "학생 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 		return toDto(student);
 	}
 
@@ -136,7 +136,8 @@ public class StudentService {
 	public Long findByNameEmail(String name, String email) {
 		return studentRepository.findByNameAndEmail(name, email)
 				.map(Student::getId)
-				.orElseThrow(() -> new RuntimeException("Student not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "학생 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 	}
 	// 전체 학생 조회
 	public Page<StudentDto> getStudents(Pageable pageable) {
@@ -146,20 +147,23 @@ public class StudentService {
 	// 학과별 학생 조회
 	public Page<StudentDto> getStudentsByDep(Long deptId,Pageable pageable) {
 		Department dept = departmentRepository.findById(deptId)
-                .orElseThrow(() -> new RuntimeException("Department not found"));
+				 .orElseThrow(() -> new CustomRestfullException(
+	                        "학과 정보를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST));
 		  return studentRepository.findByDepartment(dept, pageable)
 	                .map(this::toDto);
 	}
 	// 학번 학생 조회
 	public StudentDto getStudentById(Long studentId) {
 		Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "학생 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
         return toDto(student);
 	}
 	// StudentService
 	public Student getStudentByIdEntity(Long studentId) {
 	    return studentRepository.findById(studentId)
-	            .orElseThrow(() -> new RuntimeException("학생이 존재하지 않습니다."));
+	    		.orElseThrow(() -> new CustomRestfullException(
+                        "학생 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 	}
 
 	@Transactional

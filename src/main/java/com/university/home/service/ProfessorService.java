@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,6 @@ import com.university.home.dto.DepartmentDto;
 import com.university.home.dto.ProfessorDto;
 import com.university.home.dto.StudentInfoForProfessor;
 import com.university.home.dto.SubjectForProfessorDto;
-import com.university.home.dto.UserUpdateDto;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
@@ -91,7 +89,8 @@ public class ProfessorService {
 		professor.setHireDate(LocalDate.now());
 		//professor.setDepartment(dto.getDepartment());
 		Department dept = departmentRepository.findById(dto.getDepartment().getId())
-        .orElseThrow(() -> new RuntimeException("Department not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "학과 정보를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST));
 		professor.setDepartment(dept);
 		professorRepository.save(professor);
 		
@@ -104,7 +103,8 @@ public class ProfessorService {
 	@Transactional
 	public ProfessorDto readProfessor(Long id) {
 		Professor professor = professorRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Professor not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "교수 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 		return toDto(professor);
 	}
 
@@ -120,7 +120,8 @@ public class ProfessorService {
 	public Long findByNameEmail(String name, String email) {
 		return professorRepository.findByNameAndEmail(name, email)
 				.map(Professor::getId)
-				.orElseThrow(() -> new RuntimeException("Professor not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "교수 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 	}
 	// 전체 교수 조회
 	public Page<ProfessorDto> getProfessors(Pageable pageable) {
@@ -130,14 +131,16 @@ public class ProfessorService {
 	// 학과별 교수 조회
 	public Page<ProfessorDto> getProfessorsByDep(Long deptId,Pageable pageable) {
 		Department dept = departmentRepository.findById(deptId)
-                .orElseThrow(() -> new RuntimeException("Department not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "학과 정보를 찾을 수 없습니다.", HttpStatus.BAD_REQUEST));
 		 return professorRepository.findByDepartment(dept, pageable)
 	                .map(this::toDto);
 	}
 	// id 교수 조회
 	public ProfessorDto getProfessorById(Long professorId) {
 		Professor professor = professorRepository.findById(professorId)
-                .orElseThrow(() -> new RuntimeException("Professor not found"));
+				.orElseThrow(() -> new CustomRestfullException(
+                        "교수 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
         return toDto(professor);
     }
 //	===============내 강의 조희 서비스!@!!@! ============
@@ -192,7 +195,8 @@ public class ProfessorService {
 	@Transactional
 	public StudentInfoForProfessor updateStudentGrade(Long stuSubId, StudentInfoForProfessor dto) {
 	    StuSubDetail detail = stuSubDetailRepository.findById(stuSubId)
-	            .orElseThrow(() -> new IllegalArgumentException("해당 학생 성적 정보가 없습니다."));
+	    		.orElseThrow(() -> new CustomRestfullException(
+                        "해당 학생의 성적을 찾을 수 없습니다.", HttpStatus.BAD_REQUEST));
 	    
 	    detail.setAbsent(dto.getAbsent());
 	    detail.setLateness(dto.getLateness());

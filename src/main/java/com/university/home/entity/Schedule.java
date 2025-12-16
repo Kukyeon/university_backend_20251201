@@ -2,6 +2,8 @@ package com.university.home.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -20,11 +22,11 @@ public class Schedule {
 
     @Column(name = "start_day")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDateTime startDay;
+    private LocalDate startDay;
 
     @Column(name = "end_day")
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDateTime endDay;
+    private LocalDate endDay;
 
     private String information;
 }
