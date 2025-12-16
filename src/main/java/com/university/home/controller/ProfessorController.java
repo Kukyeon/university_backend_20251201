@@ -48,4 +48,13 @@ public class ProfessorController {
 	   
 	   return ResponseEntity.ok(professorService.updateStudentGrade(stuSubId, dto));
 	}
+	@GetMapping("/my-department")
+	public ResponseEntity<?> myDepartmentProfessors(
+	        @AuthenticationPrincipal CustomUserDetails loginUser) {
+
+	    Long studentId = loginUser.getUser().getId();
+	    return ResponseEntity.ok(
+	        professorService.getProfessorsByStudentDepartment(studentId)
+	    );
+	}
 }

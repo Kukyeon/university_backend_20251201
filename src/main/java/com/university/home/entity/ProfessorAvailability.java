@@ -28,6 +28,13 @@ public class ProfessorAvailability {
     @Column(nullable = false)
     private LocalDateTime endTime;
     
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private boolean isBooked = false; // 예약 가능 여부
+    private AvailabilityStatus status = AvailabilityStatus.OPEN;
+
+    @Column(nullable = false)
+    private boolean active = true;  // 예약 가능 여부
+    
+    @Column(name = "is_booked", nullable = false)
+    private boolean isBooked = false;
 }
