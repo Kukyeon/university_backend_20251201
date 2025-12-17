@@ -1,5 +1,6 @@
 package com.university.home.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +16,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.university.home.config.WebMvcConfig;
+import com.university.home.dto.BreakAppDto;
 import com.university.home.dto.FindUserDto;
 import com.university.home.dto.UserDto;
 import com.university.home.dto.UserPwDto;
 import com.university.home.dto.UserUpdateDto;
+import com.university.home.entity.BreakApp;
 import com.university.home.entity.User;
 import com.university.home.exception.CustomRestfullException;
+import com.university.home.service.BreakAppService;
 import com.university.home.service.CustomUserDetails;
 import com.university.home.service.ProfessorService;
 import com.university.home.service.StaffService;
@@ -45,6 +49,8 @@ public class PersonalController {
 	UserService userService;
 	@Autowired
 	JwtUtil jwtUtil;
+	@Autowired
+	BreakAppService breakAppService;
 
 	
 	private String generateRandomPassword(int length) {
@@ -163,5 +169,11 @@ public class PersonalController {
 	userService.updatePw(dto);
 	return ResponseEntity.ok("비밀번ㄴ호 변경!");
 }
-	
+	@GetMapping("/students")
+	public ResponseEntity<?> getStudentBreakApps(@AuthenticationPrincipal CustomUserDetails loginUser){
+	    Long studentId = loginUser.getUser().getId();
+		List<BreakApp> apps = breakAppService.getByStudent(studentId);
+	    List<BreakAppDto> dtos = apps.stream().map(b -> breakAppService.toDto(b)).toList();
+	    return ResponseEntity.ok(dtos);
+	}
 }
