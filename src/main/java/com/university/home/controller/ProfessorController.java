@@ -55,6 +55,17 @@ public class ProfessorController {
 	   
 	   return ResponseEntity.ok(professorService.updateStudentGrade(stuSubId, dto));
 	}
+
+	@GetMapping("/my-department")
+	public ResponseEntity<?> myDepartmentProfessors(
+	        @AuthenticationPrincipal CustomUserDetails loginUser) {
+
+	    Long studentId = loginUser.getUser().getId();
+	    return ResponseEntity.ok(
+	        professorService.getProfessorsByStudentDepartment(studentId)
+	    );
+	}
+
 	
 	// ★ [수정 완료된 부분] 강의계획서 수정
     @PutMapping("/subject/{subjectId}/syllabus") // URL 경로 수정 (중복 경로 정리)
@@ -86,4 +97,5 @@ public class ProfessorController {
             return ResponseEntity.internalServerError().body("서버 오류: " + e.getMessage());
         }
     }
+
 }
