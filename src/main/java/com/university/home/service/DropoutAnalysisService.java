@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 // import org.springframework.transaction.annotation.Transactional; // Service단 트랜잭션 필요시 사용
 
@@ -42,6 +43,7 @@ public class DropoutAnalysisService {
     private final StuStatRepository stuStatRepository;
     private final UserRepository userRepository;
    
+    @Scheduled(cron = "0 0 0 1 3,9 *")
     public void analyzeAllStudents() {
         List<Student> students = studentRepository.findAll();
         log.info("총 {}명의 학생에 대한 위험 분석을 시작합니다.", students.size());
