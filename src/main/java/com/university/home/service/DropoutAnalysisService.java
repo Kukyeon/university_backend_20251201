@@ -178,7 +178,7 @@ public class DropoutAnalysisService {
 
     private void sendAlert(Student student, String level, String reason) {
         try {
-            String content = String.format("💬 [상담 권장] %s님, 학업에 어려움은 없으신가요? 상담 센터가 열려있습니다.", student.getName());
+            String content = String.format("💬 [상담 권장] %s님, 학업에 어려움은 없으신가요? 챗봇과 대화해보세요.", student.getName());
             notificationService.send(student.getId(), content, "/student/chatbot");
         } catch (Exception e) {
             log.error("학생 알림 전송 실패", e);
@@ -191,7 +191,7 @@ public class DropoutAnalysisService {
             for (Professor prof : professors) {
                 String content = String.format("🚨[위험 알림] %s 학생(%s) - %s 단계 (사유: %s)", 
                         student.getName(), student.getDepartment().getName(), level, reason);
-                notificationService.send(prof.getId(), content, "/professor/dashboard");
+                notificationService.send(prof.getId(), content, "/course?tab=danger");
             }
             
         }

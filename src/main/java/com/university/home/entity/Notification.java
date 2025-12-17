@@ -21,7 +21,8 @@ public class Notification {
     private String url;      // 클릭 시 이동할 링크 (예: "/professor/dashboard")
     
     @Column(name = "is_read")
-    private boolean isRead;  // 읽음 여부 (false: 안 읽음)
+    private boolean Checked;  // 읽음 여부 (false: 안 읽음)
+    
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
