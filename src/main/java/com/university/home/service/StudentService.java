@@ -8,10 +8,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.university.home.dto.BreakAppDto;
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.DepartmentDto;
 import com.university.home.dto.StuStatDto;
 import com.university.home.dto.StudentDto;
+import com.university.home.dto.StudentStatDto;
 import com.university.home.entity.College;
 import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
@@ -19,6 +21,7 @@ import com.university.home.entity.StuStat;
 import com.university.home.entity.Student;
 import com.university.home.entity.User;
 import com.university.home.exception.CustomRestfullException;
+import com.university.home.repository.BreakAppRepository;
 import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.StudentRepository;
@@ -38,7 +41,8 @@ public class StudentService {
 	DepartmentRepository departmentRepository;
 	@Autowired
 	StuStatService stuStatService;
-	
+	@Autowired
+	private BreakAppRepository breakAppRepository;
 	private ProfessorRepository professorRepository;
 	
 	@Autowired 
@@ -92,6 +96,37 @@ public class StudentService {
 	        statDto.setBreakAppId(currentStatus.getBreakAppId());
 	        dto.setCurrentStatus(statDto);
 	    }
+	    List<StudentStatDto> statList = stuStatService.getStatusList(student.getId())
+	            .stream()
+	            .map(s -> {
+	                StudentStatDto stat = new StudentStatDto();
+	                stat.setId(s.getId());
+	                stat.setStatus(s.getStatus());
+	                stat.setFromDate(s.getFromDate());
+	                stat.setToDate(s.getToDate());
+	                stat.setBreakAppId(s.getBreakAppId());
+	                return stat;
+	            })
+	            .toList();
+	        dto.setStatList(statList);
+	        List<BreakAppDto> breakDtos = breakAppRepository.findByStudentId(student.getId())
+	                .stream()
+	                .map(b -> {
+	                    BreakAppDto bDto = new BreakAppDto();
+	                    bDto.setId(b.getId());
+	                    bDto.setStatus(b.getStatus());
+	                    bDto.setType(b.getType());
+	                    bDto.setFromYear(b.getFromYear());
+	                    bDto.setFromSemester(b.getFromSemester());
+	                    bDto.setToYear(b.getToYear());
+	                    bDto.setToSemester(b.getToSemester());
+	                    bDto.setAppDate(b.getAppDate());
+	                    return bDto;
+	                })
+	                .toList();
+
+	            dto.setBreakApps(breakDtos);
+	        
 	    return dto;
 	}
 	@Transactional
@@ -199,9 +234,6 @@ public class StudentService {
 	    }
 	    return count;
 	}
-	
-	
-	
 	
 	public String getProfessorName(Long professorId) {
 	    return professorRepository.findById(professorId)
