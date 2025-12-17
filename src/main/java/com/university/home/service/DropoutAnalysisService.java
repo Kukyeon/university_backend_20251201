@@ -71,7 +71,7 @@ public class DropoutAnalysisService {
         	List<User> staffList = userRepository.findByUserRole("STAFF");
             
             String message = "✅ 전체 학생 위험군 분석이 완료되었습니다.";
-            String targetUrl = "/admin/dashboard"; // 직원이 이동할 대시보드 URL
+            String targetUrl = null; // 직원이 이동할 대시보드 URL
 
             for (User staff : staffList) {
                 notificationService.send(staff.getId(), message, targetUrl);
@@ -109,10 +109,10 @@ public class DropoutAnalysisService {
                 [⚠️ 절대 평가 규칙 (최우선 적용)]
                 1. 학점이 1.0 미만인 경우: 다른 요소(출결 등)가 좋더라도 **무조건 95점 이상**을 부여하세요. (즉시 이탈 위험)
                 2. 학점이 2.0 미만인 경우: **무조건 90점 이상**을 부여하세요.
-                3. 결석이 5회 이상인 경우: 학점이 높아도 **80점 이상**을 부여하세요.
+                3. 결석이 5회 이상인 경우: 학점이 높아도 **90점 이상**을 부여하세요.
 
                 [분석 기준]
-                - 95점 이상 (심각): 당장 자퇴할 확률이 매우 높음 (학사 경고 등)
+                - 90점 이상 (심각): 당장 자퇴할 확률이 매우 높음 (학사 경고 등)
                 - 70~89점 (경고): 학업에 흥미를 잃어가는 단계
                 - 50~69점 (주의): 성적 하락세이거나 결석이 생기기 시작함
                 - 50점 미만 (정상): 안정적인 학교 생활 중
