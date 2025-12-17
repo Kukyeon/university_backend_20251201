@@ -73,7 +73,7 @@ public class NotificationService {
                 .receiverId(receiverId)
                 .content(content)
                 .url(url)
-                .isRead(false)
+                .Checked(false)
                 .createdAt(LocalDateTime.now())
                 .build();
         notificationRepository.save(notification);
@@ -119,7 +119,9 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 알림입니다."));
         
-        notification.setRead(true);
+        notification.setChecked(true);
+        
+        notificationRepository.save(notification);
     }
     
     // 3. 알림 삭제
