@@ -170,7 +170,7 @@ public class DropoutAnalysisService {
     }
 
     private String determineLevel(Double score) {
-        if (score >= 95) return "심각";
+        if (score >= 90) return "심각";
         if (score >= 70) return "경고";
         if (score >= 50) return "주의";
         return "정상";
