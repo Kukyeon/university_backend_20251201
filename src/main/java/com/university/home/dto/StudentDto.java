@@ -1,6 +1,7 @@
 package com.university.home.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -42,5 +43,8 @@ public class StudentDto {
 	private Long grade;
 	
 	private Long semester;
-
+	
+	private List<StudentStatDto> statList;
+	
+	private List<BreakAppDto> breakApps;
 }
