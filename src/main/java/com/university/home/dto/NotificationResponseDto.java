@@ -18,8 +18,8 @@ public class NotificationResponseDto {
 	private String type;
 	private String content;
 	private String url;
-	private boolean isRead;
-	private LocalDateTime createAt;
+	private boolean Checked;
+	private LocalDateTime createdAt;
 	
 	public static NotificationResponseDto fromEntity(Notification notification) {
 		return NotificationResponseDto.builder()
@@ -29,8 +29,8 @@ public class NotificationResponseDto {
 				.type(notification.getType())
 				.content(notification.getContent())
 				.url(notification.getUrl())
-				.isRead(notification.isRead())
-				.createAt(notification.getCreatedAt())
+				.Checked(notification.isChecked())
+				.createdAt(notification.getCreatedAt())
 				.build();
 	}
 	
