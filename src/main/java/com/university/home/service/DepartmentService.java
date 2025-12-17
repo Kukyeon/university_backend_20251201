@@ -65,4 +65,11 @@ public class DepartmentService {
          departmentRepository.save(department);
          return toDto(department);
     }
+    
+    public List<DepartmentDto> getDepartments() {
+        return departmentRepository.findAll()
+            .stream()
+            .map(this::toDto)
+            .toList();
+    }
 }

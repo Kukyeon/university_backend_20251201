@@ -19,6 +19,7 @@ import com.university.home.entity.Department;
 import com.university.home.entity.Professor;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.StuSubDetail;
+import com.university.home.entity.Student;
 import com.university.home.entity.Subject;
 import com.university.home.entity.User;
 import com.university.home.exception.CustomRestfullException;
@@ -26,6 +27,7 @@ import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.StuSubDetailRepository;
 import com.university.home.repository.StuSubRepository;
+import com.university.home.repository.StudentRepository;
 import com.university.home.repository.SubjectRepository;
 
 import jakarta.transaction.Transactional;
@@ -247,5 +249,25 @@ public class ProfessorService {
 	    if (convertedMark >= 50) return "D0";
 	    return "F";
 	}
+	@Autowired
+	StudentRepository studentRepository;
+	
+	public List<ProfessorDto> getProfessorsByStudentDepartment(Long studentId) {
 
+        Student student = studentRepository.findById(studentId)
+            .orElseThrow(() ->
+                new CustomRestfullException("학생 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND)
+            );
+
+        if (student.getDepartment() == null) {
+            throw new CustomRestfullException("학생의 학과 정보가 없습니다.", HttpStatus.BAD_REQUEST);
+        }
+
+        Long departmentId = student.getDepartment().getId();
+
+        return professorRepository.findByDepartment_Id(departmentId)
+                .stream()
+                .map(this::toDto)
+                .toList();
+    }
 }

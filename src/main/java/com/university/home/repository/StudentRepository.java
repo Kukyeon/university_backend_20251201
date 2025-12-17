@@ -32,4 +32,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     @Override
     @EntityGraph(attributePaths = {"department"}) 
     List<Student> findAll();
+    
+    //학생 이름으로 검색
+    List<Student> findByNameContainingIgnoreCase(String name);
 }
