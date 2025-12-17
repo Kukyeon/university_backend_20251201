@@ -28,6 +28,22 @@ public class BreakAppService {
     BreakAppService(StuStatService stuStatService) {
         this.stuStatService = stuStatService;
     }
+    public BreakAppDto toDto(BreakApp app){
+        BreakAppDto dto = new BreakAppDto();
+        dto.setId(app.getId());
+        dto.setStudentId(app.getStudent().getId());
+        dto.setStudentName(app.getStudent().getName());
+        dto.setDepartmentName(app.getStudent().getDepartment().getName());
+        dto.setType(app.getType());
+        dto.setStatus(app.getStatus());
+        dto.setFromYear(app.getFromYear());
+        dto.setFromSemester(app.getFromSemester());
+        dto.setToYear(app.getToYear());
+        dto.setToSemester(app.getToSemester());
+        dto.setAppDate(app.getAppDate());
+        return dto;
+    }
+
 	public List<BreakApp> getBreakApps() {
 		List<BreakApp> breakApps = breakAppRepository.findAll();
 		return breakApps;
