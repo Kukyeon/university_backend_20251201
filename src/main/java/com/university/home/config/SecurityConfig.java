@@ -47,7 +47,24 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 안 씀 (StateLess)
             )
             .authorizeHttpRequests(auth -> auth
-                // 1. 완전 허용 (로그인, 정적파일, 웹소켓 등)
+                .requestMatchers("/api/user/login", 
+                        "/api/user/findId", 
+                        "/api/user/findPw",
+                        "/api/test",
+                        "/api/notice/**",
+                        "/api/notice/list*",
+                        "/images/**","/api/**",
+                        "/api/notification/**" ,
+                        "/ws/signaling/**" ,
+                         "/api/schedules/**",
+                         "/api/schedules/available/professor/*",
+                        "/api/notice/**",
+                        "/api/notice/list*",
+                        "/images/**",
+                        "/api/notification/**",
+                        "/ws/signaling/**"  // 공지목록 조회
+
+                        ).permitAll() // 로그인, ID/PW 찾기 허용
                 .requestMatchers(
                     "/api/user/login", 
                     "/api/user/findId", 
@@ -109,8 +126,12 @@ public class SecurityConfig {
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
-        
-        // JWT 토큰 헤더 노출
+        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("http://127.0.0.1:3000");
+        config.addAllowedOrigin("http://university-frontend-bucket.s3-website.ap-northeast-2.amazonaws.com");
+        config.addAllowedOrigin("https://d207tkakfktjyb.cloudfront.net");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
         config.addExposedHeader("Authorization");
         config.addExposedHeader("Content-Disposition"); // 파일 다운로드 시 필요
 

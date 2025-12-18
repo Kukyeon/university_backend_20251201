@@ -61,7 +61,7 @@ public class NoticeController {
 
     // 공지 수정
     @PostMapping("/update/{id}")
-    public Notice updateNotice(@PathVariable("id") Long id,  @ModelAttribute NoticeFormDto dto) {
+    public Notice updateNotice(@PathVariable("id") Long id,  @ModelAttribute NoticeFormDto dto) throws IOException {
         return noticeService.updateNotice(id, dto);
     }
 

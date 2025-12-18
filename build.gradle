@@ -43,16 +43,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-websocket-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	// redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    // aws S3
-    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.772'
-    // image compression
-    implementation 'net.coobird:thumbnailator:0.4.20'
-    
-    implementation('com.google.genai:google-genai:1.0.0') {
-        exclude group: 'commons-logging', module: 'commons-logging'
-    }
+	implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.4'
 
 }
 
