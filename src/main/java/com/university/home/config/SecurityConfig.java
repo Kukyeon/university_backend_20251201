@@ -39,7 +39,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/user/login", 
                         "/api/user/findId", 
                         "/api/user/findPw",
-
+                        "/api/test",
                         "/api/notice/**",
                         "/api/notice/list*",
                         "/images/**","/api/**",
@@ -47,9 +47,11 @@ public class SecurityConfig {
                         "/ws/signaling/**" ,
                          "/api/schedules/**",
                          "/api/schedules/available/professor/*",
-
-                        "/api/notice/**", "/api/notice/list*", "/images/**",
-                        "/api/notification/**, \"/ws/signaling/**\"  "// 공지목록 조회
+                        "/api/notice/**",
+                        "/api/notice/list*",
+                        "/images/**",
+                        "/api/notification/**",
+                        "/ws/signaling/**"  // 공지목록 조회
 
                         ).permitAll() // 로그인, ID/PW 찾기 허용
                 .requestMatchers(
@@ -92,6 +94,9 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("http://127.0.0.1:3000");
+        config.addAllowedOrigin("http://university-frontend-bucket.s3-website.ap-northeast-2.amazonaws.com");
+        config.addAllowedOrigin("https://d207tkakfktjyb.cloudfront.net");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.addExposedHeader("Authorization");
