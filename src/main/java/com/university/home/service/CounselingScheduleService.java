@@ -139,7 +139,11 @@ public class CounselingScheduleService {
             if (schedule.getStatus() == ScheduleStatus.CANCELED) {
                 throw new CustomRestfullException("이미 취소된 일정입니다.", HttpStatus.BAD_REQUEST);
             }
-
+            
+            if (schedule.getStatus() == ScheduleStatus.COMPLETED) {
+                throw new CustomRestfullException("이미 완료된 상담은 취소할 수 없습니다.", HttpStatus.BAD_REQUEST);
+            }
+            
             ProfessorAvailability availability = schedule.getAvailability();
             availability.setStatus(AvailabilityStatus.OPEN);
             availabilityRepository.save(availability);
