@@ -1,0 +1,129 @@
+package com.university.home.service;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import com.university.home.dto.BreakAppDto;
+import com.university.home.entity.BreakApp;
+import com.university.home.entity.Student;
+import com.university.home.exception.CustomRestfullException;
+import com.university.home.repository.BreakAppRepository;
+
+import jakarta.transaction.Transactional;
+
+@Service
+public class BreakAppService {
+
+    private final StuStatService stuStatService;
+
+	@Autowired
+	BreakAppRepository breakAppRepository;
+	@Autowired
+	StudentService studentService;
+
+    BreakAppService(StuStatService stuStatService) {
+        this.stuStatService = stuStatService;
+    }
+    public BreakAppDto toDto(BreakApp app){
+        BreakAppDto dto = new BreakAppDto();
+        dto.setId(app.getId());
+        dto.setStudentId(app.getStudent().getId());
+        dto.setStudentName(app.getStudent().getName());
+        dto.setDepartmentName(app.getStudent().getDepartment().getName());
+        dto.setType(app.getType());
+        dto.setStatus(app.getStatus());
+        dto.setFromYear(app.getFromYear());
+        dto.setFromSemester(app.getFromSemester());
+        dto.setToYear(app.getToYear());
+        dto.setToSemester(app.getToSemester());
+        dto.setAppDate(app.getAppDate());
+        return dto;
+    }
+
+	public List<BreakApp> getBreakApps() {
+		List<BreakApp> breakApps = breakAppRepository.findAll();
+		return breakApps;
+	}
+	public List<BreakApp> getByStudent(Long studentId) {
+		Student student = studentService.getStudentByIdEntity(studentId);
+		List<BreakApp> breakAppList = breakAppRepository
+				.findByStudentOrderByIdDesc(student);
+		
+		return breakAppList;
+	}
+	public BreakApp getById(Long id) {
+		return breakAppRepository.findById(id)
+				.orElseThrow(() -> new CustomRestfullException("휴학 신청 내역이 없습니다.", HttpStatus.NOT_FOUND));
+	}
+	
+	public void createBreakApp(BreakAppDto dto) {
+		
+		List<BreakApp> breakApps = getStudentApps(dto.getStudentId());
+		for (BreakApp b : breakApps) {
+			if(b.getStatus().equals("처리중") || b.getStatus().equals("승인")) {
+				throw new CustomRestfullException("이미 처리중인 신청내역이 존재합니다.", HttpStatus.BAD_REQUEST);
+			}
+		}
+		Student student = studentService.getStudentByIdEntity(dto.getStudentId());
+		BreakApp breakApp = new BreakApp();
+		breakApp.setStudent(student);
+        breakApp.setFromYear(dto.getFromYear());
+        breakApp.setFromSemester(dto.getFromSemester());
+        breakApp.setToYear(dto.getToYear());
+        breakApp.setToSemester(dto.getToSemester());
+        breakApp.setType(dto.getType());
+        breakApp.setStatus("처리중");
+        breakApp.setAppDate(LocalDate.now());
+
+        breakAppRepository.save(breakApp);
+	}
+	public List<BreakApp> getStudentApps(Long studentId) {
+		List<BreakApp> breakApps = breakAppRepository.findByStudentId(studentId);
+		
+		return breakApps;
+	}
+	@Transactional
+	public void deleteApp(Long id) {
+		BreakApp app = getById(id);
+		
+		if (app.getStatus().equals("승인")) {
+			throw new CustomRestfullException("이미 처리가 완료되어 취소가 불가합니다.", HttpStatus.BAD_REQUEST);
+		}
+		breakAppRepository.deleteById(id);
+	}
+	@Transactional
+	public void updateStatus(Long id, String status) {
+		BreakApp app = getById(id);
+		
+		app.setStatus(status);
+		breakAppRepository.save(app);
+		
+		if (status.equals("승인")) {
+			LocalDate toDate;
+			Student student = studentService.getStudentByIdEntity(app.getStudent().getId());
+			if (app.getToSemester() ==1) {
+				toDate = LocalDate.of(app.getToYear().intValue(), 8, 31);
+			} else {
+				toDate = LocalDate.of(app.getToYear().intValue() + 1, 2, 28);
+			}
+			stuStatService.updateStatus(student,"휴학", app.getId());
+		}
+	}
+	@Transactional
+	public void cancelBreakApp(Long id) {
+	    BreakApp app = getById(id);
+	    
+	    if ("승인".equals(app.getStatus())) {
+	        throw new CustomRestfullException("승인된 휴학은 취소할 수 없습니다.", HttpStatus.BAD_REQUEST);
+	    }
+	    
+	    Student student = app.getStudent();
+	    stuStatService.revertToRegular(student); // 재학 상태 복원
+	    breakAppRepository.delete(app); // 신청 내역 삭제
+	}
+
+}
