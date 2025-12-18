@@ -1,6 +1,7 @@
 package com.university.home.dto;
 
 
+import jakarta.validation.constraints.NotNull; // ✅ 표준 경로로 변경
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
