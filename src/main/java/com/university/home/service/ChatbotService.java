@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.university.home.entity.ChatLog;
 import com.university.home.entity.DropoutRisk;
 import com.university.home.entity.Professor;
+import com.university.home.entity.StuStat;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
@@ -17,6 +18,7 @@ import com.university.home.entity.Subject;
 import com.university.home.repository.ChatLogRepository;
 import com.university.home.repository.DropoutRiskRepository;
 import com.university.home.repository.ProfessorRepository;
+import com.university.home.repository.StuStatRepository;
 import com.university.home.repository.StuSubRepository;
 import com.university.home.repository.StudentRepository;
 import com.university.home.repository.SubjectRepository;
@@ -35,7 +37,7 @@ public class ChatbotService {
     private final StuSubRepository stuSubRepository;
     private final SubjectRepository subjectRepository;
     private final ProfessorRepository professorRepository;
-
+    private final StuStatRepository stuStatRepository;
     @Transactional
     public String ask(Long studentId, String question) {
         
@@ -272,6 +274,12 @@ public class ChatbotService {
 
     // (makeStudentInfoString 등 나머지 메서드는 기존 유지)
     private String makeStudentInfoString(Student student) {
+    	List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
+    	String currentStatus = "정보 없음"; // 기본값
+        if (!statHistory.isEmpty()) {
+            // 정렬을 내림차순(Desc)으로 했으므로, 0번째가 가장 최신 상태입니다.
+            currentStatus = statHistory.get(0).getStatus();
+        }
         // ... (기존 코드와 동일) ...
         Integer totalCredits = gradeService.calculateTotalCredits(student.getId());
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());      
@@ -285,6 +293,7 @@ public class ChatbotService {
         return """
                 - 학번: %d
                 - 이름: %s
+                - 학적 상태: %s
                 - 성별: %s
                 - 소속 학과: %s
                 - 학년/학기: %d학년 %d학기
@@ -292,9 +301,16 @@ public class ChatbotService {
                 - 총 이수 학점: %d학점
                 - 이번 학기 평점: %.2f점
                 """.formatted(
-                    student.getId(), student.getName(), gender, dept, 
-                    student.getGrade(), student.getSemester(), 
-                    tel, totalCredits, avgGrade
+                        student.getId(),        // 1. 학번 (%d)
+                        student.getName(),      // 2. 이름 (%s)
+                        currentStatus,          // 3. 학적 상태 (%s) ★여기에 추가!
+                        gender,                 // 4. 성별 (%s)
+                        dept,                   // 5. 소속 학과 (%s)
+                        student.getGrade(),     // 6. 학년 (%d)
+                        student.getSemester(),  // 7. 학기 (%d)
+                        tel,                    // 8. 연락처 (%s)
+                        totalCredits,           // 9. 총 이수 학점 (%d)
+                        avgGrade                // 10. 평점 (%.2f)
                 );
     }       
 
