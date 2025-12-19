@@ -5,6 +5,7 @@ import com.university.home.dto.AvailableTimeResponseDto;
 import com.university.home.dto.BookingRequestDto; 
 import com.university.home.dto.CounselingRecordResponseDto;
 import com.university.home.dto.CounselingScheduleResponseDto;
+import com.university.home.dto.EntryValidateDto;
 import com.university.home.dto.ProfessorScheduleRequestDto;
 import com.university.home.service.CounselingScheduleService;
 import com.university.home.service.CounselingRecordService;
@@ -22,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -311,4 +313,52 @@ public class CounselingController {
         
         return ResponseEntity.ok(confirmedList);
     }
+    @GetMapping("/validate-entry/{scheduleId}")
+    public ResponseEntity<EntryValidateDto> validateEntry(
+        @PathVariable(name = "scheduleId") Long scheduleId,
+        @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        Long userId = getUserId(principal, "any");
+
+        return ResponseEntity.ok(
+            scheduleService.checkCanEnterRoom(scheduleId, userId)
+        );
+    }
+    @GetMapping("/entry-check/{scheduleId}")
+    public ResponseEntity<EntryValidateDto> checkEntry(
+            @PathVariable(name = "scheduleId") Long scheduleId,
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        Long userId = getUserId(principal, "any");
+        return ResponseEntity.ok(
+            scheduleService.checkCanEnterRoom(scheduleId, userId)
+        );
+    }
+
+    @PostMapping("/enter/{scheduleId}")
+    public ResponseEntity<Void> enterRoom(
+            @PathVariable(name = "scheduleId") Long scheduleId,
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        Long userId = getUserId(principal, "any");
+
+        scheduleService.enterRoom(scheduleId, userId);
+
+        return ResponseEntity.ok().build();
+    }
+    @PutMapping("/complete/{scheduleId}")
+    public ResponseEntity<Void> completeConsultation(
+            @PathVariable(name = "scheduleId") Long scheduleId,
+            @AuthenticationPrincipal CustomUserDetails principal
+    ) {
+        Long professorId = getUserId(principal, "professor");
+
+        scheduleService.completeConsultation(scheduleId, professorId);
+
+        return ResponseEntity.ok().build();
+    }
+
+
+
+
 }
