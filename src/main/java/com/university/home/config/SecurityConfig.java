@@ -128,8 +128,8 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedOrigin("http://127.0.0.1:3000");
-        config.addAllowedOrigin("http://university-frontend-bucket.s3-website.ap-northeast-2.amazonaws.com");
-        config.addAllowedOrigin("https://d207tkakfktjyb.cloudfront.net");
+        config.addAllowedOrigin("http://university-front.s3-website.ap-northeast-2.amazonaws.com");
+        config.addAllowedOrigin("https://d1bu7ottqpcm69.cloudfront.net");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.addExposedHeader("Authorization");
