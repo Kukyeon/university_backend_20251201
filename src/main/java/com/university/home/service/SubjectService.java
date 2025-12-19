@@ -3,6 +3,8 @@ package com.university.home.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.SubjectDto;
@@ -42,9 +44,9 @@ public class SubjectService {
 	            throw new RuntimeException("해당 시간에 해당 강의실은 이미 사용 중입니다.");
 	    }
 	}
-	public List<SubjectDto> getSubjects() {
-	    List<Subject> subjects = subjectRepository.findAll();
-	    return subjects.stream().map(this::toDto).toList();
+	public Page<SubjectDto> getSubjects(Pageable pageable) {
+	    Page<Subject> subjects = subjectRepository.findAll(pageable);
+	    return subjects.map(this::toDto);
 	}
 
 	private SubjectDto toDto(Subject subject) {

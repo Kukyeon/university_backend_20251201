@@ -1,5 +1,7 @@
 package com.university.home.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +18,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 	// 교수 기준 조회
     @Query("SELECT e FROM Evaluation e " +
            "WHERE e.stuSub.subject.professor.id = :professorId")
-    List<Evaluation> findByProfessorId(@Param("professorId") Long professorId);
+    Page<Evaluation> findByProfessorId(@Param("professorId") Long professorId, Pageable pageable);
 
     // 교수+과목 기준 조회
     @Query("SELECT e FROM Evaluation e " +

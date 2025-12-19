@@ -2,6 +2,8 @@ package com.university.home.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,15 +66,15 @@ public class EvaluationController {
 
     //교수 기준 전체 강의 평가 조회
     @GetMapping("/professor")
-    public ResponseEntity<List<EvaluationDto>> getEvaluationByProfessor(
-            @AuthenticationPrincipal CustomUserDetails loginUser) {
+    public ResponseEntity<?> getEvaluationByProfessor(
+            @AuthenticationPrincipal CustomUserDetails loginUser, Pageable pageable) {
 
         if (loginUser == null) {
             throw new CustomRestfullException("인증 정보가 유효하지 않습니다.", HttpStatus.UNAUTHORIZED);
         }
 
         Long professorId = loginUser.getUser().getId();
-        List<EvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorId(professorId);
+        Page<EvaluationDto> evaluations = evaluationService.getEvaluationsByProfessorId(professorId,pageable);
 
         return ResponseEntity.ok(evaluations);
     }
