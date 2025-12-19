@@ -43,14 +43,22 @@ public class DropoutAnalysisService {
     private final StuStatRepository stuStatRepository;
     private final UserRepository userRepository;
    
-    @Scheduled(cron = "0 0 0 1 3,9 *")
+    @Scheduled(cron = "0 0 0 1 5,11 *")
     public void analyzeAllStudents() {
-        List<Student> students = studentRepository.findAll();
-        log.info("총 {}명의 학생에 대한 위험 분석을 시작합니다.", students.size());
+        // 1. [수정] StudentRepository를 사용하여 모든 학생을 먼저 가져옵니다.
+        List<Student> allStudents = studentRepository.findAll();
+        log.info("총 {}명의 학생 데이터 로드 완료. 재학생 선별 중...", allStudents.size());
 
-        for (Student student : students) {
+        for (Student student : allStudents) {
             try {
+                // 2. [핵심] 여기서 '현재 재학 중인지' 검사하고 아니면 건너뜁니다.
+                if (!isEnrolled(student)) {
+                    continue; 
+                }
+
+                // 3. 재학생인 경우에만 분석 실행
                 analyzeStudentRisk(student);
+                
                 // API 속도 제한 고려 (1초 대기)
                 Thread.sleep(1000); 
 
@@ -61,8 +69,21 @@ public class DropoutAnalysisService {
                 log.error("학생({}) 건너뜀: {}", student.getName(), e.getMessage());
             }
         }
-     // ★ [추가] 모든 분석이 끝난 후 직원들에게 '실행 완료' 알림 발송
+        
+        // 실행 완료 알림
         sendAnalysisCompletionAlertToStaff();
+    }
+
+    // [필수] 학생이 현재 '재학' 상태인지 확인하는 메서드
+    private boolean isEnrolled(Student student) {
+        // 해당 학생의 학적 기록을 최신순으로 가져옴
+        List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
+        
+        // 기록이 없으면 신입생(재학), 기록이 있으면 가장 최신 상태(get(0)) 확인
+        String status = statHistory.isEmpty() ? "재학" : statHistory.get(0).getStatus();
+        
+        // "재학" 글자와 일치하는지 확인 (true/false 반환)
+        return "재학".equals(status);
     }
  // ★ [신규 메서드] 직원 알림 전송 로직
     private void sendAnalysisCompletionAlertToStaff() {
@@ -88,18 +109,29 @@ public class DropoutAnalysisService {
         
         // 1. 데이터 조회 (기존 로직 유지)
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());
-
+        
         List<StuSubDetail> details = stuSubDetailRepository.findByStudent_Id(student.getId());
         int absenceCount = details.stream()
                 .mapToInt(detail -> detail.getAbsent() == null ? 0 : detail.getAbsent().intValue()) 
                 .sum();
-     
+        // 1. 학적 상태 확인
         List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
         String status = statHistory.isEmpty() ? "재학" : statHistory.get(0).getStatus();
+        if (!"재학".equals(status)) {
+            log.info("학생({})은 '{}' 상태이므로 분석을 건너뜁니다.", student.getName(), status);
+            return; // 여기서 메서드 종료 (API 호출 안 함)
+        }
+        
+        // ★ [핵심] 성적도 0점이고 결석도 0회라면? -> "모범생"일 수도 있지만 "아직 학기 초라 데이터가 없는 상태"일 확률 99%
+        // 이 경우 위험도를 분석하지 않거나 '정상'으로 간주해야 합니다.
+        if (avgGrade == 0.0 && absenceCount == 0) {
+            log.info("데이터 부족(성적0, 결석0)으로 인해 정상 처리: {}", student.getName());
+            return; // 분석하지 않고 넘어감 (DB에 저장 안 함)
+        }
         
         // ★ [수정] 프롬프트 고도화: 성적, 학점, 출결을 구체적인 판단 기준으로 제시
         String analysisPrompt = """
-                당신은 대학교의 '중도 이탈(자퇴) 위험 분석 AI'입니다.
+                당신은 누리대학교의 '중도 이탈(자퇴) 위험 분석 AI'입니다.
                 아래의 [학생 데이터]를 기반으로 위험도를 예측하세요.
 
                 [학생 데이터]
