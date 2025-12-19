@@ -52,6 +52,10 @@ public class CounselingRecordService {
         CounselingSchedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new CustomRestfullException("상담 일정이 존재하지 않아 기록할 수 없습니다.", HttpStatus.NOT_FOUND));
 
+        System.out.println("scheduleId: " + scheduleId);
+        System.out.println("schedule.getProfessorId(): " + schedule.getProfessorId());
+        System.out.println("professorId (로그인): " + professorId);
+        
         if (!schedule.getProfessorId().equals(professorId)) {
             throw new CustomRestfullException("해당 상담 기록을 저장/수정할 권한이 없습니다. (담당 교수가 아님)", HttpStatus.FORBIDDEN);
         }
