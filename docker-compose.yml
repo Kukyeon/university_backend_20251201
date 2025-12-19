@@ -1,3 +1,5 @@
+docker-compose.yml
+
 version: '3.8'
 
 services:
@@ -8,6 +10,7 @@ services:
       - "8888:8888"
     env_file: .env
     environment:
+      # .env 파일에 정의한 변수들을 Spring Boot 설정 항목에 주입합니다.
       - SPRING_DATASOURCE_URL=${DB_URL}
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
@@ -16,12 +19,4 @@ services:
       - CLOUD_AWS_S3_BUCKET=${S3_BUCKET}
       - SPRING_WEB_CORS_ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      
-      # [중요] 스프링부트가 파일을 저장할 내부 경로 지정
-      - UPLOAD_PATH=/app/uploads/ 
-    
     restart: always
-    
-    # [중요] EC2 폴더와 도커 내부 폴더 연결 (영구 저장)
-    volumes:
-      - /home/ubuntu/uploads:/app/uploads
