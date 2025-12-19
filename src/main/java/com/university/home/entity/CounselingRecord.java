@@ -35,4 +35,10 @@ public class CounselingRecord {
     
     private LocalDateTime recordDate = LocalDateTime.now();
     
+    private LocalDateTime startedAt;  // 화상 상담 입장 시간
+    private LocalDateTime finishedAt; // 상담 종료 시간
+    @Enumerated(EnumType.STRING)
+    private ScheduleStatus status;    // PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELED, NO_SHOW
+
+    
 }

@@ -71,9 +71,14 @@ public class TuitionController {
 	        }
 	    }
 
-	    // 등록금 고지서 조회
-	    Tuition tuition = tuitionService.getSemester(studentId,  (long) LocalDate.now().getYear(),
-                (LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
+	    Tuition tuition = null;
+	    try {
+	        tuition = tuitionService.getSemester(studentId, (long) LocalDate.now().getYear(),
+	                    (LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
+	    } catch (CustomRestfullException e) {
+	        // 등록금 고지서 없음
+	    }
+
 	    if (tuition == null) {
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("status", null);
