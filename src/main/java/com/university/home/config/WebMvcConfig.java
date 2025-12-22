@@ -38,7 +38,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 // 기존 로컬 테스트용
                 .allowedOrigins("http://localhost:3000", "http://127.0.0.1:3000")
                 // 2. S3 정적 웹사이트 호스팅 주소를 정확히 추가
-                .allowedOrigins("https://university-frontend-bucket.s3-website.ap-northeast-2.amazonaws.com")
+                .allowedOrigins("https://university-front.s3-website.ap-northeast-2.amazonaws.com")
                 // .env 설정값 반영
                 .allowedOrigins(allowedOrigins.split(","))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
