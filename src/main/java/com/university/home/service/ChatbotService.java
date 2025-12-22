@@ -63,7 +63,7 @@ public class ChatbotService {
                     💬 **상담이 필요하신가요?**
                     교수님과 편하게 이야기를 나눌 수 있어요.
                     
-                    👉 [상담 예약 바로가기](/student-schedule)
+                    👉 [상담 예약 바로가기](/counseling)
                     """;
             
         }
