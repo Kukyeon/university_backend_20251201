@@ -1,12 +1,13 @@
-# 1. 자바 17 JDK 슬림 버전 사용
 FROM eclipse-temurin:17-jdk-focal
 
-# 2. 컨테이너 내부 작업 디렉토리 설정
-WORKDIR /app
+# 💡 OS 레벨에서 타임존을 서울로 설정
+ENV TZ=Asia/Seoul
+RUN apt-get update && apt-get install -y tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone
 
-# 3. 빌드된 jar 파일을 컨테이너 내부로 복사
-# STS4 터미널에서 ./gradlew build 실행 후 생성되는 jar 파일을 대상으로 합니다.
+WORKDIR /app
 COPY *-SNAPSHOT.jar app.jar
 
-# 4. 애플리케이션 실행 명령어
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# 💡 실행 시 타임존 옵션을 명시적으로 추가
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]

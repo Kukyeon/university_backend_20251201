@@ -28,7 +28,7 @@ public class S3Service {
         metadata.setContentType(file.getContentType());
 
         amazonS3.putObject(new PutObjectRequest(bucket, fileName, file.getInputStream(), metadata)
-                .withCannedAcl(CannedAccessControlList.PublicRead));
+                );
         return amazonS3.getUrl(bucket, fileName).toString();
     }
 }
