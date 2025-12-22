@@ -12,6 +12,8 @@ import com.university.home.repository.CounselingScheduleRepository;
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.StudentService; // 학생 이름 조회를 위해 주입
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CounselingScheduleService {
@@ -116,8 +119,16 @@ public class CounselingScheduleService {
             schedule.setStartTime(availability.getStartTime());
             schedule.setEndTime(availability.getEndTime());
             schedule.setStatus(ScheduleStatus.PENDING);
-
-            return scheduleRepository.save(schedule);
+            
+            CounselingSchedule savedSchedule = scheduleRepository.save(schedule);
+            
+            try {
+                notificationService.sendAppointmentAlert(savedSchedule, "신규 예약");
+            } catch (Exception e) {
+                log.error("예약 알림 전송 실패: {}", e.getMessage());
+            }
+            
+            return savedSchedule;
         }
 
         // [3] 상담 취소
