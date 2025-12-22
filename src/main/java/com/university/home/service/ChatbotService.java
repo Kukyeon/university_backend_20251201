@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.university.home.entity.ChatLog;
 import com.university.home.entity.DropoutRisk;
 import com.university.home.entity.Professor;
+import com.university.home.entity.StuStat;
 import com.university.home.entity.StuSub;
 import com.university.home.entity.StuSubDetail;
 import com.university.home.entity.Student;
@@ -17,6 +18,7 @@ import com.university.home.entity.Subject;
 import com.university.home.repository.ChatLogRepository;
 import com.university.home.repository.DropoutRiskRepository;
 import com.university.home.repository.ProfessorRepository;
+import com.university.home.repository.StuStatRepository;
 import com.university.home.repository.StuSubRepository;
 import com.university.home.repository.StudentRepository;
 import com.university.home.repository.SubjectRepository;
@@ -35,7 +37,7 @@ public class ChatbotService {
     private final StuSubRepository stuSubRepository;
     private final SubjectRepository subjectRepository;
     private final ProfessorRepository professorRepository;
-
+    private final StuStatRepository stuStatRepository;
     @Transactional
     public String ask(Long studentId, String question) {
         
@@ -51,12 +53,13 @@ public class ChatbotService {
         String attitudeGuide = ""; // AI에게 줄 지침 (프롬프트용)
         String mandatorySuffix = ""; // 답변 뒤에 무조건 붙일 꼬리말 (링크용)
         if (risk != null && (risk.getRiskLevel().contains("심각") || risk.getRiskLevel().contains("경고"))) {
-        	// (1) AI에게는 "따뜻하게 말해라"라고만 시킵니다. (링크 강요 X)
-            attitudeGuide = """
-                [⚠️ 중요: 대화 태도 가이드]
-                이 학생은 현재 학업 중단 위험(심각/경고) 단계입니다.
-                질문에 대한 답변을 마친 후, 문단은 나누지 말고 **"혹시 요즘 학교생활에 힘든 점은 없으신가요?"** 와 같이 학생을 걱정하는 따뜻한 멘트를 한 문장 덧붙여주세요.
-                """;
+        	attitudeGuide = """
+        		    [⚠️ 내부 지침 (사용자에게 비밀)]
+        		    상황: 이 학생은 현재 학교 생활에 어려움을 겪고 있을 가능성이 높습니다. (위험 단계 분류됨)
+        		    지시 1: 답변할 때 공감하고 격려하는 따뜻한 어조를 사용하세요.
+        		    지시 2: '위험 단계', '심각', '경고'라는 단어는 절대 학생에게 언급하지 마세요.
+        		    지시 3: 답변의 맨 마지막에 자연스럽게 "혹시 요즘 학교생활에 힘든 점은 없으신가요?"라고 물어봐 주세요.
+        		    """;
             mandatorySuffix = """
                     \n
                     --------------------------------------------------
@@ -142,12 +145,12 @@ public class ChatbotService {
         // 실제 리액트 라우터(App.js)에 정의된 경로와 일치시켜야 합니다.
         String siteMap = """
                 [주요 서비스 링크]
-                - 수강 신청: /sugang
-                - 성적 조회: /grade
-                - 휴학 신청/조회: /student/leave
-                - 마이 페이지: /student/my
-                - 강의 목록: /course/list
-                - 장학금 조회: /student/scholarship
+                - 수강 신청: /sugang?tab=수강신청
+                - 금학기 성적 조회: /grade?tab=this
+                - 휴학 신청: /my?tab=leave
+                - 내 정보 조회: /my?tab=myInfo
+                - 강의 시간표 조회: /sugang?tab=강의시간표조회
+                - 등록금 내역 조회: /my?tab=tuitionHistory
                 """;
 
         // 7. 프롬프트 작성
@@ -271,6 +274,12 @@ public class ChatbotService {
 
     // (makeStudentInfoString 등 나머지 메서드는 기존 유지)
     private String makeStudentInfoString(Student student) {
+    	List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
+    	String currentStatus = "정보 없음"; // 기본값
+        if (!statHistory.isEmpty()) {
+            // 정렬을 내림차순(Desc)으로 했으므로, 0번째가 가장 최신 상태입니다.
+            currentStatus = statHistory.get(0).getStatus();
+        }
         // ... (기존 코드와 동일) ...
         Integer totalCredits = gradeService.calculateTotalCredits(student.getId());
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());      
@@ -284,6 +293,7 @@ public class ChatbotService {
         return """
                 - 학번: %d
                 - 이름: %s
+                - 학적 상태: %s
                 - 성별: %s
                 - 소속 학과: %s
                 - 학년/학기: %d학년 %d학기
@@ -291,9 +301,16 @@ public class ChatbotService {
                 - 총 이수 학점: %d학점
                 - 이번 학기 평점: %.2f점
                 """.formatted(
-                    student.getId(), student.getName(), gender, dept, 
-                    student.getGrade(), student.getSemester(), 
-                    tel, totalCredits, avgGrade
+                        student.getId(),        // 1. 학번 (%d)
+                        student.getName(),      // 2. 이름 (%s)
+                        currentStatus,          // 3. 학적 상태 (%s) ★여기에 추가!
+                        gender,                 // 4. 성별 (%s)
+                        dept,                   // 5. 소속 학과 (%s)
+                        student.getGrade(),     // 6. 학년 (%d)
+                        student.getSemester(),  // 7. 학기 (%d)
+                        tel,                    // 8. 연락처 (%s)
+                        totalCredits,           // 9. 총 이수 학점 (%d)
+                        avgGrade                // 10. 평점 (%.2f)
                 );
     }       
 

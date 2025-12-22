@@ -15,8 +15,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.university.home.dto.NotificationResponseDto;
 import com.university.home.entity.CounselingSchedule;
 import com.university.home.entity.Notification;
+import com.university.home.entity.Student;
 import com.university.home.repository.NotificationRepository;
 import com.university.home.repository.ProfessorRepository;
+import com.university.home.repository.StudentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j; // 로그 확인용 (선택)
@@ -28,6 +30,8 @@ public class NotificationService {
 	
 	private final NotificationRepository notificationRepository;
 	private final ProfessorRepository professorRepository;
+	private final StudentRepository studentRepository;
+	
 	
 	// 메모리 누수 방지를 위해 ConcurrentHashMap 사용
 	private static final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -170,6 +174,7 @@ public class NotificationService {
     			.Checked(false)
     			.createdAt(LocalDateTime.now())
     			.build();
+    	
     	
     	Notification savedNotification = notificationRepository.save(notification);
     	
