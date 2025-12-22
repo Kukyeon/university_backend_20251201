@@ -91,7 +91,7 @@ public class DropoutAnalysisService {
             // 1. 'STAFF' 권한을 가진 모든 사용자 조회
             // (DB의 user_tb 테이블 role 컬럼값이 'STAFF'인 사용자를 찾습니다)
             // UserRepository에 List<User> findByRole(String role); 메서드가 있어야 합니다.
-        	List<User> staffList = userRepository.findByUserRole("STAFF");
+           List<User> staffList = userRepository.findByUserRole("STAFF");
             
             String message = "✅ 전체 학생 위험군 분석이 완료되었습니다.";
             String targetUrl = null; // 직원이 이동할 대시보드 URL
@@ -105,7 +105,7 @@ public class DropoutAnalysisService {
             log.error("직원 알림 전송 중 오류 발생", e);
         }
     }
-    	private void analyzeStudentRisk(Student student) {
+       private void analyzeStudentRisk(Student student) {
         
         // 1. 데이터 조회 (기존 로직 유지)
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());
