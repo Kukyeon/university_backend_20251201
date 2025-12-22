@@ -7,8 +7,12 @@ services:
     ports:
       - "8888:8888"
     env_file: .env
+    # 💡 [핵심] 팀원분의 명령어를 Docker 방식으로 녹여낸 부분입니다.
+    # -Duser.timezone=Asia/Seoul을 실행 시점에 직접 주입합니다.
+    entrypoint: ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
     environment:
-      # .env 파일에 정의한 변수들을 Spring Boot 설정 항목에 주입합니다.
+      - TZ=Asia/Seoul
+      - JAVA_TOOL_OPTIONS=-Duser.timezone=Asia/Seoul
       - SPRING_DATASOURCE_URL=${DB_URL}
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
@@ -17,4 +21,7 @@ services:
       - CLOUD_AWS_S3_BUCKET=${S3_BUCKET}
       - SPRING_WEB_CORS_ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:  
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     restart: always
