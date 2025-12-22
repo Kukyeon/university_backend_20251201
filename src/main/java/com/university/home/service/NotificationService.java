@@ -157,7 +157,7 @@ public class NotificationService {
     			.senderId(senderId)
     			.content(content)
     			.type("PROFESSOR_MESSAGE")
-    			.url("/student-schedule")
+    			.url("/counseling")
     			.Checked(false)
     			.createdAt(LocalDateTime.now())
     			.build();
