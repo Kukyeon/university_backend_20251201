@@ -117,6 +117,7 @@ public class CounselingScheduleService {
             schedule.setEndTime(availability.getEndTime());
             schedule.setStatus(ScheduleStatus.PENDING);
 
+            notificationService.sendAppointmentAlert(schedule, "예약");
             return scheduleRepository.save(schedule);
         }
 
