@@ -304,9 +304,10 @@ public class CounselingScheduleService {
                     throw new CustomRestfullException("아직 상담 시작 시간이 아닙니다.", HttpStatus.BAD_REQUEST);
                 }
 
-                if (now.isAfter(schedule.getEndTime())) {
+                if (now.isAfter(schedule.getEndTime()) && schedule.getStatus() != ScheduleStatus.IN_PROGRESS) {
                     throw new CustomRestfullException("상담 시간이 종료되었습니다.", HttpStatus.BAD_REQUEST);
                 }
+
 
                 if (!schedule.getStudentId().equals(userId)
                     && !schedule.getProfessorId().equals(userId)) {
@@ -348,7 +349,7 @@ public class CounselingScheduleService {
                 return EntryValidateDto.fail("아직 상담 시작 시간이 아닙니다.");
             }
 
-            if (now.isAfter(schedule.getEndTime())) {
+            if (now.isAfter(schedule.getEndTime()) && schedule.getStatus() != ScheduleStatus.IN_PROGRESS) {
                 return EntryValidateDto.fail("상담 시간이 종료되었습니다.");
             }
 
