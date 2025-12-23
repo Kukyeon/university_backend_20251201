@@ -119,16 +119,9 @@ public class CounselingScheduleService {
             schedule.setStartTime(availability.getStartTime());
             schedule.setEndTime(availability.getEndTime());
             schedule.setStatus(ScheduleStatus.PENDING);
-            
-            CounselingSchedule savedSchedule = scheduleRepository.save(schedule);
-            
-            try {
-                notificationService.sendAppointmentAlert(savedSchedule, "신규 예약");
-            } catch (Exception e) {
-                log.error("예약 알림 전송 실패: {}", e.getMessage());
-            }
-            
-            return savedSchedule;
+
+            notificationService.sendAppointmentAlert(schedule, "예약");
+            return scheduleRepository.save(schedule);
         }
 
         // [3] 상담 취소
@@ -311,9 +304,10 @@ public class CounselingScheduleService {
                     throw new CustomRestfullException("아직 상담 시작 시간이 아닙니다.", HttpStatus.BAD_REQUEST);
                 }
 
-                if (now.isAfter(schedule.getEndTime())) {
+                if (now.isAfter(schedule.getEndTime()) && schedule.getStatus() != ScheduleStatus.IN_PROGRESS) {
                     throw new CustomRestfullException("상담 시간이 종료되었습니다.", HttpStatus.BAD_REQUEST);
                 }
+
 
                 if (!schedule.getStudentId().equals(userId)
                     && !schedule.getProfessorId().equals(userId)) {
@@ -355,7 +349,7 @@ public class CounselingScheduleService {
                 return EntryValidateDto.fail("아직 상담 시작 시간이 아닙니다.");
             }
 
-            if (now.isAfter(schedule.getEndTime())) {
+            if (now.isAfter(schedule.getEndTime()) && schedule.getStatus() != ScheduleStatus.IN_PROGRESS) {
                 return EntryValidateDto.fail("상담 시간이 종료되었습니다.");
             }
 

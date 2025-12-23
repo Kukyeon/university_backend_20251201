@@ -1,6 +1,8 @@
 package com.university.home.service;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -38,15 +40,19 @@ public class NotificationService {
 	// 3. 상담 예약 알림
     public void sendAppointmentAlert(CounselingSchedule schedule, String type) {
         Long professorId = schedule.getProfessorId();
-        String studentDisplay = studentRepository.findById(schedule.getStudentId())
-                .map(Student::getName)
-                .orElse(schedule.getStudentId().toString());
+        Long studentId = schedule.getStudentId();
         
-        String action = "예약 취소".equals(type) ? "취소했습니다" : "예약했습니다";
-        String message = String.format("📅 [%s] %s 학생이 상담을 %s. (%s)", 
-                type, studentDisplay, action, schedule.getStartTime().toString());
+        String action = switch (type) {
+        case "예약" -> "예약했습니다";
+        case "예약 취소" -> "예약을 취소했습니다";
+        default -> "상태 변경";
+    };
+    String tab = "학생 상담 목록";
+    String url = "/counseling?tab=" + URLEncoder.encode(tab, StandardCharsets.UTF_8);
+    String message = String.format("📅 [%s] %s 학생이 상담을 %s. (%s)", 
+            type, studentId, action, schedule.getStartTime().toString());
         
-        send(professorId, message, "/counseling"); 
+        send(professorId, message, url); 
         
         System.out.println("🔔 [Notification] Sent to Prof " + professorId + ": " + message);
     }

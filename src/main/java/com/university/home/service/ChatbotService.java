@@ -58,10 +58,6 @@ public class ChatbotService {
         		    상황: 이 학생은 현재 학교 생활에 어려움을 겪고 있을 가능성이 높습니다. (위험 단계 분류됨)
         		    지시 1: 답변할 때 공감하고 격려하는 따뜻한 어조를 사용하세요.
         		    지시 2: '위험 단계', '심각', '경고'라는 단어는 절대 학생에게 언급하지 마세요.
-
-        		    지시 3: 답변의 맨 마지막에 자연스럽게 "혹시 요즘 학교생활에 힘든 점은 없으신가요?"라고 물어봐 주세요.
-
-
         		    """;
             mandatorySuffix = """
                     \n
@@ -69,7 +65,7 @@ public class ChatbotService {
                     💬 **상담이 필요하신가요?**
                     교수님과 편하게 이야기를 나눌 수 있어요.
                     
-                    👉 [상담 예약 바로가기](/student-schedule)
+                    👉 [상담 예약 바로가기](/counseling)
                     """;
             
         }
@@ -148,12 +144,12 @@ public class ChatbotService {
         // 실제 리액트 라우터(App.js)에 정의된 경로와 일치시켜야 합니다.
         String siteMap = """
                 [주요 서비스 링크]
-                - 수강 신청: /sugang
-                - 성적 조회: /grade
-                - 휴학 신청/조회: /student/leave
-                - 마이 페이지: /student/my
-                - 강의 목록: /course/list
-                - 장학금 조회: /student/scholarship
+                - 수강 신청: /sugang?tab=수강신청
+                - 금학기 성적 조회: /grade?tab=this
+                - 휴학 신청: /my?tab=leave
+                - 내 정보 조회: /my?tab=myInfo
+                - 강의 시간표 조회: /sugang?tab=강의시간표조회
+                - 등록금 내역 조회: /my?tab=tuitionHistory
                 """;
 
         // 7. 프롬프트 작성

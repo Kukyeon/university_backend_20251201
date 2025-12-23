@@ -47,55 +47,18 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 안 씀 (StateLess)
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/user/login", 
-                        "/api/user/findId", 
-                        "/api/user/findPw",
-                        "/api/test",
-                        "/api/notice/**",
-                        "/api/notice/list*",
-                        "/images/**","/api/**",
-                        "/api/notification/**" ,
-                        "/ws/signaling/**" ,
-                         "/api/schedules/**",
-                         "/api/schedules/available/professor/*",
-                        "/api/notice/**",
-                        "/api/notice/list*",
-                        "/images/**",
-                        "/api/notification/**",
-                        "/ws/signaling/**"  // 공지목록 조회
-
-                        ).permitAll() // 로그인, ID/PW 찾기 허용
-                .requestMatchers(
-                    "/api/user/login", 
-                    "/api/user/findId", 
-                    "/api/user/findPw",
-                    "/api/user/check_nickname", // 닉네임 중복 확인 등 추가 가능
-                    "/uploads/**",              // 파일 업로드 경로
-                    "/images/**",               // 이미지 경로
-                    "/ws/signaling/**",         // 웹소켓 경로
-                    "/api/notice/list*",        // 공지 목록
-                    "/api/notice/**"            // 공지 상세 (조회만 허용할거면 GET 메서드 제한 필요)
-                ).permitAll()
-
-                // 2. 교수 전용 기능 (Role: PROFESSOR)
-                .requestMatchers(
-                    "/api/schedules/professor/**",
-                    "/api/schedules/availability/**",
-                    "/api/schedules/requests",
-                    "/api/prof/**"
-                ).hasRole("PROFESSOR")
-
-                // 3. 학생/교수 공통 인증 필요 기능 (예약, 취소 등)
-                .requestMatchers(
-                    "/api/schedules/book",
-                    "/api/schedules/student",
-                    "/api/schedules/cancel/*",
-                    "/api/notification/**" 
-                ).authenticated()
-
-                // 4. 그 외 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+            	    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ⭐ 추가
+            	    .requestMatchers(
+            	        "/api/user/login",
+            	        "/api/user/findId",
+            	        "/api/user/findPw",
+            	        "/api/user/check_nickname",
+            	        "/uploads/**",
+            	        "/images/**",
+            	        "/ws/signaling/**"
+            	    ).permitAll()
+            	    .anyRequest().authenticated()
+            	)
             .userDetailsService(customUserDetailService)
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
@@ -113,19 +76,21 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        
-        // yml에서 가져온 도메인들을 리스트로 변환하여 적용
-        // (빈 문자열이 들어올 경우를 대비해 예외처리나 로그를 찍는 것도 좋음)
-        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        } else {
-            // 실수로 설정을 안 했을 때 개발용 기본값
-            config.addAllowedOrigin("http://localhost:3000");
+
+        if (allowedOrigins != null && !allowedOrigins.isBlank()) {
+            config.setAllowedOrigins(
+                Arrays.stream(allowedOrigins.split(","))
+                      .map(String::trim)
+                      .toList()
+            );
         }
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedMethods(List.of(
+            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+
         config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedOrigin("http://127.0.0.1:3000");
         config.addAllowedOrigin("http://university-frontend-bucket.s3-website.ap-northeast-2.amazonaws.com");
@@ -135,10 +100,18 @@ public class SecurityConfig {
         config.addExposedHeader("Authorization");
         config.addExposedHeader("Content-Disposition"); // 파일 다운로드 시 필요
 
+
+        config.setExposedHeaders(List.of(
+            "Authorization",
+            "Content-Disposition"
+        ));
+
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
