@@ -47,18 +47,18 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 안 씀 (StateLess)
             )
             .authorizeHttpRequests(auth -> auth
-            	    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ⭐ 추가
-            	    .requestMatchers(
-            	        "/api/user/login",
-            	        "/api/user/findId",
-            	        "/api/user/findPw",
-            	        "/api/user/check_nickname",
-            	        "/uploads/**",
-            	        "/images/**",
-            	        "/ws/signaling/**"
-            	    ).permitAll()
-            	    .anyRequest().authenticated()
-            	)
+                   .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ⭐ 추가
+                   .requestMatchers(
+                       "/api/user/login",
+                       "/api/user/findId",
+                       "/api/user/findPw",
+                       "/api/user/check_nickname",
+                       "/uploads/**",
+                       "/images/**",
+                       "/ws/signaling/**"
+                   ).permitAll()
+                   .anyRequest().authenticated()
+               )
             .userDetailsService(customUserDetailService)
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex

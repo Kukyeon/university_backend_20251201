@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y tzdata && \
     echo $TZ > /etc/timezone
 
 WORKDIR /app
-COPY *-SNAPSHOT.jar app.jar
+COPY university.jar app.jar
 
 # 💡 실행 시 타임존 옵션을 명시적으로 추가
 ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
