@@ -13,8 +13,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.university.home.dto.NotificationResponseDto;
 import com.university.home.entity.CounselingSchedule;
 import com.university.home.entity.Notification;
+import com.university.home.entity.Student;
 import com.university.home.repository.NotificationRepository;
 import com.university.home.repository.ProfessorRepository;
+import com.university.home.repository.StudentRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j; // 로그 확인용 (선택)
@@ -26,6 +28,8 @@ public class NotificationService {
 	
 	private final NotificationRepository notificationRepository;
 	private final ProfessorRepository professorRepository;
+	private final StudentRepository studentRepository;
+	
 	
 	// 메모리 누수 방지를 위해 ConcurrentHashMap 사용
 	private static final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
@@ -34,12 +38,15 @@ public class NotificationService {
 	// 3. 상담 예약 알림
     public void sendAppointmentAlert(CounselingSchedule schedule, String type) {
         Long professorId = schedule.getProfessorId();
-        Long studentId = schedule.getStudentId();
+        String studentDisplay = studentRepository.findById(schedule.getStudentId())
+                .map(Student::getName)
+                .orElse(schedule.getStudentId().toString());
         
-        String message = String.format("📅 [%s] %s 학생이 상담을 예약했습니다. (%s)", 
-                type, studentId, schedule.getStartTime().toString());
+        String action = "예약 취소".equals(type) ? "취소했습니다" : "예약했습니다";
+        String message = String.format("📅 [%s] %s 학생이 상담을 %s. (%s)", 
+                type, studentDisplay, action, schedule.getStartTime().toString());
         
-        send(professorId, message, "/professor/counseling"); 
+        send(professorId, message, "/counseling"); 
         
         System.out.println("🔔 [Notification] Sent to Prof " + professorId + ": " + message);
     }
@@ -157,10 +164,11 @@ public class NotificationService {
     			.senderId(senderId)
     			.content(content)
     			.type("PROFESSOR_MESSAGE")
-    			.url("/student-schedule")
+    			.url("/counseling")
     			.Checked(false)
     			.createdAt(LocalDateTime.now())
     			.build();
+    	
     	
     	Notification savedNotification = notificationRepository.save(notification);
     	

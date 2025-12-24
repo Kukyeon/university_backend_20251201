@@ -12,6 +12,8 @@ import com.university.home.repository.CounselingScheduleRepository;
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.StudentService; // 학생 이름 조회를 위해 주입
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CounselingScheduleService {
@@ -117,6 +120,7 @@ public class CounselingScheduleService {
             schedule.setEndTime(availability.getEndTime());
             schedule.setStatus(ScheduleStatus.PENDING);
 
+            notificationService.sendAppointmentAlert(schedule, "예약");
             return scheduleRepository.save(schedule);
         }
 
@@ -300,9 +304,10 @@ public class CounselingScheduleService {
                     throw new CustomRestfullException("아직 상담 시작 시간이 아닙니다.", HttpStatus.BAD_REQUEST);
                 }
 
-                if (now.isAfter(schedule.getEndTime())) {
+                if (now.isAfter(schedule.getEndTime()) && schedule.getStatus() != ScheduleStatus.IN_PROGRESS) {
                     throw new CustomRestfullException("상담 시간이 종료되었습니다.", HttpStatus.BAD_REQUEST);
                 }
+
 
                 if (!schedule.getStudentId().equals(userId)
                     && !schedule.getProfessorId().equals(userId)) {
@@ -344,7 +349,7 @@ public class CounselingScheduleService {
                 return EntryValidateDto.fail("아직 상담 시작 시간이 아닙니다.");
             }
 
-            if (now.isAfter(schedule.getEndTime())) {
+            if (now.isAfter(schedule.getEndTime()) && schedule.getStatus() != ScheduleStatus.IN_PROGRESS) {
                 return EntryValidateDto.fail("상담 시간이 종료되었습니다.");
             }
 
@@ -383,4 +388,3 @@ public class CounselingScheduleService {
 
 
     }
-
