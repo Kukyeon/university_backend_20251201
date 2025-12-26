@@ -37,4 +37,7 @@ public class Subject {
     private Integer basketCount = 0; //예비 수강신청인원
     @OneToOne(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Syllabus syllabus;
+    
+    @Column(name = "target_grade")
+    private Long targetGrade;
 }

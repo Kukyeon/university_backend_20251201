@@ -31,14 +31,17 @@ public class CourseController {
     // GET /api/course/list
     @GetMapping("/list")
     public ResponseEntity<Page<Subject>> getCourseList(
-            @RequestParam(name = "year", required = false) Long year,
-            @RequestParam(name = "semester", required = false) Long semester,
+    		@AuthenticationPrincipal CustomUserDetails loginUser,
             @RequestParam(name = "page", defaultValue = "0") int page,        
             @RequestParam(name = "type", required = false) String type,
             @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "deptId", required = false) Long deptId
+            @RequestParam(name = "deptId", required = false) Long deptId,
+            @RequestParam(name = "targetGrade", required = false) Long targetGrade
     ) {
-        return ResponseEntity.ok(courseService.getAvailableCourses(year, semester, page, type, name, deptId));
+    	if (loginUser == null) return ResponseEntity.status(401).build();
+
+    	Long studentId = loginUser.getUser().getId();
+        return ResponseEntity.ok(courseService.getAvailableCourses(studentId, page, type, name, deptId, targetGrade));
     }
     
  // [추가] 모든 강좌 조회 (년도/학기 무관)

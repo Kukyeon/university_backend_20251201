@@ -1,6 +1,8 @@
 package com.university.home.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -114,8 +116,15 @@ public class StuSubService {
         return dto;
     }
  // 금학기 성적 조회
-    public List<GradeDto> getThisSemesterGrades(Long studentId, Long currentYear, Long currentSemester) {
-        List<StuSub> stuSubs = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
+    public List<GradeDto> getThisSemesterGrades(Long studentId) {
+        
+    	Subject latest = subjectRepository.findTopByOrderBySubYearDescSemesterDesc().orElse(null);
+        if (latest == null) return Collections.emptyList();
+        
+        Long currentYear = latest.getSubYear();
+        Long currentSemester = latest.getSemester();
+    	
+    	List<StuSub> stuSubs = stuSubRepository.findByStudentIdAndSubjectSubYearAndSubjectSemester(
             studentId, currentYear, currentSemester
         );
 
@@ -222,6 +231,10 @@ public class StuSubService {
         }).toList();
         
     }
-
+    @Transactional(readOnly = true)
+    public List<Long> getTakenYears(Long studentId) {
+        // 이제 에러 없이 List<Long> 형태로 잘 받아옵니다.
+        return stuSubRepository.findDistinctYearsByStudentId(studentId);
+    }
 
 }

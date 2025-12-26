@@ -63,4 +63,6 @@ public class SubjectDto {
     private Long capacity;
 
     private Long numOfStudent;
+    
+    private Long targetGrade;
 }
