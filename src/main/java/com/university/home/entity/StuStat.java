@@ -8,9 +8,9 @@ import java.time.LocalDate;
 @Table(name = "stu_stat_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class StuStat {
+public class StuStat { // 학생 학적상태
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
@@ -25,5 +25,5 @@ public class StuStat {
     private LocalDate toDate;
 
     @Column(name = "break_app_id")
-    private Long breakAppId; // Integer -> Long
+    private Long breakAppId; 
 }

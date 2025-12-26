@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.university.home.dto.BreakAppDto;
@@ -34,7 +33,7 @@ public class BreakAppController {
 
 	@Autowired
 	BreakAppService breakAppService;
-
+	// 휴학신청(학생)
 	@PostMapping("/app")
 	public ResponseEntity<?> createBreakApp(@RequestBody @Valid BreakAppDto dto, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		Long studentId = loginUser.getUser().getId();
@@ -56,6 +55,7 @@ public class BreakAppController {
 		
 		return ResponseEntity.ok("휴학 신청 완료");
 	}
+	// 휴학신청목록(직원)
 	@GetMapping("/list")
 	public ResponseEntity<?> getByStudent(@AuthenticationPrincipal CustomUserDetails loginUser) {
 		List<BreakApp> apps;
@@ -75,6 +75,7 @@ public class BreakAppController {
 	    }
 		return ResponseEntity.ok(apps);
 	}
+	// 휴학내용상세보기(학생, 직원)
 	@GetMapping("/detail/{id}")
 	public ResponseEntity<?> getAppDetail(@PathVariable(name = "id") Long id, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		BreakApp app = breakAppService.getById(id);
@@ -85,6 +86,7 @@ public class BreakAppController {
 		
 		return ResponseEntity.ok(app);
 	}
+	// 휴학신청 취소(학생)
 	@DeleteMapping("/detail/{id}")
 	public ResponseEntity<?> deleteApp(@PathVariable(name = "id") Long id, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		BreakApp app = breakAppService.getById(id);
@@ -96,6 +98,7 @@ public class BreakAppController {
 	    breakAppService.cancelBreakApp(id);
 		return ResponseEntity.ok("신청 취소 완료");
 	}
+	// 휴학승인/반려(직원)
 	@PutMapping("/update/{id}")
 	public ResponseEntity<?> updateApp(@PathVariable(name = "id") Long id,  @RequestBody Map<String, String> body, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		if (!loginUser.getUser().getUserRole().equals("staff") &&

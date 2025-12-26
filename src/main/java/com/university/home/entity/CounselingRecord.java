@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CounselingRecord {
+public class CounselingRecord { // 화상상담기록
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,7 +21,6 @@ public class CounselingRecord {
     @JoinColumn(name = "schedule_id", nullable = false)
     private CounselingSchedule schedule;
 
-    // 검색 용이성을 위해 User 정보를 중복 저장
     private String studentName; 
     private Long studentId;
     

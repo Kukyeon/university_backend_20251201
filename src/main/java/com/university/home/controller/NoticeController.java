@@ -11,13 +11,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.university.home.dto.NoticeFormDto;
-import com.university.home.dto.NoticePageFormDto;
 import com.university.home.entity.Notice;
 import com.university.home.service.NoticeService;
 
@@ -65,13 +63,13 @@ public class NoticeController {
         return noticeService.updateNotice(id, dto);
     }
 
-
     // 공지 삭제
     @DeleteMapping("/delete/{id}")
     public String deleteNotice(@PathVariable("id") Long id) {
         noticeService.deleteNotice(id);
         return "deleted";
     }
+    // 공지 마지막 5개(홈화면용)
     @GetMapping("/latest")
     public ResponseEntity<?> latestList(){
     	List<Notice> latestList = noticeService.getLatest5Notices();

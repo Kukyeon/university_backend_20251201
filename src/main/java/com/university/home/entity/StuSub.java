@@ -7,9 +7,9 @@ import lombok.*;
 @Table(name = "stu_sub_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class StuSub {
+public class StuSub { // 학생 성적
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
@@ -22,13 +22,11 @@ public class StuSub {
     private String grade; 
     
     @Column(name = "complete_grade")
-    private Long completeGrade; // Integer -> Long
+    private Long completeGrade;
     
- // 1:1 매핑
     @OneToOne(mappedBy = "stuSub", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private StuSubDetail detail;
 
-    // helper method
     public void setDetail(StuSubDetail detail) {
         this.detail = detail;
         detail.setStuSub(this); // 양방향 연결

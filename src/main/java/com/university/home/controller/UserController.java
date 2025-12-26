@@ -3,9 +3,7 @@ package com.university.home.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,16 +15,12 @@ import com.university.home.dto.PageResponse;
 import com.university.home.dto.ProfessorDto;
 import com.university.home.dto.StaffDto;
 import com.university.home.dto.StudentDto;
-import com.university.home.entity.Professor;
-import com.university.home.entity.Student;
-import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.*;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/staff")
-public class UserController /*~~(Could not parse as Java)~~>*/{
-
+public class UserController {
 
 	@Autowired
 	UserService userService;

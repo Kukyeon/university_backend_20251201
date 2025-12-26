@@ -6,9 +6,9 @@ import lombok.*;
 @Entity
 @Table(name = "room_tb")
 @Getter @Setter @NoArgsConstructor
-public class Room {
+public class Room { // 강의실
     @Id 
-    private String id; // 강의실 호수는 보통 문자열(예: E101)이 많아 유지했으나, 숫자만 쓴다면 Long 변경 가능
+    private String id; 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "college_id")

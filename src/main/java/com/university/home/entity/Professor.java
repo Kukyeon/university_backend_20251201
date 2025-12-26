@@ -3,22 +3,18 @@ package com.university.home.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @Table(name = "professor_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Professor {
+public class Professor { // 교수
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
     
     @OneToOne
     @JoinColumn(name = "user_id")
-    private User user; // User와 1:1 매핑
+    private User user;
     
     private String name;
     private LocalDate birthDate;
@@ -29,7 +25,6 @@ public class Professor {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dept_id")
-   // @JsonBackReference
     private Department department;
     
     private LocalDate hireDate;

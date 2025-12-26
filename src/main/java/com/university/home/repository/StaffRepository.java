@@ -6,9 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.university.home.entity.Staff;
 
-import java.util.List;
-
-
 public interface StaffRepository extends JpaRepository<Staff, Long> {
 
 	// 이름 + 이메일(아이디 찾기)

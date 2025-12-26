@@ -34,7 +34,6 @@ public class SecurityConfig {
     private final CustomUserDetailService customUserDetailService;
     private final JwtAuthenticationFilter jwtFilter;
 
-    // application.yml에서 허용할 도메인 리스트를 가져옴
     @Value("${spring.web.cors.allowed-origins}")
     private String allowedOrigins;
 
@@ -47,7 +46,7 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 안 씀 (StateLess)
             )
             .authorizeHttpRequests(auth -> auth
-            	    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ⭐ 추가
+            	    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 추가
             	    .requestMatchers(
             	        "/api/user/login",
             	        "/api/user/findId",

@@ -23,7 +23,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,16 +42,9 @@ public class CounselingController {
         }
         
         Long id = principal.getUser().getId();
-        // 💡 필요하다면 여기에 role 체크 로직 추가 가능
-        // if (!principal.getUser().getUserRole().name().equalsIgnoreCase(role)) { ... }
         return id;
     }
-
-
-    // =========================================================
-    // 1. 교수 상담 가능 시간
-    // =========================================================
-
+    // 교수 상담 가능 시간
     @PostMapping("/availability")
     public ResponseEntity<ProfessorAvailability> setAvailability(
         @RequestBody AvailabilityRequestDto request,
@@ -95,11 +87,7 @@ public class CounselingController {
 
         return ResponseEntity.noContent().build();
     }
-
-    // =========================================================
-    // 2. 학생 상담 예약
-    // =========================================================
-
+    //  학생 상담 예약
     @PostMapping("/book")
     public ResponseEntity<CounselingSchedule> bookAppointment(
         @RequestBody BookingRequestDto request, // BookingRequestDto를 그대로 사용
@@ -114,12 +102,6 @@ public class CounselingController {
                 studentId
             )
         );
-        // ⚠️ JSON 오류가 계속 발생하면, 다음처럼 수동으로 Long을 추출하도록 임시 수정 가능
-        // @RequestBody Map<String, Long> requestBody
-        // Long availabilityId = requestBody.get("availabilityId");
-        // BookingRequestDto request = new BookingRequestDto();
-        // request.setAvailabilityId(availabilityId); // DTO에 Setter가 필요함
-        // return ResponseEntity.ok(scheduleService.bookAppointment(request, studentId));
     }
 
     @PutMapping("/cancel/{scheduleId}")
@@ -136,11 +118,7 @@ public class CounselingController {
             )
         );
     }
-
-    // =========================================================
-    // 3. 일정 조회
-    // =========================================================
-
+    // 일정 조회
     @GetMapping("/student")
     public ResponseEntity<List<CounselingScheduleResponseDto>> getStudentSchedules(
         @AuthenticationPrincipal CustomUserDetails principal
@@ -156,16 +134,11 @@ public class CounselingController {
     public ResponseEntity<List<AvailableTimeResponseDto>> getAvailableTimesByProfessor(
         @PathVariable("professorId") Long professorId
     ) {
-        // 이 엔드포인트는 비로그인 사용자도 접근할 수 있도록 설계되었으므로 인증 검사 생략
         return ResponseEntity.ok(
             scheduleService.getAvailableTimesByProfessor(professorId)
         );
     }
-
-    // =========================================================
-    // 4. 교수 상담 요청 관리
-    // =========================================================
-
+    // 교수 상담 요청 관리
     @GetMapping("/requests")
     public ResponseEntity<List<ProfessorScheduleRequestDto>> getProfessorRequests(
         @AuthenticationPrincipal CustomUserDetails principal
@@ -183,7 +156,6 @@ public class CounselingController {
     ) {
         Long professorId = getUserId(principal, "professor");
 
-        // Service 계층의 새로운 메서드 호출
         return ResponseEntity.ok(
             scheduleService.getProfessorAllSchedules(professorId)
         );
@@ -197,7 +169,6 @@ public class CounselingController {
     ) {
         Long professorId = getUserId(principal, "professor");
         
-        // Map에서 status를 추출하고 Enum으로 변환
         ScheduleStatus newStatus = Optional.ofNullable(body.get("status"))
             .map(String::toUpperCase)
             .map(ScheduleStatus::valueOf)
@@ -211,13 +182,7 @@ public class CounselingController {
             )
         );
     }
-
-    // =========================================================
-    // 5. 상담 기록
-    // =========================================================
-    
-    // ... (상담 기록 관련 코드는 인증 로직만 getUserId로 대체하고 유지)
-
+    // 상담 기록
     @PutMapping("/records/{scheduleId}/memo")
     public ResponseEntity<CounselingRecord> saveRecord(
         @PathVariable("scheduleId") Long scheduleId,
@@ -258,21 +223,19 @@ public class CounselingController {
         @RequestParam(value = "consultationDate", required = false) String consultationDate,
         @RequestParam(value = "keyword", required = false) String keyword,
         @AuthenticationPrincipal CustomUserDetails principal,
-        Pageable pageable // 💡 Pageable 객체를 인자로 받도록 수정
+        Pageable pageable 
     ) {
         Long professorId = getUserId(principal, "professor");
 
-        // Service 계층의 검색 메서드 호출 (Page<T>를 반환)
         return ResponseEntity.ok(
             counselingRecordService.searchRecords(
                 professorId, 
                 studentName, 
                 consultationDate, 
                 keyword,
-                pageable // 💡 Pageable 객체 전달
+                pageable 
             )
         );
-    
     }
     @GetMapping("/records/student/{scheduleId}")
     public ResponseEntity<CounselingRecordResponseDto> getRecordForStudent(
@@ -288,7 +251,6 @@ public class CounselingController {
             )
         );
     }
-
     @GetMapping("/records/list")
     public ResponseEntity<List<CounselingRecordResponseDto>> getProfessorRecordList(
         @AuthenticationPrincipal CustomUserDetails principal
@@ -301,14 +263,12 @@ public class CounselingController {
             )
         );
     }
-    
     @GetMapping("/professor/schedules/confirmed") 
     public ResponseEntity<List<CounselingScheduleResponseDto>> getConfirmedSchedules(
         @AuthenticationPrincipal CustomUserDetails principal
     ) {
         Long professorId = getUserId(principal, "professor");
         
-        // CONFIRMED 일정만 가져오는 새로운 Service 메서드 호출
         List<CounselingScheduleResponseDto> confirmedList = counselingRecordService.getConfirmedSchedulesForProfessor(professorId); 
         
         return ResponseEntity.ok(confirmedList);

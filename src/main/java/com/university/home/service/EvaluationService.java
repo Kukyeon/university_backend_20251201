@@ -76,7 +76,6 @@ public class EvaluationService {
                 .collect(Collectors.toList());
     }
 
-    // Evaluation → MyEvaluationDto 변환
     private EvaluationDto convertToDto(Evaluation e) {
         EvaluationDto dto = new EvaluationDto();
         dto.setStudentId(e.getStuSub().getStudent().getId());

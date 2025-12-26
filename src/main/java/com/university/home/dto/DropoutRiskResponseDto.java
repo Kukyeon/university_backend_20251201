@@ -14,14 +14,14 @@ public class DropoutRiskResponseDto {
 	//학생 기본 정보
 	private Long studentId;
 	private String studentName;
-	private String departmentName; //학과
-	private Long grade; //학년
+	private String departmentName; 
+	private Long grade;
 	
 	//AI분석 결과
-	private Double riskScore;  //위험 점수
-	private String riskLevel;  //위험/주의/정상
-	private String reason;  //AI분석 원인
-	private LocalDate analyzedDate; //분석 날짜
+	private Double riskScore; 
+	private String riskLevel; 
+	private String reason; 
+	private LocalDate analyzedDate; 
 
 	//Entity -> Dto 변환 메소드
 	public static DropoutRiskResponseDto fromEntity(DropoutRisk risk) {

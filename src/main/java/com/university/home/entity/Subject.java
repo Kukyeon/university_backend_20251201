@@ -6,9 +6,9 @@ import lombok.*;
 @Table(name = "subject_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Subject {
+public class Subject { // 강의
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
     
     private String name;
     
@@ -25,14 +25,14 @@ public class Subject {
     private Department department;
 
     private String type; // 전공선택, 교양 등
-    private Long subYear; // Integer -> Long
-    private Long semester; // Integer -> Long
+    private Long subYear; 
+    private Long semester;
     private String subDay;
-    private Long startTime; // Integer -> Long
-    private Long endTime; // Integer -> Long
-    private Long grades; // Integer -> Long (학점)
-    private Long capacity; // Integer -> Long (정원)
-    private Long numOfStudent = 0L; // Integer -> Long (신청인원)
+    private Long startTime; 
+    private Long endTime;
+    private Long grades; // 학점
+    private Long capacity; // 정원
+    private Long numOfStudent = 0L; // 신청인원
     @Column(columnDefinition = "integer default 0")
     private Integer basketCount = 0; //예비 수강신청인원
     @OneToOne(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

@@ -8,13 +8,13 @@ import java.time.LocalDate;
 @Table(name = "staff_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Staff {
+public class Staff { // 직원
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
 
     @OneToOne
     @JoinColumn(name = "user_id")
-    private User user; // User와 1:1 매핑
+    private User user; 
     
     private String name;
     private LocalDate birthDate;

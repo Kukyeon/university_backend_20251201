@@ -10,7 +10,6 @@ import com.university.home.entity.*;
 import com.university.home.repository.ProfessorAvailabilityRepository;
 import com.university.home.repository.CounselingScheduleRepository;
 import com.university.home.exception.CustomRestfullException;
-import com.university.home.service.StudentService; // 학생 이름 조회를 위해 주입
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,11 +27,11 @@ public class CounselingScheduleService {
     
     private final ProfessorAvailabilityRepository availabilityRepository;
     private final CounselingScheduleRepository scheduleRepository;
-    private final StudentService studentService; // 학생 이름 조회를 위해 사용
+    private final StudentService studentService;
     private final NotificationService notificationService;
 
 
-        // [1] 교수 상담 가능 시간 등록
+    // 교수 상담 가능 시간 등록
     @Transactional
     public ProfessorAvailability setAvailability(
         Long professorId,
@@ -47,7 +46,7 @@ public class CounselingScheduleService {
             );
         }
         
-        // 💡 [추가] 닫힌 슬롯을 다시 여는 경우 (재활성화 로직)
+        //  닫힌 슬롯을 다시 여는 경우 (재활성화 로직)
         Optional<ProfessorAvailability> existingClosedOpt = 
             availabilityRepository.findByProfessorIdAndStartTimeAndEndTimeAndActiveFalse(
                 professorId, start, end
@@ -55,13 +54,12 @@ public class CounselingScheduleService {
 
         if (existingClosedOpt.isPresent()) {
             ProfessorAvailability existingClosed = existingClosedOpt.get();
-            // 닫혀있던 슬롯을 OPEN 상태로 재활성화 (업데이트)
             existingClosed.setActive(true);
             existingClosed.setStatus(AvailabilityStatus.OPEN);
             return availabilityRepository.save(existingClosed);
         }
 
-        // 2. 겹침(Overlap) 검사: 활성화된 슬롯만 대상으로 검사하도록 로직 변경
+        // 활성화된 슬롯만 대상으로 검사하도록 로직 변경
         boolean overlap =
             availabilityRepository
                 .existsByProfessorIdAndStartTimeLessThanAndEndTimeGreaterThanAndActiveTrue( // 💡 [수정] Active=true 조건 추가
@@ -71,14 +69,13 @@ public class CounselingScheduleService {
                 );
 
         if (overlap) {
-            // 이 에러는 활성화된 슬롯과 겹치는 경우에만 발생해야 합니다.
             throw new CustomRestfullException(
                 "이미 등록된 시간과 겹칩니다.",
                 HttpStatus.BAD_REQUEST
             );
         }
 
-        // 3. 완전히 새로운 슬롯 등록 (기존 코드가 이 위치로 이동)
+        // 새로운 슬롯 등록
         ProfessorAvailability availability = new ProfessorAvailability();
         availability.setProfessorId(professorId);
         availability.setStartTime(start);
@@ -89,7 +86,7 @@ public class CounselingScheduleService {
         return availabilityRepository.save(availability);
     }
 
-        // [2] 학생 상담 예약
+        // 학생 상담 예약
         @Transactional
         public CounselingSchedule bookAppointment(
             BookingRequestDto request,
@@ -124,7 +121,7 @@ public class CounselingScheduleService {
             return scheduleRepository.save(schedule);
         }
 
-        // [3] 상담 취소
+        // 상담 취소
         @Transactional
         public CounselingSchedule cancelAppointment(
             Long scheduleId,
@@ -161,12 +158,12 @@ public class CounselingScheduleService {
             return schedule;
         }
 
-        // [4] 교수 캘린더 조회
+        // 교수 캘린더 조회
         public List<ProfessorAvailability> getProfessorAvailability(Long professorId) {
             return availabilityRepository.findByProfessorIdAndActive(professorId, true);
         }
 
-        // [5] 학생 상담 일정 조회
+        // 학생 상담 일정 조회
         @Transactional
         public List<CounselingScheduleResponseDto> getStudentSchedules(Long studentId) {
         	List<CounselingSchedule> schedules =
@@ -183,7 +180,7 @@ public class CounselingScheduleService {
         	        .toList();
         	}
 
-        // [6] 교수 상담 요청 목록
+        // 교수 상담 요청 목록
         public List<ProfessorScheduleRequestDto> getProfessorRequests(Long professorId) {
             return scheduleRepository
                 .findByProfessorIdAndStatus(professorId, ScheduleStatus.PENDING)
@@ -197,11 +194,9 @@ public class CounselingScheduleService {
 
         public List<ProfessorScheduleRequestDto> getProfessorAllSchedules(Long professorId) {
             return scheduleRepository
-                // PENDING, CONFIRMED, COMPLETED 상태의 일정을 모두 가져옵니다.
-                // Repository에 findByProfessorIdAndStatusIn(Long professorId, List<ScheduleStatus> statuses) 필요
-                .findByProfessorId(professorId) // 모든 일정을 가져와 필터링하거나, Repository에서 필터링
+                .findByProfessorId(professorId)
                 .stream()
-                .filter(s -> s.getStatus() != ScheduleStatus.CANCELED) // 취소된 일정은 제외
+                .filter(s -> s.getStatus() != ScheduleStatus.CANCELED) 
                 .map(s -> new ProfessorScheduleRequestDto(
                     s,
                     studentService.getStudentName(s.getStudentId())
@@ -210,7 +205,7 @@ public class CounselingScheduleService {
         }
         
         
-        // [7] 상담 상태 변경 (교수)
+        // 상담 상태 변경 (교수)
         @Transactional
         public CounselingSchedule updateScheduleStatus(
             Long scheduleId,
@@ -243,7 +238,7 @@ public class CounselingScheduleService {
             return scheduleRepository.save(schedule);
         }
 
-        // [8] 학생 예약용 시간 조회
+        // 학생 예약용 시간 조회
         public List<AvailableTimeResponseDto> getAvailableTimesByProfessor(Long professorId) {
             return availabilityRepository
                 .findByProfessorIdAndStatusAndActive(
@@ -263,7 +258,7 @@ public class CounselingScheduleService {
                 .toList();
         }
 
-        // [9] 시간 비활성화
+        // 시간 비활성화
         @Transactional
         public void closeAvailability(Long availabilityId, Long professorId) {
 
@@ -365,7 +360,7 @@ public class CounselingScheduleService {
             if (schedule.getStatus() == ScheduleStatus.CONFIRMED) {
                 schedule.setStatus(ScheduleStatus.IN_PROGRESS);
             } else if (schedule.getStatus() == ScheduleStatus.IN_PROGRESS) {
-                return; // 이미 입장한 상태
+                return;
             }
 
         }

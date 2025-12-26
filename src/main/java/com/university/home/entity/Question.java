@@ -7,9 +7,9 @@ import lombok.*;
 @Table(name = "question_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Question {
+public class Question { // 강의평가 질문
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
 
     @Column(name = "question1")
     private String question1;
@@ -32,11 +32,10 @@ public class Question {
     @Column(name = "question7")
     private String question7;
 
-    // DB 스키마에 존재하는 다른 필드들도 추가합니다. (사용하지 않더라도 매핑 필요)
     private String title;
-    private String content; // 이전 코드가 사용하던 content 필드 (DB에 존재)
+    private String content;
     private Long userId;
     
     @Column(name = "sug_content")
-    private String sugContent; // DB 스키마에 sug_content가 있으므로 추가
+    private String sugContent;
 }

@@ -33,8 +33,8 @@ public class GradeController {
 		 List<GradeDto> list = stuSubService.getThisSemesterGrades(studentId);
 
 		    Map<String, Object> result = new HashMap<>();
-		    result.put("gradeList", list);       // 🔥 프론트 요구 형식
-		    result.put("submitted", !list.isEmpty()); // 필요하면 나중에 채우면 됨
+		    result.put("gradeList", list);       
+		    result.put("submitted", !list.isEmpty()); 
 		    return ResponseEntity.ok(result);
     }
 	@GetMapping("/semester")
@@ -50,7 +50,7 @@ public class GradeController {
 
 	    Map<String, Object> result = new HashMap<>();
 	    result.put("gradeList", list);
-	    result.put("submitted", !list.isEmpty()); // 필요 시 추가
+	    result.put("submitted", !list.isEmpty());
 
 	    return ResponseEntity.ok(result);
 	}
@@ -62,18 +62,16 @@ public class GradeController {
 
 	    Map<String, Object> result = new HashMap<>();
 	    result.put("gradeList", totalGrades);
-	    result.put("submitted", !totalGrades.isEmpty()); // 필요 시 추가
+	    result.put("submitted", !totalGrades.isEmpty());
 	    return ResponseEntity.ok(result);
 	}
+	// 학생의 성적 있는 년도 불러오기
 	@GetMapping("/available-years")
     public ResponseEntity<List<Long>> getAvailableYears(@AuthenticationPrincipal CustomUserDetails loginUser) {
-        // 1. 로그인한 학생 정보 가져오기
         Long studentId = loginUser.getUser().getId();
         
-        // 2. 서비스 호출 (쿼리 없이 만든 메서드 실행)
         List<Long> years = stuSubService.getTakenYears(studentId);
         
-        // 3. 결과 반환
         return ResponseEntity.ok(years);
     }
 }

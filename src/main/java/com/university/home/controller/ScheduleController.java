@@ -18,7 +18,6 @@ import com.university.home.repository.ScheduleRepository;
 import com.university.home.service.CustomUserDetails;
 import com.university.home.service.ScheduleService;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +30,6 @@ public class ScheduleController {
 
     private final ScheduleRepository scheduleRepository;
 
-    private final HttpSession session;
     private final ScheduleService scheduleService;
 
 
@@ -53,7 +51,6 @@ public class ScheduleController {
 
     // 일정 목록 조회
     @GetMapping("")
-    // ⭐️ String 대신 List<Schedule>를 JSON으로 반환합니다.
     public ResponseEntity<List<Schedule>> scheduleList() { 
         List<Schedule> schedules = scheduleService.getAllSchedules();
         return new ResponseEntity<>(schedules, HttpStatus.OK);
@@ -66,7 +63,6 @@ public class ScheduleController {
         return new ResponseEntity<>(schedule, HttpStatus.OK);
     }
 
-
     //일정 수정
     
     @PutMapping("/{id}")
@@ -77,7 +73,6 @@ public class ScheduleController {
     }
 
     // 일정 삭제
-   
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteSchedule(@AuthenticationPrincipal CustomUserDetails loginUser,@PathVariable("id") Long id) {
 
@@ -86,6 +81,7 @@ public class ScheduleController {
         scheduleService.deleteSchedule(id, staffId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT); // 204 No Content
     }
+    // 학사일정 최근 5개 (홈화면용)
     @GetMapping("/latest")
     public ResponseEntity<?> getLatestSchedules() {
         Pageable top5 = PageRequest.of(0, 5, Sort.by("startDay"));

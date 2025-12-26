@@ -22,7 +22,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DropoutRisk {
+public class DropoutRisk { // 위험학생 분석기록
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	

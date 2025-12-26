@@ -1,6 +1,9 @@
 package com.university.home;
 
 import com.university.home.entity.CounselingRecord;
+
+import jakarta.persistence.criteria.Predicate;
+
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
@@ -30,14 +33,13 @@ public class RecordSpecification {
             String likeKeyword = "%" + keyword.toLowerCase() + "%";
             
             // 1. notes 필드 검색 조건
-            jakarta.persistence.criteria.Predicate notesMatch = 
+            Predicate notesMatch = 
                 criteriaBuilder.like(criteriaBuilder.lower(root.get("notes")), likeKeyword);
             
             // 2. keywords 필드 검색 조건
-            jakarta.persistence.criteria.Predicate keywordsMatch = 
+            Predicate keywordsMatch = 
                 criteriaBuilder.like(criteriaBuilder.lower(root.get("keywords")), likeKeyword);
             
-            // 두 조건 중 하나라도 만족하면 검색
             return criteriaBuilder.or(notesMatch, keywordsMatch);
         };
     }

@@ -12,7 +12,6 @@ import com.university.home.repository.CounselingScheduleRepository;
 import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.StudentRepository;
 import com.university.home.exception.CustomRestfullException;
-import com.university.home.service.StudentService; 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,33 +28,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
-// JPA Join을 위한 import 추가 (필요 시)
-import jakarta.persistence.criteria.Join; 
-
 @Service
 @RequiredArgsConstructor
 public class CounselingRecordService {
-	// @Autowired 제거: final 필드에 @RequiredArgsConstructor로 주입 (권장 방식)
     private final CounselingRecordRepository recordRepository;
 	
 	private final StudentRepository studentRepository;
     private final CounselingScheduleRepository scheduleRepository;
     private final StudentService studentService; 
     
-    // final이 아닌 필드에 대해서만 @Autowired 유지
     @Autowired
     private ProfessorRepository professorRepository;
     
-    // [1] 상담 기록 저장 (STT 완료 또는 교수자 메모 입력 시)
+    // 상담 기록 저장 (STT 완료 또는 교수자 메모 입력 시)
     @Transactional
     public CounselingRecord saveRecord(Long scheduleId,Long professorId, String notes, String keywords) {
         CounselingSchedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new CustomRestfullException("상담 일정이 존재하지 않아 기록할 수 없습니다.", HttpStatus.NOT_FOUND));
 
-        System.out.println("scheduleId: " + scheduleId);
-        System.out.println("schedule.getProfessorId(): " + schedule.getProfessorId());
-        System.out.println("professorId (로그인): " + professorId);
-        
         if (!schedule.getProfessorId().equals(professorId)) {
             throw new CustomRestfullException("해당 상담 기록을 저장/수정할 권한이 없습니다. (담당 교수가 아님)", HttpStatus.FORBIDDEN);
         }
@@ -83,14 +73,14 @@ public class CounselingRecordService {
         return recordRepository.save(record);
     }
     
-    // [1-2] 완료된 상담 기록 목록 조회 (페이지네이션/검색이 없는 단순 목록)
+    //  완료된 상담 기록 목록 조회 (페이지네이션/검색이 없는 단순 목록)
     public List<CounselingRecordResponseDto> getProfessorRecordList(Long professorId) {
-        // 1. 해당 교수의 완료된(COMPLETED) 상담 일정을 모두 조회
+        // 해당 교수의 완료된(COMPLETED) 상담 일정을 모두 조회
         List<CounselingSchedule> completedSchedules = scheduleRepository.findByProfessorIdAndStatus(professorId, ScheduleStatus.COMPLETED);
         
         return completedSchedules.stream()
                 .map(schedule -> {
-                    // 2. Schedule ID로 해당 Record를 조회 (Optional)
+                    // Schedule ID로 해당 Record를 조회 (Optional)
                     Optional<CounselingRecord> optionalRecord = recordRepository.findByScheduleId(schedule.getId());
                     
                     String professorName = professorRepository.findById(professorId).map(Professor::getName).orElse("교수");
@@ -111,7 +101,7 @@ public class CounselingRecordService {
                 .toList();
     }
     
-    // [2] 상담 내용 검색 (학생 이름, 상담 날짜, 키워드 등) - ⭐️ 핵심 수정 부분
+    // 상담 내용 검색 (학생 이름, 상담 날짜, 키워드 등) 
     @Transactional(readOnly = true)
     public Page<CounselingRecordResponseDto> searchRecords(
         Long professorId, 
@@ -121,13 +111,12 @@ public class CounselingRecordService {
         Pageable pageable 
     ) {
         
-        // 1. Specification 구성
+        //  Specification 구성
     	Specification<CounselingRecord> spec = Specification.where((root, query, builder) -> 
-        // Join Type 문제 발생 가능성을 줄이기 위해, 가장 단순한 형태의 관계 접근을 다시 시도합니다.
         builder.equal(root.get("schedule").get("professorId"), professorId)
     );
 
-        // 2. 학생 이름 검색 (기존 로직 유지)
+        // 학생 이름 검색 
         if (studentName != null && !studentName.trim().isEmpty()) {
             List<Long> studentIds = studentRepository.findByNameContainingIgnoreCase(studentName.trim())
                                             .stream()
@@ -143,9 +132,8 @@ public class CounselingRecordService {
             );
         }
         
-        // 3. 날짜 검색 (기존 로직 유지)
+        // 날짜 검색
         if (consultationDateStr != null && !consultationDateStr.trim().isEmpty()) {
-            // ... (기존 날짜 검색 로직)
             try {
                 LocalDate searchDate = LocalDate.parse(consultationDateStr.trim(), DateTimeFormatter.ISO_DATE); 
                 
@@ -161,7 +149,7 @@ public class CounselingRecordService {
             }
         }
         
-        // 4. 키워드/내용 검색 (기존 로직 유지)
+        // 키워드/내용 검색
         if (keyword != null && !keyword.trim().isEmpty()) {
             String likeKeyword = "%" + keyword.trim().toLowerCase() + "%";
             
@@ -173,24 +161,19 @@ public class CounselingRecordService {
             );
         }
 
-        // 5. 최종 검색 실행
-        // 💡 Fetch Join을 직접 사용하지 않고, Specification을 사용하는 경우,
-        //    DTO 변환 시 N+1 쿼리 방지를 위해 DTO 변환 시 scheduleRepository.findById를 사용했던 코드를 제거하고
-        //    record.getSchedule()을 직접 사용합니다. (이미 OneToOne 매핑되어 있으므로)
+        // 최종 검색 실행
         Page<CounselingRecord> recordPage = recordRepository.findAll(spec, pageable);
         
-        // 6. DTO로 변환
+        // DTO로 변환
         return recordPage.map(record -> {
-            // 🚨 record.getSchedule()을 사용하여 지연 로딩을 트리거합니다. (N+1 문제 발생 가능하지만, 일단 목록 표시를 우선합니다)
             CounselingSchedule schedule = record.getSchedule(); 
             
-            // DTO 생성에 필요한 나머지 정보 조회
             String studentNameResult = studentRepository.findById(record.getStudentId())
                 .map(Student::getName)
                 .orElse("학생 정보 없음");
 
             CounselingScheduleResponseDto scheduleDto = new CounselingScheduleResponseDto(
-                schedule, // 이미 엔티티에 매핑된 schedule 객체 사용
+                schedule,
                 professorRepository.findById(professorId).map(Professor::getName).orElse("교수"),
                 studentNameResult
             );
@@ -199,11 +182,10 @@ public class CounselingRecordService {
         });
     }
     
-    // [3] 교수용: 확정/진행 중인 상담 목록 조회 (COMPLETED 제외)
+    // 교수용: 확정/진행 중인 상담 목록 조회 (COMPLETED 제외)
     @Transactional(readOnly = true)
     public List<CounselingScheduleResponseDto> getConfirmedSchedulesForProfessor(Long professorId) {
         
-        // ScheduleStatus.CONFIRMED 상태의 일정만 조회
         List<CounselingSchedule> confirmedSchedules = scheduleRepository.findByProfessorIdAndStatus(professorId, ScheduleStatus.CONFIRMED);
         
         return confirmedSchedules.stream()
@@ -220,13 +202,13 @@ public class CounselingRecordService {
                 .toList();
     }
     
-    // [4] 특정 상담 기록 조회 (다른 메서드에서 사용)
+    // 특정 상담 기록 조회
     public CounselingRecord getRecordByScheduleId(Long scheduleId, Long studentId) {
         return recordRepository.findByScheduleIdAndStudentId(scheduleId, studentId)
                 .orElseThrow(() -> new CustomRestfullException("기록된 상담 내용이 없습니다.", HttpStatus.NOT_FOUND));
     }
     
-    // [5] 학생용: 특정 상담 기록 조회
+    // 학생용: 특정 상담 기록 조회
     @Transactional(readOnly = true)
     public CounselingRecordResponseDto getRecordForStudent(Long scheduleId, Long studentId) {
 
@@ -242,7 +224,6 @@ public class CounselingRecordService {
             .orElseThrow(() -> new CustomRestfullException("교수 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
         String professorName = professor.getName(); 
 
-        // TODO: studentService.getStudentName(studentId)가 StudentService에 구현되어 있어야 함
         String studentName = studentService.getStudentName(studentId);
 
         Optional<CounselingRecord> optionalRecord = recordRepository.findByScheduleIdAndStudentId(scheduleId, studentId);
@@ -261,7 +242,7 @@ public class CounselingRecordService {
         }
     }
     
-    // [6] 교수용: 특정 상담 기록 조회
+    // 교수용: 특정 상담 기록 조회
     @Transactional(readOnly = true)
     public CounselingRecordResponseDto getRecordForProfessor(Long scheduleId, Long studentId, Long professorId) {
 

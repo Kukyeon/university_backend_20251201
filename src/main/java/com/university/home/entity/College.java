@@ -7,8 +7,8 @@ import lombok.*;
 @Table(name = "college_tb")
 @Getter @NoArgsConstructor
 @Setter
-public class College {
+public class College { // 단과대
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id;
     private String name;
 }

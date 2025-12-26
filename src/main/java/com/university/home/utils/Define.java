@@ -12,7 +12,7 @@ public class Define {
     public static final String WRONG_PASSWORD = "비밀번호가 틀렸습니다.";
 
     // 현재 학기/학년
-    public static final int CURRENT_YEAR = 2023;
+    public static final int CURRENT_YEAR = 2025;
     public static final int CURRENT_SEMESTER = 1;
 
     // 파일 업로드 관련

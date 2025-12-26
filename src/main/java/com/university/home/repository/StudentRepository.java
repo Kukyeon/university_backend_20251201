@@ -28,7 +28,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Page<Student> findByDepartment(Department department, Pageable pageable);
 
     // 학번으로 학생 조회
-    //Page<Student> findById(Long id, Pageable pageable);
     @Override
     @EntityGraph(attributePaths = {"department"}) 
     List<Student> findAll();

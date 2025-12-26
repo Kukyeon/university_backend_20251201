@@ -1,17 +1,11 @@
 package com.university.home.service;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.university.home.repository.RoomRepository;
-
 import jakarta.transaction.Transactional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 import com.university.home.dto.CollegeDto;
 import com.university.home.dto.RoomDto;
 import com.university.home.entity.College;
@@ -50,7 +44,7 @@ public class RoomService {
                 .orElseThrow(() -> new RuntimeException("단과대학이 존재하지 않습니다."));
 
         Room room = new Room();
-        room.setId(dto.getId());      // 호수는 프론트에서 문자열로 전달
+        room.setId(dto.getId());
         room.setCollege(college);
 
         roomRepository.save(room);
