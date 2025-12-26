@@ -108,6 +108,9 @@ public class InitAutoIncrement implements CommandLineRunner {
         insertTuitionIfNotExists(2, 3588500);
         insertTuitionIfNotExists(3, 3588500);
         insertTuitionIfNotExists(4, 3588500);
+        
+        insertScholarshipIfNotExists(1, 5000000); // 성적우수 A유형 (전액 기준 예시)
+        insertScholarshipIfNotExists(2, 2547400); // 성적우수 B유형 (반액 기준 예시)
 
      // 기본 스태프 계정 생성
         insertStaffIfNotExists();
@@ -247,8 +250,23 @@ public class InitAutoIncrement implements CommandLineRunner {
 
             staffService.createStaff(dto);
         }
+        
     }
+    private void insertScholarshipIfNotExists(int type, int amount) {
+        // 이미 해당 타입의 장학금이 있는지 확인
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM scholarship_tb WHERE type = ?",
+            Integer.class,
+            type
+        );
 
+        if (count == 0) {
+            jdbcTemplate.update(
+                "INSERT INTO scholarship_tb (type, max_amount) VALUES (?, ?)",
+                type, amount
+            );
+        }
+    }
 
 
 }

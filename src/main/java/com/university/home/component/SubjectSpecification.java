@@ -53,4 +53,14 @@ public class SubjectSpecification {
             return cb.equal(root.get("semester"), semester);
         };
     }
+    public static Specification<Subject> equalTargetGrade(Long targetGrade) {
+        return (root, query, cb) -> {
+            if (targetGrade == null) return null;
+            // (대상학년 == 선택학년) OR (대상학년 == 0) -> 0은 전학년 공통을 의미
+            return cb.or(
+                cb.equal(root.get("targetGrade"), targetGrade),
+                cb.equal(root.get("targetGrade"), 0)
+            );
+        };
+    }
 }

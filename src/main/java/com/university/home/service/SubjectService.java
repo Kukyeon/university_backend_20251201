@@ -5,12 +5,14 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.SubjectDto;
 import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.Subject;
 import com.university.home.entity.Syllabus;
+import com.university.home.exception.CustomRestfullException;
 import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.RoomRepository;
@@ -65,6 +67,7 @@ public class SubjectService {
 	    dto.setRoomId(subject.getRoom().getId());
 	    dto.setDeptId(subject.getDepartment().getId());
 	    dto.setNumOfStudent(subject.getNumOfStudent());
+	    dto.setTargetGrade(subject.getTargetGrade());
 	    return dto;
 	}
 
@@ -87,6 +90,7 @@ public class SubjectService {
 	    subject.setGrades(dto.getGrades());
 	    subject.setCapacity(dto.getCapacity());
 	    subject.setType(dto.getType());
+	    subject.setTargetGrade(dto.getTargetGrade());
 
 	    // 연관관계 매핑
 	    subject.setProfessor(professorRepository.findById(dto.getProfessorId()).orElseThrow());
@@ -104,7 +108,19 @@ public class SubjectService {
 	@Transactional
 	public void deleteSubject(Long id) {
 		Subject subject = subjectRepository.findById(id)
-	            .orElseThrow(() -> new RuntimeException("강의 없음"));
+				.orElseThrow(() -> new CustomRestfullException("강의를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+		if (subject.getNumOfStudent() != null && subject.getNumOfStudent() > 0) {
+	        throw new CustomRestfullException(
+	            "이미 수강 신청한 학생이 " + subject.getNumOfStudent() + "명 존재하여 삭제할 수 없습니다.", 
+	            HttpStatus.BAD_REQUEST
+	        );
+	    }
+		try {
+	        subjectRepository.delete(subject);
+	    } catch (Exception e) {
+	        // 기타 DB 제약 조건 위반 시
+	        throw new CustomRestfullException("다른 데이터와 연결되어 있어 삭제할 수 없습니다.", HttpStatus.CONFLICT);
+	    }
 		subjectRepository.delete(subject);
 
 	}
@@ -112,7 +128,7 @@ public class SubjectService {
 	public SubjectDto updateSubject(Long id, SubjectDto dto) {
 
 	    Subject subject = subjectRepository.findById(id)
-	            .orElseThrow(() -> new RuntimeException("강의 없음"));
+	    		.orElseThrow(() -> new CustomRestfullException("강의를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
 
 	    // 연도/학기는 변경 불가 (기존 로직 유지)
 	    dto.setSubYear(subject.getSubYear());
@@ -135,6 +151,7 @@ public class SubjectService {
 	    subject.setGrades(dto.getGrades());
 	    subject.setCapacity(dto.getCapacity());
 	    subject.setType(dto.getType());
+	    subject.setTargetGrade(dto.getTargetGrade());
 
 	    subject.setProfessor(professorRepository.findById(dto.getProfessorId()).orElseThrow());
 	    subject.setRoom(roomRepository.findById(dto.getRoomId()).orElseThrow());

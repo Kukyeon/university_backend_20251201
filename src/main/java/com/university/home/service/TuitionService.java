@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.university.home.dto.GradeTotalDto;
 import com.university.home.entity.BreakApp;
 import com.university.home.entity.CollTuit;
 import com.university.home.entity.Scholarship;
@@ -40,6 +41,8 @@ public class TuitionService {
 	CollTuitRepository collTuitRepository;
 	@Autowired
 	StuSchRepository stuSchRepository;
+	@Autowired
+	StuSubService stuSubService;
 	
 	 public List<Tuition> tuitionList(Long studentId) {
 	        return tuitionRepository.findByStudentId(studentId);
@@ -111,6 +114,37 @@ public class TuitionService {
     	            .orElseThrow(() -> new RuntimeException("등록금 정보 없음"));
     	 Long tuiAmount = collTuit.getAmount();
     	 
+    	// 직전 학기 성적 리스트를 가져옵니다.
+    	    List<GradeTotalDto> gradeHistory = stuSubService.readGradeInquiryList(studentId);
+    	    
+    	    if (!gradeHistory.isEmpty()) {
+    	        // 가장 최근 학기 성적 DTO (마지막 요소)
+    	        GradeTotalDto latestGrade = gradeHistory.get(gradeHistory.size() - 1);
+    	        double gpa = latestGrade.getAverageScore();
+    	        
+    	        Integer determinedSchType = null;
+    	        if (gpa >= 4.2) {
+    	            determinedSchType = 1; // 성적우수 A
+    	        } else if (gpa >= 3.7) {
+    	            determinedSchType = 2; // 성적우수 B
+    	        }
+
+    	        // 조건에 맞는 장학금이 있다면 StuSch 테이블에 먼저 저장
+    	        if (determinedSchType != null) {
+    	            // 해당 유형의 Scholarship 엔티티 조회 (id가 1, 2라고 가정하거나 type명으로 조회)
+    	            Scholarship scholarship = scholarshipRepository.findById(Long.valueOf(determinedSchType)).orElse(null);
+    	            
+    	            if (scholarship != null) {
+    	                StuSch newStuSch = new StuSch();
+    	                newStuSch.setStudent(student);
+    	                newStuSch.setScholarshipType(scholarship);
+    	                newStuSch.setSchYear((long)currentYear);
+    	                newStuSch.setSemester((long)currentSemester);
+    	                stuSchRepository.save(newStuSch); // 장학금 수혜 내역 저장
+    	            }
+    	        }
+    	    }
+    	 
     	 List<StuSch> stuSchs = stuSchRepository.findByStudentIdAndSchYearAndSemester(studentId, (long) currentYear, (long) currentSemester);
     	 Long schAmount = 0L;
     	 Scholarship schType = null;
@@ -142,7 +176,11 @@ public class TuitionService {
 	    tuition.setTuiAmount(tuiAmount);
 	    tuition.setScholarshipType(schType);
 	    tuition.setSchAmount(schAmount);
-	    tuition.setStatus(false); // 기본 납부 상태 false
+	    if (tuiAmount - schAmount <= 0) {
+	        tuition.setStatus(true); // 자동 납부 완료 처리
+	    } else {
+	        tuition.setStatus(false); // 미납 상태
+	    } // 기본 납부 상태 false
 
 	    // 8. 저장
 	    tuitionRepository.save(tuition);
