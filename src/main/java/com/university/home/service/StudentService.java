@@ -43,6 +43,7 @@ public class StudentService {
 	StuStatService stuStatService;
 	@Autowired
 	private BreakAppRepository breakAppRepository;
+	@Autowired
 	private ProfessorRepository professorRepository;
 	
 	@Transactional
