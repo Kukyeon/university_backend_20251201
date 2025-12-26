@@ -7,28 +7,28 @@ import lombok.*;
 @Table(name = "tuition_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Tuition {
+public class Tuition { // 등록금
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id")
     private Student student;
 
     @Column(name = "tui_year")
-    private Long tuiYear; // Integer -> Long
+    private Long tuiYear;
 
-    private Long semester; // Integer -> Long
+    private Long semester;
 
     @Column(name = "tui_amount")
-    private Long tuiAmount; // Integer -> Long
+    private Long tuiAmount;
 
     @ManyToOne
     @JoinColumn(name = "sch_type")
     private Scholarship scholarshipType;
 
     @Column(name = "sch_amount")
-    private Long schAmount; // Integer -> Long
+    private Long schAmount;
 
     @Column(nullable = false)
     private Boolean status = false; 

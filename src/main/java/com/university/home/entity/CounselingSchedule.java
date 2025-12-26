@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CounselingSchedule {
+public class CounselingSchedule { // 화상상담 예약
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

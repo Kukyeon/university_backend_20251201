@@ -7,15 +7,15 @@ import lombok.*;
 @Table(name = "coll_tuit_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class CollTuit {
+public class CollTuit { // 단과대 등록금
     @Id
     @Column(name = "college_id")
-    private Long collegeId; // Integer -> Long
+    private Long collegeId;
 
     @OneToOne
     @MapsId
     @JoinColumn(name = "college_id")
     private College college;
 
-    private Long amount; // Integer -> Long
+    private Long amount;
 }

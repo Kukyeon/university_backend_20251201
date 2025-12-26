@@ -45,15 +45,10 @@ public class StudentService {
 	private BreakAppRepository breakAppRepository;
 	private ProfessorRepository professorRepository;
 	
-	@Autowired 
-    public StudentService(ProfessorRepository professorRepository) {
-        this.professorRepository = professorRepository;
-    }
-	
 	@Transactional
 	public StudentDto createStudentWithStatus(StudentDto dto) {
-	    Student student = createStudent(dto);  // 학생 생성
-	    stuStatService.createFirstStatus(student); // 학적 상태 생성
+	    Student student = createStudent(dto); 
+	    stuStatService.createFirstStatus(student); 
 	    return toDto(student);
 	}
 	public StudentDto toDto(Student student) {
@@ -177,7 +172,7 @@ public class StudentService {
 	// 전체 학생 조회
 	public Page<StudentDto> getStudents(Pageable pageable) {
 		 return studentRepository.findAll(pageable)
-	                .map(this::toDto); // map으로 DTO 변환
+	                .map(this::toDto);
 	}
 	// 학과별 학생 조회
 	public Page<StudentDto> getStudentsByDep(Long deptId,Pageable pageable) {

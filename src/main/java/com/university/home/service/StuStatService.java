@@ -6,7 +6,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.university.home.dto.StudentDto;
 import com.university.home.entity.StuStat;
 import com.university.home.entity.Student;
 import com.university.home.repository.StuStatRepository;
@@ -47,11 +46,9 @@ public class StuStatService {
     public void revertToRegular(Student student) {
         List<StuStat> stats = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
         
-        // 휴학 상태 삭제 또는 상태 변경
         for (StuStat s : stats) {
             if ("휴학".equals(s.getStatus())) {
-                stuStatRepository.delete(s); // 삭제하거나
-                // s.setStatus("재학"); s.setBreakAppId(null); stuStatRepository.save(s);
+                stuStatRepository.delete(s);
             }
         }
         
@@ -70,14 +67,11 @@ public class StuStatService {
     // 학적 상태 업데이트
     @Transactional
     public void updateStatus(Student student, String newStatus, Long breakAppId) {
-        // 가장 최근 상태 가져오기
         StuStat lastStatus = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId()).get(0);
 
-        // 기존 상태 종료
         lastStatus.setToDate(LocalDate.now());
         stuStatRepository.save(lastStatus);
 
-        // 새 상태 추가
         StuStat newStat = new StuStat();
         newStat.setStudent(student);
         newStat.setStatus(newStatus);

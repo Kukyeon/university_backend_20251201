@@ -45,20 +45,20 @@ public class UserService {
 	@Transactional
 	public User login(Long id, String rawPassword) {
 		User user = userRepository.findById(id)
-				.orElseThrow(() -> new CustomRestfullException("User not found", HttpStatus.NOT_FOUND));
+				.orElseThrow(() -> new CustomRestfullException("등록된 아이디가 아닙니다.", HttpStatus.NOT_FOUND));
 		if (!encoder.matches(rawPassword, user.getPassword())) {
-			throw new CustomRestfullException("Invalid password", HttpStatus.NOT_FOUND);
+			throw new CustomRestfullException("비밀번호가 일치하지 않습니다.", HttpStatus.NOT_FOUND);
 		}
 		return user;
 	}
 	public User getUserById(Long id) {
 	    return userRepository.findById(id)
-	             .orElseThrow(() -> new CustomRestfullException("User not found", HttpStatus.NOT_FOUND));
+	             .orElseThrow(() -> new CustomRestfullException("등록된 아이디가 아닙니다.", HttpStatus.NOT_FOUND));
 	}
 	 @Transactional
 	    public void resetPassword(Long id, String tempPassword) {
 	        User user = userRepository.findById(id)
-	                .orElseThrow(() -> new CustomRestfullException("User not found", HttpStatus.NOT_FOUND));
+	                .orElseThrow(() -> new CustomRestfullException("등록된 아이디가 아닙니다.", HttpStatus.NOT_FOUND));
 	        user.setPassword(encoder.encode(tempPassword));
 	    }
 	 @Transactional
@@ -88,16 +88,16 @@ public class UserService {
 	            staff.setEmail(dto.getEmail());
 	            return staff;
 	        } else {
-	            throw new RuntimeException("User not found");
+	            throw new CustomRestfullException("등록된 아이디가 아닙니다.", HttpStatus.NOT_FOUND);
 	        }
 	    }
 	 @Transactional
 	 public void updatePw(UserPwDto dto) {
 		 Long userId = dto.getUserId();
 		 User user = userRepository.findById(userId)
-		            .orElseThrow(() -> new RuntimeException("User not found"));
+				 .orElseThrow(() -> new CustomRestfullException("등록된 아이디가 아닙니다.", HttpStatus.NOT_FOUND));
 		 if (!encoder.matches(dto.getOldPassword(), user.getPassword())) {
-			 throw new RuntimeException("Incorrect current password");
+			 throw new RuntimeException("기존 비밀번호가 일치하지 않습니다.");
 		}
 		 user.setPassword(encoder.encode(dto.getNewPassword()));
 	 }

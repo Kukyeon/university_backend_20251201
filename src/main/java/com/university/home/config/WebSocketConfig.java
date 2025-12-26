@@ -23,7 +23,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // yml에 적힌 도메인들을 콤마(,)로 잘라서 배열로 만듦
+        // 적힌 도메인들을 콤마(,)로 잘라서 배열로 만듦
         String[] origins = allowedOrigins.split(",");
 
         registry.addHandler(signalingHandler, "/ws/signaling/{scheduleId}")

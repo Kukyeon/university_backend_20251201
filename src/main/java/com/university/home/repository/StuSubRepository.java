@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface StuSubRepository extends JpaRepository<StuSub, Long> {
     
-    //학생 ID로 수강 내역(성적 포함)을 몽땅 가져옵니다.
+    //학생 ID로 수강 내역 조회
     List<StuSub> findByStudentId(Long studentId);
 
     //중복 신청 확인

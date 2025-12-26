@@ -41,15 +41,11 @@ public class ChatbotService {
     @Transactional
     public String ask(Long studentId, String question) {
         
-        // 1. 학생 조회
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("학생 찾기 실패"));
 
-        // 2. 학생의 위험도 조회 및 안내 문구 생성
-        //String riskGuidance = "";
         DropoutRisk risk = dropoutRiskRepository.findTopByStudentIdOrderByAnalyzedDateDesc(studentId)
                 .orElse(null);
-        // ★ [수정 1] AI에게 줄 '태도 지침'과 자바가 붙일 '필수 링크'를 분리
         String attitudeGuide = ""; // AI에게 줄 지침 (프롬프트용)
         String mandatorySuffix = ""; // 답변 뒤에 무조건 붙일 꼬리말 (링크용)
         if (risk != null && (risk.getRiskLevel().contains("심각") || risk.getRiskLevel().contains("경고"))) {
@@ -80,30 +76,22 @@ public class ChatbotService {
             currentSemester = latestSubject.getSemester();
         }
         
-        // AI에게 알려줄 기준 시점 문자열 생성
         String semesterInfo = String.format("현재 학사 기준: %d년 %d학기 (최신 개설 강의 기준)", currentYear, currentSemester);
-        //교수님 정보 조회
         String professorInfo = "정보 없음";
         if (student.getDepartment() != null) {
             List<Professor> professors = professorRepository.findByDepartmentId(student.getDepartment().getId());
             
-            // 교수님 이름과 이메일(또는 연락처)을 문자열로 변환
             professorInfo = professors.stream()
                     .map(p -> String.format("%s (%s)", p.getName(), p.getEmail())) // 예: 김철수 (cs@univ.ac.kr)
                     .collect(Collectors.joining(", "));
         }
         
         
-        // 3. 학생 및 수강 내역 조회 (재료 수집)
         List<StuSub> history = stuSubRepository.findByStudentId(studentId);
         
-     // A. 과거 수강 (현재 학기가 아닌 것)
-        // effectively final 문제 해결을 위해 로컬 변수 재할당
         Long finalCurrentYear = currentYear;
         Long finalCurrentSemester = currentSemester;
         
-        
-     // A. 과거 수강 과목 (현재 학기가 아닌 것들)
         String pastCourses = history.stream()
                 .filter(sub -> !sub.getSubject().getSubYear().equals(finalCurrentYear) 
                             || !sub.getSubject().getSemester().equals(finalCurrentSemester))
@@ -111,37 +99,26 @@ public class ChatbotService {
                 .collect(Collectors.joining(", "));
         if (pastCourses.isEmpty()) pastCourses = "없음";
 
-     // B. 이번 학기 수강 (현재 학기와 일치하는 것)
         String currentCourses = history.stream()
                 .filter(sub -> sub.getSubject().getSubYear().equals(finalCurrentYear) 
                             && sub.getSubject().getSemester().equals(finalCurrentSemester))
                 .map(sub -> sub.getSubject().getName())
                 .collect(Collectors.joining(", "));
         if (currentCourses.isEmpty()) currentCourses = "없음 (아직 신청 안 함)";
-
-        // (만약 비어있으면 "없음" 처리)
-//        if (pastCourses.isEmpty()) pastCourses = "없음";
-//        if (currentCourses.isEmpty()) currentCourses = "없음 (아직 신청 안 함)";
-        // 수강했던 과목명 문자열 변환
         String takenCourses = history.stream()
                 .map(sub -> sub.getSubject().getName())
                 .collect(Collectors.joining(", "));
         
-     // ★ [추가] C. 상세 성적/출석 정보 생성
         String detailedGradeInfo = makeDetailedGradeInfo(history);
 
-     // 3. 이번 학기 개설된 강의 목록 조회 (수강신청 안 한 과목들 중 추천용)
         List<Subject> openSubjects = subjectRepository.findBySubYearAndSemester(finalCurrentYear, finalCurrentSemester);
         String availableCourses = openSubjects.stream()
                 .map(Subject::getName)
                 .limit(10) 
                 .collect(Collectors.joining(", "));
         
-        // 4. 학생 프로필 생성
         String studentProfile = makeStudentInfoString(student);
 
-        // ★ [핵심] 6. 사이트맵(URL 정보) 정의
-        // 실제 리액트 라우터(App.js)에 정의된 경로와 일치시켜야 합니다.
         String siteMap = """
                 [주요 서비스 링크]
                 - 수강 신청: /sugang?tab=수강신청
@@ -153,7 +130,6 @@ public class ChatbotService {
                 - 상담 신청: /counseling
                 """;
 
-        // 7. 프롬프트 작성
         String systemPrompt = """
      	       당신은 '누리대학교'의 학사 행정 챗봇입니다.
      	       제공된 데이터를 바탕으로 학생의 질문에 답변하세요.
@@ -216,18 +192,12 @@ public class ChatbotService {
      	                attitudeGuide,     // 9 (이 내용이 있으면 챗봇이 그대로 뱉어냄)
      	                question           // 10
      	       );
-//질문쪽 인자 [질문]: %s가 없었기에 마지막인 교수님 질문으로 들어가짐 -> 프롬포트 유의사항, 순서 맞춰야함
-     // 8. Gemini 호출
         String rawAnswer = geminiService.talk(systemPrompt);
 
-        // ★ [핵심] 줄바꿈 압축 로직
-        // 1. 연속된 3개 이상의 줄바꿈(\n\n\n...) -> 2개(\n\n)로 (문단 구분용)
-        // 2. 불필요한 공백 라인 제거
         String answer = rawAnswer.replaceAll("(\\r?\\n){3,}", "\n\n").trim();
         if (!mandatorySuffix.isEmpty()) {
             answer += mandatorySuffix;
         }
-        // 9. 저장
         ChatLog log = ChatLog.builder()
                 .student(student)
                 .question(question)
@@ -240,7 +210,6 @@ public class ChatbotService {
         return answer;
     }
     
- // ★ [신규 메서드] 상세 성적 정보를 문자열로 변환
     private String makeDetailedGradeInfo(List<StuSub> history) {
         if (history == null || history.isEmpty()) {
             return "수강 이력이 없습니다.";
@@ -251,25 +220,20 @@ public class ChatbotService {
             Subject subject = sub.getSubject();
             StuSubDetail detail = sub.getDetail(); // 상세 정보 가져오기
 
-            // 과목명 헤더
             sb.append(String.format("- [%d-%d학기] %s: ", 
                     subject.getSubYear(), subject.getSemester(), subject.getName()));
 
-            // 최종 등급 (있는 경우)
             if (sub.getGrade() != null) {
                 sb.append(String.format("최종성적 %s, ", sub.getGrade()));
             }
 
-            // 상세 점수 (StuSubDetail이 존재하는 경우)
             if (detail != null) {
-//                sb.append(String.format("중간고사 %d점, 기말고사 %d점, 과제 %d점, 출석(결석 %d회 / 지각 %d회), 환산총점 %d점",
                 sb.append(String.format("중간고사 %d점, 기말고사 %d점, 과제 %d점, 출석(결석 %d회 / 지각 %d회)",
                         detail.getMidExam() != null ? detail.getMidExam() : 0,
                         detail.getFinalExam() != null ? detail.getFinalExam() : 0,
                         detail.getHomework() != null ? detail.getHomework() : 0,
                         detail.getAbsent() != null ? detail.getAbsent() : 0,
                         detail.getLateness() != null ? detail.getLateness() : 0
-//                      detail.getConvertedMark() != null ? detail.getConvertedMark() : 0
                 ));
             } else {
                 sb.append("상세 점수 데이터 없음");
@@ -279,23 +243,16 @@ public class ChatbotService {
         return sb.toString();
     }
 
-    // (makeStudentInfoString 등 나머지 메서드는 기존 유지)
     private String makeStudentInfoString(Student student) {
     	List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
     	String currentStatus = "정보 없음"; // 기본값
         if (!statHistory.isEmpty()) {
-            // 정렬을 내림차순(Desc)으로 했으므로, 0번째가 가장 최신 상태입니다.
             currentStatus = statHistory.get(0).getStatus();
         }
-        // ... (기존 코드와 동일) ...
         Integer totalCredits = gradeService.calculateTotalCredits(student.getId());
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());      
         String dept = (student.getDepartment() != null) ? student.getDepartment().getName() : "학부 미배정";
-        String entrance = (student.getEntranceDate() != null) ? student.getEntranceDate().toString() : "정보없음";
-        String birth = (student.getBirthDate() != null) ? student.getBirthDate().toString() : "정보 없음";
         String tel = (student.getTel() != null) ? student.getTel() : "정보 없음";
-        String addr = (student.getAddress() != null) ? student.getAddress() : "정보 없음";
-        String email = (student.getEmail() != null) ? student.getEmail() : "정보 없음";
         String gender = (student.getGender() != null) ? student.getGender() : "정보 없음";       
         return """
                 - 학번: %d
@@ -321,7 +278,6 @@ public class ChatbotService {
                 );
     }       
 
-    // ... (나머지 메서드 유지) ...
     public List<ChatLog> getChatHistory(Long studentId) {
         return chatLogRepository.findByStudentIdOrderByCreatedAtAsc(studentId);
     }

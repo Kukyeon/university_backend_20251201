@@ -8,29 +8,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal; 
-import com.university.home.dto.PrincipalDto;
 import com.university.home.dto.EvaluationDto;
-import com.university.home.dto.MyEvaluationDto;
-import com.university.home.dto.PrincipalDto;
 import com.university.home.dto.QuestionDto;
 import com.university.home.entity.Evaluation; 
 import com.university.home.exception.CustomRestfullException;
 import com.university.home.service.CustomUserDetails;
 import com.university.home.service.EvaluationService;
 import com.university.home.service.QuestionService;
-import com.university.home.utils.Define;
 
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-// ⭐️ @RestController 사용
 @RestController
 @RequestMapping("/api/evaluation")
 @RequiredArgsConstructor
 public class EvaluationController {
 
-//    private final HttpSession session;
     private final EvaluationService evaluationService;
     private final QuestionService questionService;
 

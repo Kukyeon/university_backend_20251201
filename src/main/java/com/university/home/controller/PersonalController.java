@@ -7,15 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.university.home.config.WebMvcConfig;
 import com.university.home.dto.BreakAppDto;
 import com.university.home.dto.FindUserDto;
 import com.university.home.dto.UserDto;
@@ -52,7 +49,7 @@ public class PersonalController {
 	@Autowired
 	BreakAppService breakAppService;
 
-	
+	// 비밀번호 찾기용 랜덤 비밀번호
 	private String generateRandomPassword(int length) {
 	    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	    StringBuilder sb = new StringBuilder();
@@ -62,12 +59,12 @@ public class PersonalController {
 	    }
 	    return sb.toString();
 	}
+	// App.js에서 받을 user 객체
 	 @GetMapping("/me")
 	    public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails loginUser) {
 	        User user = userService.getUserById(loginUser.getUser().getId());
 	        Long userId = user.getId();   
 	        String role = user.getUserRole();
-	        System.out.println("롤ㄹㄹㄹ!!!"+role);
 	        Object result;
 	        
 	        switch(role) {
@@ -88,6 +85,7 @@ public class PersonalController {
 	                "role", role
 	            ));
 	    }
+	 // 로그인
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@RequestBody @Valid UserDto dto) {
 	    
@@ -110,13 +108,13 @@ public class PersonalController {
 	            throw new CustomRestfullException("Unknown user role", HttpStatus.BAD_REQUEST);
 	    }
 
-	    // 3️⃣ 반환
 	    return ResponseEntity.ok(Map.of(
 	            "token", token,
 	            "user", result,
 	            "role", role
 	        ));
 	}
+	// 아이디 찾기
 	@PostMapping("/findId")
 	public ResponseEntity<?> findId(@RequestBody @Valid FindUserDto dto) {
 		Long id;
@@ -135,6 +133,7 @@ public class PersonalController {
     }
 		return ResponseEntity.ok(Map.of("id", id, "message", "ID 조회 성공"));
 	}
+	// 비밀번호 찾기
 	@PostMapping("/findPw")
 	public ResponseEntity<?> findPw(@RequestBody @Valid FindUserDto dto) {
 		 boolean exists = switch(dto.getUserRole()) {
@@ -147,28 +146,28 @@ public class PersonalController {
 	    if (!exists) {
 	        throw new CustomRestfullException("정보가 일치하지 않습니다.", HttpStatus.BAD_REQUEST);
 	    }
-	 // 2️⃣ 랜덤 임시 비밀번호 생성
 	    String tempPassword = generateRandomPassword(8);
 
-	    // 3️⃣ User에 임시 비밀번호 설정
 	    userService.resetPassword(dto.getId(), tempPassword);
 
 	    return ResponseEntity.ok(Map.of("message", "임시 비밀번호 발급 완료", "tempPassword", tempPassword));
 	}
+	// 내정보 수정
 	@PutMapping("/update")
 	public ResponseEntity<?> updateUser(@RequestBody @Valid UserUpdateDto dto, @AuthenticationPrincipal CustomUserDetails loginUser) {
 		dto.setId(loginUser.getUser().getId());
 		 Object updatedUser = userService.updateUser(dto);
 
-		    // 최신 객체를 그대로 반환
 		    return ResponseEntity.ok(updatedUser);
 	}
+	// 비밀번호 변경
 	@PutMapping("/update/pw")
 	public ResponseEntity<?> updatePassword(@RequestBody@Valid UserPwDto dto, @AuthenticationPrincipal CustomUserDetails loginUser ){
 	dto.setUserId(loginUser.getUser().getId());
 	userService.updatePw(dto);
-	return ResponseEntity.ok("비밀번ㄴ호 변경!");
-}
+	return ResponseEntity.ok("비밀번호 변경!");
+	}
+	// 학생 MY에서 학적상태 조회
 	@GetMapping("/students")
 	public ResponseEntity<?> getStudentBreakApps(@AuthenticationPrincipal CustomUserDetails loginUser){
 	    Long studentId = loginUser.getUser().getId();

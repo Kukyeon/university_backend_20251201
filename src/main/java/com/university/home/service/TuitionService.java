@@ -114,11 +114,9 @@ public class TuitionService {
     	            .orElseThrow(() -> new RuntimeException("등록금 정보 없음"));
     	 Long tuiAmount = collTuit.getAmount();
     	 
-    	// 직전 학기 성적 리스트를 가져옵니다.
     	    List<GradeTotalDto> gradeHistory = stuSubService.readGradeInquiryList(studentId);
     	    
     	    if (!gradeHistory.isEmpty()) {
-    	        // 가장 최근 학기 성적 DTO (마지막 요소)
     	        GradeTotalDto latestGrade = gradeHistory.get(gradeHistory.size() - 1);
     	        double gpa = latestGrade.getAverageScore();
     	        
@@ -129,9 +127,7 @@ public class TuitionService {
     	            determinedSchType = 2; // 성적우수 B
     	        }
 
-    	        // 조건에 맞는 장학금이 있다면 StuSch 테이블에 먼저 저장
     	        if (determinedSchType != null) {
-    	            // 해당 유형의 Scholarship 엔티티 조회 (id가 1, 2라고 가정하거나 type명으로 조회)
     	            Scholarship scholarship = scholarshipRepository.findById(Long.valueOf(determinedSchType)).orElse(null);
     	            
     	            if (scholarship != null) {
@@ -150,7 +146,6 @@ public class TuitionService {
     	 Scholarship schType = null;
     	 
     	 if (!stuSchs.isEmpty()) {
-    		    // 여러 장학금이 있을 경우 가장 큰 장학금 사용
 		    StuSch bestSch = stuSchs.stream()
 		            .max((a, b) -> Long.compare(
 		                    a.getScholarshipType() != null ? a.getScholarshipType().getMaxAmount() : 0,
@@ -159,14 +154,11 @@ public class TuitionService {
 
 		    if (bestSch.getScholarshipType() != null) {
 		        schType = bestSch.getScholarshipType();
-		        schAmount = Math.min(bestSch.getScholarshipType().getMaxAmount(), tuiAmount); // 등록금보다 크면 등록금 한도로
+		        schAmount = Math.min(bestSch.getScholarshipType().getMaxAmount(), tuiAmount);
 		    }
 		}
-    	 System.out.println("stuSchs.size() = " + stuSchs.size());
     	 if (schType != null) {
-    	     System.out.println("schType = " + schType.getType() + ", schAmount = " + schAmount);
     	 } else {
-    	     System.out.println("schType is null");
     	 }
 
     	 Tuition tuition = new Tuition();
@@ -177,12 +169,10 @@ public class TuitionService {
 	    tuition.setScholarshipType(schType);
 	    tuition.setSchAmount(schAmount);
 	    if (tuiAmount - schAmount <= 0) {
-	        tuition.setStatus(true); // 자동 납부 완료 처리
+	        tuition.setStatus(true); 
 	    } else {
-	        tuition.setStatus(false); // 미납 상태
-	    } // 기본 납부 상태 false
-
-	    // 8. 저장
+	        tuition.setStatus(false); 
+	    } 
 	    tuitionRepository.save(tuition);
 	    
 	    return 1;

@@ -31,7 +31,6 @@ public class AdminService {
 	            throw new CustomRestfullException("이미 등록금이 입력된 학과입니다", HttpStatus.INTERNAL_SERVER_ERROR);
 	        }
 
-	        // DTO → Entity 변환 후 저장
 	        CollTuit collTuit = new CollTuit();
 	        College college = collegeRepository.findById(dto.getCollegeId())
 	        	    .orElseThrow(() -> new RuntimeException("College not found"));

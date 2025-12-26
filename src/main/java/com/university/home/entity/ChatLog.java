@@ -10,12 +10,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ChatLog {
+public class ChatLog { // 챗봇
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 질문한 학생 (로그인 안 해도 되면 Nullable, 여기선 로그인 가정)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     @JsonIgnore
