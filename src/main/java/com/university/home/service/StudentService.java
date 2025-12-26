@@ -33,18 +33,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StudentService {
 
-	@Autowired
-	StudentRepository studentRepository;
-	@Autowired
-	UserService userService;
-	@Autowired
-	DepartmentRepository departmentRepository;
-	@Autowired
-	StuStatService stuStatService;
-	@Autowired
-	private BreakAppRepository breakAppRepository;
-	@Autowired
-	private ProfessorRepository professorRepository;
+	private final StudentRepository studentRepository;
+    private final UserService userService;
+    private final DepartmentRepository departmentRepository;
+    private final StuStatService stuStatService;
+    private final BreakAppRepository breakAppRepository;
+    private final ProfessorRepository professorRepository;
 	
 	@Transactional
 	public StudentDto createStudentWithStatus(StudentDto dto) {
