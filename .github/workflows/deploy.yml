@@ -26,8 +26,10 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          # build/libs 폴더 안의 JAR 파일만 전송합니다.
           source: "build/libs/*.jar,Dockerfile,docker-compose.yml"
-          target: "/home/ubuntu/app"
+          # target을 홈 디렉토리로 변경합니다.
+          target: "/home/ubuntu"
 
       - name: Deploy to Docker
         uses: appleboy/ssh-action@master
@@ -36,9 +38,21 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ubuntu/app
+            cd /home/ubuntu
+            
+            # 1. .env 파일 생성 및 덮어쓰기
             echo "${{ secrets.ENV_FILE }}" > .env
-            mv build/libs/*.jar ./ 2>/dev/null || true
+            
+            # 2. 전송된 JAR 파일을 university.jar로 이름 변경 (기존 파일 덮어쓰기)
+            # build/libs 폴더 채로 왔으므로 꺼내면서 이름을 바꿉니다.
+            mv build/libs/*.jar ./university.jar
+            
+            # 3. 기존 컨테이너 중지 및 삭제
             sudo docker-compose down
+            
+            # 4. 새 이미지 빌드 및 컨테이너 실행
             sudo docker-compose up --build -d --force-recreate
+            
+            # 5. 불필요한 이미지 정리 및 전송된 빈 폴더 삭제
             sudo docker image prune -f
+            rm -rf build
