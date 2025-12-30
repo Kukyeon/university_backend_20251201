@@ -88,7 +88,7 @@ public class DropoutAnalysisService {
         } catch (Exception e) {
         }
     }
-    	private void analyzeStudentRisk(Student student) {
+       private void analyzeStudentRisk(Student student) {
         
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());
         
