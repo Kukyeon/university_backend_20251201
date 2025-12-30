@@ -15,7 +15,6 @@ import java.util.List;
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
 
     // 검색: 제목+내용
-    
     Page<Notice> findByTitleContainingOrContentContaining(String title, String content, Pageable pageable);
     Page<Notice> findByTitleContaining(String title, Pageable pageable);
     @Modifying

@@ -1,6 +1,8 @@
 package com.university.home.service;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -17,9 +19,9 @@ import com.university.home.repository.NotificationRepository;
 import com.university.home.repository.ProfessorRepository;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j; // 로그 확인용 (선택)
+import lombok.extern.slf4j.Slf4j; 
 
-@Slf4j // 로그 사용 시 필요
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -27,35 +29,36 @@ public class NotificationService {
 	private final NotificationRepository notificationRepository;
 	private final ProfessorRepository professorRepository;
 	
-	// 메모리 누수 방지를 위해 ConcurrentHashMap 사용
 	private static final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 	
 	
-	// 3. 상담 예약 알림
+	// 상담 예약 알림
     public void sendAppointmentAlert(CounselingSchedule schedule, String type) {
         Long professorId = schedule.getProfessorId();
         Long studentId = schedule.getStudentId();
         
-        String message = String.format("📅 [%s] %s 학생이 상담을 예약했습니다. (%s)", 
-                type, studentId, schedule.getStartTime().toString());
+        String action = switch (type) {
+        case "예약" -> "예약했습니다";
+        case "예약 취소" -> "예약을 취소했습니다";
+        default -> "상태 변경";
+    };
+    String tab = "학생 상담 목록";
+    String url = "/counseling?tab=" + URLEncoder.encode(tab, StandardCharsets.UTF_8);
+    String message = String.format("📅 [%s] %s 학생이 상담을 %s. (%s)", 
+            type, studentId, action, schedule.getStartTime().toString());
         
-        send(professorId, message, "/professor/counseling"); 
-        
-        System.out.println("🔔 [Notification] Sent to Prof " + professorId + ": " + message);
+        send(professorId, message, url); 
     }
     
-    // 1. 클라이언트가 구독(연결) 요청 시 호출
+    // 클라이언트가 구독(연결) 요청 시 호출
     public SseEmitter subscribe(Long userId) {
-        // 타임아웃 1시간 설정
         SseEmitter emitter = new SseEmitter(60 * 60 * 1000L);
         emitters.put(userId, emitter);
 
-        // 연결 종료/타임아웃/에러 시 맵에서 제거
         emitter.onCompletion(() -> emitters.remove(userId));
         emitter.onTimeout(() -> emitters.remove(userId));
         emitter.onError((e) -> emitters.remove(userId));
 
-        // 503 에러 방지를 위한 더미 데이터 전송
         try {
             emitter.send(SseEmitter.event().name("connect").data("connected!"));
         } catch (IOException e) {
@@ -65,10 +68,9 @@ public class NotificationService {
         return emitter;
     }
 
-    // 2. [핵심 수정] 알림 생성 및 실시간 전송
+    // 알림 생성 및 실시간 전송
     @Transactional
     public void send(Long receiverId, String content, String url) { 
-        // (1) DB 저장
         Notification notification = Notification.builder()
                 .receiverId(receiverId)
                 .content(content)
@@ -78,7 +80,6 @@ public class NotificationService {
                 .build();
         notificationRepository.save(notification);
 
-        // (2) 실시간 전송
         SseEmitter emitter = emitters.get(receiverId);
         if (emitter != null) {
             try {
@@ -86,34 +87,21 @@ public class NotificationService {
                         .name("notification") 
                         .data(notification)); 
             } catch (Exception e) { 
-                // ★ [수정 포인트] IOException -> Exception으로 변경
-                // IllegalStateException (ResponseBodyEmitter가 이미 완료됨) 등을 모두 잡아서 처리
                 emitters.remove(receiverId);
-                // log.debug("알림 전송 실패(연결 끊김): {}", receiverId); 
             }
         }
     }
     
-    // 1. 내 알림 목록 조회
-//    @Transactional(readOnly = true)
-//    public List<Notification> getMyNotifications(Long userId) {
-//        return notificationRepository.findByReceiverIdOrderByCreatedAtDesc(userId);
-//    }
-    
-    // 내 알림목록 조회 / 교수 -> 학생 알림때문에 기존꺼 주석 후 진행 
-    // 에러날시 이거 주석 후 기존꺼 주석 해재 해주세요!
     @Transactional(readOnly = true)
     public List<NotificationResponseDto> getMyNotifications(Long userId) {
         List<Notification> notifications = notificationRepository.findByReceiverIdOrderByCreatedAtDesc(userId);
         
-        //entity 리슷흐를 Dto 리슷흐로 변환하며 sendname 채우기
         return notifications.stream()
         		.map(this::toResponseDto)
         		.toList();
     }
-    
 
-    // 2. 알림 읽음 처리
+    //  알림 읽음 처리
     @Transactional
     public void markAsRead(Long notificationId) {
         Notification notification = notificationRepository.findById(notificationId)
@@ -124,7 +112,7 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
     
-    // 3. 알림 삭제
+    // 알림 삭제
     @Transactional
     public void deleteNotification(Long notificationId, Long userId) {
         Notification notification = notificationRepository.findById(notificationId)
@@ -137,7 +125,7 @@ public class NotificationService {
         notificationRepository.delete(notification);
     }
     
-    //교수 -> 학생 알림보내기 수정중
+    // 교수 -> 학생 알림보내기
     @Transactional
     private NotificationResponseDto toResponseDto(Notification notification) {
     	NotificationResponseDto dto = NotificationResponseDto.fromEntity(notification);
@@ -151,23 +139,21 @@ public class NotificationService {
     	
     public NotificationResponseDto sendDirectMessage(Long senderId, Long receiverId, String content) {
     	
-    	//Db 저장
     	Notification notification = Notification.builder()
     			.receiverId(receiverId)
     			.senderId(senderId)
     			.content(content)
     			.type("PROFESSOR_MESSAGE")
-    			.url("/student-schedule")
+    			.url("/counseling")
     			.Checked(false)
     			.createdAt(LocalDateTime.now())
     			.build();
     	
+    	
     	Notification savedNotification = notificationRepository.save(notification);
     	
-    	//Dto 변환 및 발신자 이름 
     	NotificationResponseDto responseDto = toResponseDto(savedNotification);
     	
-    	//메세지 전송
     	SseEmitter emitter = emitters.get(receiverId);
     	if(emitter != null) {
     		try {
@@ -175,7 +161,6 @@ public class NotificationService {
 				.name("notification")
 				.data(responseDto));
 			} catch (Exception e) {
-				log.warn("알림 전송 실패 : 수신자 ID = {}",receiverId);
 				emitters.remove(receiverId);
 			}
     	}

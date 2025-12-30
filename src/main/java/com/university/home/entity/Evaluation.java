@@ -7,12 +7,12 @@ import lombok.*;
 @Table(name = "evaluation_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Evaluation {
+public class Evaluation { // 강의평가 답변지
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "evaluation_id")
-    private Long id; // Integer -> Long
+    private Long id;
 
-    private Long answer1; // Integer -> Long
+    private Long answer1;
     private Long answer2;
     private Long answer3;
     private Long answer4;

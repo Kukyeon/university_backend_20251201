@@ -16,5 +16,5 @@ public class FindUserDto {
 	private String userRole;
 	
 	// 비밀번호 찾기 시 필요
-	private Long id; // Optional: ID를 알고 있어야 pw 찾기 가능
+	private Long id;
 }

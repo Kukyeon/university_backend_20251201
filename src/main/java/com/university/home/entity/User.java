@@ -9,10 +9,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User { // 로그인/권한용 유저
     
     @Id 
-    private Long id; // Integer -> Long
+    private Long id;
 
     @Column(nullable = false)
     private String password;

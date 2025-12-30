@@ -9,9 +9,9 @@ import lombok.*;
 @Table(name = "stu_sub_detail_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class StuSubDetail {
+public class StuSubDetail { // 교수용 학생 성적기입
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId // StuSub.id를 그대로 사용
@@ -27,7 +27,7 @@ public class StuSubDetail {
     @JoinColumn(name = "subject_id")
     private Subject subject;
     
-    private Long absent; // Integer -> Long
+    private Long absent; 
     private Long lateness; 
     private Long homework;
     private Long midExam;

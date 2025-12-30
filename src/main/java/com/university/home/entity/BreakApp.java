@@ -14,25 +14,25 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class BreakApp {
+public class BreakApp { // 휴학
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id; 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     private Student student;
 
     @Column(name = "student_grade")
-    private Long studentGrade; // Integer -> Long
+    private Long studentGrade;
 
     @Column(name = "from_year")
-    private Long fromYear; // Integer -> Long
+    private Long fromYear; 
     @Column(name = "from_semester")
-    private Long fromSemester; // Integer -> Long
+    private Long fromSemester; 
     @Column(name = "to_year")
-    private Long toYear; // Integer -> Long
+    private Long toYear; 
     @Column(name = "to_semester")
-    private Long toSemester; // Integer -> Long
+    private Long toSemester; 
 
     private String type;
     private LocalDate appDate;

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class CounselingRecord {
+public class CounselingRecord { // 화상상담기록
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,7 +21,6 @@ public class CounselingRecord {
     @JoinColumn(name = "schedule_id", nullable = false)
     private CounselingSchedule schedule;
 
-    // 검색 용이성을 위해 User 정보를 중복 저장
     private String studentName; 
     private Long studentId;
     
@@ -34,5 +33,11 @@ public class CounselingRecord {
     private String keywords; // 검색용 키워드
     
     private LocalDateTime recordDate = LocalDateTime.now();
+    
+    private LocalDateTime startedAt;  // 화상 상담 입장 시간
+    private LocalDateTime finishedAt; // 상담 종료 시간
+    @Enumerated(EnumType.STRING)
+    private ScheduleStatus status;    // PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELED, NO_SHOW
+
     
 }

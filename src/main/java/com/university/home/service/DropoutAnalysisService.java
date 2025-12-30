@@ -7,8 +7,6 @@ import java.util.regex.Pattern;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-// import org.springframework.transaction.annotation.Transactional; // Service단 트랜잭션 필요시 사용
-
 import com.university.home.entity.DropoutRisk;
 import com.university.home.entity.Professor;
 import com.university.home.entity.StuStat;
@@ -43,55 +41,42 @@ public class DropoutAnalysisService {
     private final StuStatRepository stuStatRepository;
     private final UserRepository userRepository;
    
-    @Scheduled(cron = "0 0 0 1 5,11 *")
+    @Scheduled(cron = "0 0 0 15 7,12 *")
     public void analyzeAllStudents() {
-        // 1. [수정] StudentRepository를 사용하여 모든 학생을 먼저 가져옵니다.
         List<Student> allStudents = studentRepository.findAll();
-        log.info("총 {}명의 학생 데이터 로드 완료. 재학생 선별 중...", allStudents.size());
 
         for (Student student : allStudents) {
             try {
-                // 2. [핵심] 여기서 '현재 재학 중인지' 검사하고 아니면 건너뜁니다.
                 if (!isEnrolled(student)) {
                     continue; 
                 }
 
-                // 3. 재학생인 경우에만 분석 실행
                 analyzeStudentRisk(student);
                 
-                // API 속도 제한 고려 (1초 대기)
                 Thread.sleep(1000); 
 
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;
             } catch (Exception e) {
-                log.error("학생({}) 건너뜀: {}", student.getName(), e.getMessage());
             }
         }
         
-        // 실행 완료 알림
         sendAnalysisCompletionAlertToStaff();
     }
 
-    // [필수] 학생이 현재 '재학' 상태인지 확인하는 메서드
+    // 학생이 현재 '재학' 상태인지 확인하는 메서드
     private boolean isEnrolled(Student student) {
-        // 해당 학생의 학적 기록을 최신순으로 가져옴
         List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
         
-        // 기록이 없으면 신입생(재학), 기록이 있으면 가장 최신 상태(get(0)) 확인
         String status = statHistory.isEmpty() ? "재학" : statHistory.get(0).getStatus();
         
-        // "재학" 글자와 일치하는지 확인 (true/false 반환)
         return "재학".equals(status);
     }
- // ★ [신규 메서드] 직원 알림 전송 로직
+    // 직원 알림 전송 로직
     private void sendAnalysisCompletionAlertToStaff() {
         try {
-            // 1. 'STAFF' 권한을 가진 모든 사용자 조회
-            // (DB의 user_tb 테이블 role 컬럼값이 'STAFF'인 사용자를 찾습니다)
-            // UserRepository에 List<User> findByRole(String role); 메서드가 있어야 합니다.
-           List<User> staffList = userRepository.findByUserRole("STAFF");
+        	List<User> staffList = userRepository.findByUserRole("STAFF");
             
             String message = "✅ 전체 학생 위험군 분석이 완료되었습니다.";
             String targetUrl = null; // 직원이 이동할 대시보드 URL
@@ -99,37 +84,28 @@ public class DropoutAnalysisService {
             for (User staff : staffList) {
                 notificationService.send(staff.getId(), message, targetUrl);
             }
-            log.info("직원 {}명에게 분석 완료 알림 전송 완료", staffList.size());
             
         } catch (Exception e) {
-            log.error("직원 알림 전송 중 오류 발생", e);
         }
     }
        private void analyzeStudentRisk(Student student) {
         
-        // 1. 데이터 조회 (기존 로직 유지)
         Double avgGrade = gradeService.calculateCurrentSemesterAverageGrade(student.getId());
         
         List<StuSubDetail> details = stuSubDetailRepository.findByStudent_Id(student.getId());
         int absenceCount = details.stream()
                 .mapToInt(detail -> detail.getAbsent() == null ? 0 : detail.getAbsent().intValue()) 
                 .sum();
-        // 1. 학적 상태 확인
         List<StuStat> statHistory = stuStatRepository.findByStudentIdOrderByIdDesc(student.getId());
         String status = statHistory.isEmpty() ? "재학" : statHistory.get(0).getStatus();
         if (!"재학".equals(status)) {
-            log.info("학생({})은 '{}' 상태이므로 분석을 건너뜁니다.", student.getName(), status);
-            return; // 여기서 메서드 종료 (API 호출 안 함)
+            return; 
         }
         
-        // ★ [핵심] 성적도 0점이고 결석도 0회라면? -> "모범생"일 수도 있지만 "아직 학기 초라 데이터가 없는 상태"일 확률 99%
-        // 이 경우 위험도를 분석하지 않거나 '정상'으로 간주해야 합니다.
         if (avgGrade == 0.0 && absenceCount == 0) {
-            log.info("데이터 부족(성적0, 결석0)으로 인해 정상 처리: {}", student.getName());
-            return; // 분석하지 않고 넘어감 (DB에 저장 안 함)
+            return; 
         }
         
-        // ★ [수정] 프롬프트 고도화: 성적, 학점, 출결을 구체적인 판단 기준으로 제시
         String analysisPrompt = """
                 당신은 누리대학교의 '중도 이탈(자퇴) 위험 분석 AI'입니다.
                 아래의 [학생 데이터]를 기반으로 위험도를 예측하세요.
@@ -158,11 +134,9 @@ public class DropoutAnalysisService {
                 """.formatted(student.getName(), avgGrade, absenceCount, status);
 
         try {
-            // Gemini 호출 및 결과 처리 로직 (기존과 동일)
             String result = geminiService.talk(analysisPrompt);
 
             if (result.contains("429") || result.contains("error") || result.contains("연결 실패")) {
-                log.warn("API 한도 초과/에러 (학생: {}). 분석 중단.", student.getName());
                 return; 
             }
 
@@ -174,14 +148,12 @@ public class DropoutAnalysisService {
             if (matcher.find()) {
                 riskScore = Double.parseDouble(matcher.group(1));
             } else {
-                log.warn("점수 파싱 실패. 원본: {}", lines[0]);
                 return; 
             }
             
             String reason = lines.length > 1 ? lines[1].trim() : "상세 분석 내용 없음";
             String riskLevel = determineLevel(riskScore);            
 
-            // DB 저장
             DropoutRisk risk = DropoutRisk.builder()
                     .student(student)
                     .riskScore(riskScore)
@@ -191,15 +163,12 @@ public class DropoutAnalysisService {
                     .build();
             
             dropoutRiskRepository.save(risk);
-            log.info("분석 완료: {} ({}점/{})", student.getName(), riskScore, riskLevel);
 
-            // 알림 발송
             if ("심각".equals(riskLevel)) {
                 sendAlert(student, riskLevel, reason);
             }
 
         } catch (Exception e) {
-            log.error("학생({}) 분석 로직 에러: {}", student.getName(), e.getMessage());
         }
     }
 
@@ -215,7 +184,6 @@ public class DropoutAnalysisService {
             String content = String.format("💬 [상담 권장] %s님, 학업에 어려움은 없으신가요? 챗봇과 대화해보세요.", student.getName());
             notificationService.send(student.getId(), content, "/student/chatbot");
         } catch (Exception e) {
-            log.error("학생 알림 전송 실패", e);
         }
 
         if (student.getDepartment() != null) {

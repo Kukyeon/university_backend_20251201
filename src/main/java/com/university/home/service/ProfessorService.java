@@ -143,7 +143,7 @@ public class ProfessorService {
                         "교수 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
         return toDto(professor);
     }
-//	===============내 강의 조희 서비스!@!!@! ============
+//	===============내 강의 조희 서비스 ============
 	public SubjectForProfessorDto toDto(Subject subject) {
 	    SubjectForProfessorDto dto = new SubjectForProfessorDto();
 	    dto.setId(subject.getId());
@@ -206,23 +206,20 @@ public class ProfessorService {
 
 	    String grade;
 	    Long converted;
-	    // 결석 5회 이상이면 무조건 F
 	    if (dto.getAbsent() != null && dto.getAbsent() >= 5) {
 	        grade = "F";
-	        converted = 0L; // 환산점수도 0 처리
+	        converted = 0L; 
 	    } else {
-	        // 환산점수 계산
 	        converted = calculateConvertedMark(dto.getHomework(), dto.getMidExam(), dto.getFinalExam());
 	        detail.setConvertedMark(converted);
 
-	        // 등급 결정
 	        grade = calculateGrade(converted);
 	    }
 
-	    detail.setConvertedMark(converted); // detail에 환산점수 저장
+	    detail.setConvertedMark(converted); 
 	    StuSub stuSub = detail.getStuSub();
-	    stuSub.setGrade(grade);             // 문자 학점 저장
-	    stuSub.setCompleteGrade(converted); // 숫자 점수 저장
+	    stuSub.setGrade(grade);            
+	    stuSub.setCompleteGrade(converted); 
 	    stuSubRepository.save(stuSub);
 	    stuSubDetailRepository.save(detail);
 	    return toDto(detail);

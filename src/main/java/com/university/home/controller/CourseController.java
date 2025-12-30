@@ -1,10 +1,9 @@
 package com.university.home.controller;
 
 import com.university.home.service.CourseService;
-import com.university.home.service.CustomUserDetails; // 패키지명 확인 필요
+import com.university.home.service.CustomUserDetails;
 import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.PreStuSub;
-import com.university.home.entity.StuSub;
 import com.university.home.entity.Subject;
 import com.university.home.repository.PreStuSubRepository;
 
@@ -25,24 +24,23 @@ public class CourseController {
 
     private final CourseService courseService;
     private final PreStuSubRepository preStuSubRepository;
-    // ============================ 조회 API ============================
-
-    // 1. 강의 목록 조회 (학기 자동 감지)
-    // GET /api/course/list
+    // 강의 목록 조회 (학기 자동 감지)
     @GetMapping("/list")
     public ResponseEntity<Page<Subject>> getCourseList(
-            @RequestParam(name = "year", required = false) Long year,
-            @RequestParam(name = "semester", required = false) Long semester,
+    		@AuthenticationPrincipal CustomUserDetails loginUser,
             @RequestParam(name = "page", defaultValue = "0") int page,        
             @RequestParam(name = "type", required = false) String type,
             @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "deptId", required = false) Long deptId
+            @RequestParam(name = "deptId", required = false) Long deptId,
+            @RequestParam(name = "targetGrade", required = false) Long targetGrade
     ) {
-        return ResponseEntity.ok(courseService.getAvailableCourses(year, semester, page, type, name, deptId));
+    	if (loginUser == null) return ResponseEntity.status(401).build();
+
+    	Long studentId = loginUser.getUser().getId();
+        return ResponseEntity.ok(courseService.getAvailableCourses(studentId, page, type, name, deptId, targetGrade));
     }
     
- // [추가] 모든 강좌 조회 (년도/학기 무관)
-    // GET /api/course/all
+    // 모든 강좌 조회 (년도/학기 무관)
     @GetMapping
     public ResponseEntity<Page<Subject>> getAllCourseList(
     		@RequestParam(name = "page", defaultValue = "0") int page,
@@ -55,20 +53,16 @@ public class CourseController {
         return ResponseEntity.ok(courseService.getAllCourses(page, type, name, deptId, year, semester));
     }
 
-    // 2. 내 수강 내역 조회
-    // GET /api/course/history
+    // 내 수강 내역 조회
     @GetMapping("/history")
     public ResponseEntity<List<?>> getMyHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
         
         if (loginUser == null) return ResponseEntity.status(401).build();
         
-        // Service에서 기간(0, 1)에 따라 List<PreStuSub> 또는 List<StuSub>를 줍니다.
-        // 이를 유연하게 받기 위해 와일드카드(?)를 사용합니다.
         return ResponseEntity.ok(courseService.getMyCourseHistory(loginUser.getUser().getId()));
     }
 
-    // 3. AI 강의 추천
-    // GET /api/course/recommend
+    // AI 강의 추천
     @GetMapping("/recommend")
     public ResponseEntity<Map<String, String>> recommendCourses(@AuthenticationPrincipal CustomUserDetails loginUser) {
         if (loginUser == null) return ResponseEntity.status(401).build();
@@ -77,10 +71,7 @@ public class CourseController {
         return ResponseEntity.ok(Map.of("result", recommendation));
     }
 
-    // ============================ 동작 API (수강신청) ============================
-
-    // 4. 수강신청
-    // POST /api/course/register
+    // 수강신청
     @PostMapping("/register")
     public ResponseEntity<String> register(
             @AuthenticationPrincipal CustomUserDetails loginUser,
@@ -99,18 +90,15 @@ public class CourseController {
         }
     }
     
- // 장바구니 목록 무조건 조회 (기간 상관없이 확인용)
-    // GET /api/course/basket
+    // 장바구니 목록 조회 (기간 상관없이 확인용)
     @GetMapping("/basket")
     public ResponseEntity<List<PreStuSub>> getMyBasket(@AuthenticationPrincipal CustomUserDetails loginUser) {
         if (loginUser == null) return ResponseEntity.status(401).build();
         
-        // Repository 직접 호출해서 장바구니(PreStuSub) 내용만 가져옴
         return ResponseEntity.ok(preStuSubRepository.findByStudentId(loginUser.getUser().getId()));
     }
 
-    // 5. 수강취소
-    // DELETE /api/course/cancel?subjectId=101
+    // 수강취소
     @DeleteMapping("/cancel")
     public ResponseEntity<String> cancel(
             @AuthenticationPrincipal CustomUserDetails loginUser,
@@ -128,8 +116,7 @@ public class CourseController {
         }
     }
     
- // 6. 강의 상세 조회 (강의계획서용)
-    // GET /api/course/syllabus/101
+    // 강의 상세 조회 (강의계획서용)
     @GetMapping("/syllabus/{subjectId}")
     public ResponseEntity<SyllabusDto> getSyllabus(@PathVariable("subjectId") Long subjectId) {
         // 기존 Repository 활용

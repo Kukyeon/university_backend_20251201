@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -12,9 +11,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 @Table(name = "schedule_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Schedule {
+public class Schedule { // 학사일정
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Integer -> Long
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "staff_id")

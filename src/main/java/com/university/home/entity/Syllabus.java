@@ -9,11 +9,11 @@ import lombok.*;
 @Table(name = "syllabus_tb")
 @Getter @Setter
 @NoArgsConstructor
-public class Syllabus {
+public class Syllabus { // 강의계획서
     
     @Id
     @Column(name = "subject_id")
-    private Long subjectId; // Integer -> Long
+    private Long subjectId; 
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId 

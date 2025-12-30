@@ -3,6 +3,8 @@ package com.university.home.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,10 +62,9 @@ public class EvaluationService {
     }
 
     // 교수 기준 전체 평가 → DTO로 변환
-    public List<EvaluationDto> getEvaluationsByProfessorId(Long professorId) {
-        return evaluationRepository.findByProfessorId(professorId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public Page<EvaluationDto> getEvaluationsByProfessorId(Long professorId, Pageable pageable) {
+        return evaluationRepository.findByProfessorId(professorId, pageable)
+                .map(this::convertToDto);
     }
     public List<String> getSubjectsByProfessor(Long professorId) {
         return evaluationRepository.findDistinctSubjectNameByProfessorId(professorId);
@@ -75,7 +76,6 @@ public class EvaluationService {
                 .collect(Collectors.toList());
     }
 
-    // Evaluation → MyEvaluationDto 변환
     private EvaluationDto convertToDto(Evaluation e) {
         EvaluationDto dto = new EvaluationDto();
         dto.setStudentId(e.getStuSub().getStudent().getId());

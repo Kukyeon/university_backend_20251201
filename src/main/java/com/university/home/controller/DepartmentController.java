@@ -21,11 +21,9 @@ public class DepartmentController {
     private final DepartmentRepository departmentRepository;
     private final DepartmentService departmentService;
 
-    // 학과 전체 목록 조회 API
-    // GET /api/department/list
+    // 학과 전체 목록 조회
     @GetMapping("/list")
     public ResponseEntity<List<Department>> getDepartmentList() {
-        // 모든 학과를 이름순으로 가져오기 (Sort 안 해도 되지만 하면 좋음)
         return ResponseEntity.ok(departmentRepository.findAll());
     }
     

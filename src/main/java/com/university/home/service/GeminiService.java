@@ -47,8 +47,7 @@ public class GeminiService {
             return "AI가 응답하지 않습니다.";
 
         } catch (Exception e) {
-            log.error("Gemini 연결 에러: ", e);
-            return "AI 서버 연결 실패: " + e.getMessage();
+            return "챗봇 서비스가 혼잡합니다.\n 잠시 후 다시 시도해주세요.";
         }
     }
 }

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,11 +45,9 @@ public class TuitionController {
 	}
 	@GetMapping("/payment")
 	public ResponseEntity<?> getTuitionPayment(@AuthenticationPrincipal CustomUserDetails loginUser) {
-	    // 학생 정보 확인
 		Long studentId = loginUser.getUser().getId();
 	    Student student = studentService.getStudentByIdEntity(studentId);
 
-	    // 학적 상태 + 휴학 체크
 	    StuStat stuStat = stuStatService.getCurrentStatus(student.getId());
 	    List<BreakApp> breakAppList = breakAppService.getByStudent(studentId);
 	    
@@ -61,7 +58,6 @@ public class TuitionController {
 	        return ResponseEntity.ok(response);
 	    }
 
-	    // 휴학 체크
 	    for (BreakApp b : breakAppList) {
 	        if ("승인".equals(b.getStatus()) && b.getToYear() >= LocalDate.now().getYear()) {
 	            Map<String, Object> response = new HashMap<>();
@@ -71,9 +67,13 @@ public class TuitionController {
 	        }
 	    }
 
-	    // 등록금 고지서 조회
-	    Tuition tuition = tuitionService.getSemester(studentId,  (long) LocalDate.now().getYear(),
-                (LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
+	    Tuition tuition = null;
+	    try {
+	        tuition = tuitionService.getSemester(studentId, (long) LocalDate.now().getYear(),
+	                    (LocalDate.now().getMonthValue() <= 6 ? 1L : 2L));
+	    } catch (CustomRestfullException e) {
+	    }
+
 	    if (tuition == null) {
 	        Map<String, Object> response = new HashMap<>();
 	        response.put("status", null);

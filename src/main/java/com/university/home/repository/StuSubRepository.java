@@ -2,12 +2,15 @@ package com.university.home.repository;
 
 import com.university.home.entity.StuSub;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
 public interface StuSubRepository extends JpaRepository<StuSub, Long> {
     
-    //학생 ID로 수강 내역(성적 포함)을 몽땅 가져옵니다.
+    //학생 ID로 수강 내역 조회
     List<StuSub> findByStudentId(Long studentId);
 
     //중복 신청 확인
@@ -25,5 +28,8 @@ public interface StuSubRepository extends JpaRepository<StuSub, Long> {
     List<StuSub> findByStudentIdAndSubjectSubYearAndSubjectSemesterAndSubjectType(
     	    Long studentId, Long year, Long semester, String type
     	);
-
+    @Query("SELECT DISTINCT s.subject.subYear FROM StuSub s " +
+            "WHERE s.student.id = :studentId " +
+            "ORDER BY s.subject.subYear DESC")
+     List<Long> findDistinctYearsByStudentId(@Param("studentId") Long studentId);
 }

@@ -22,31 +22,23 @@ public class ChatbotController {
 
     private final ChatbotService chatbotService;
 
-    /**
-     * 챗봇에게 질문을 보내고 답변을 받는 API
-     * URL: POST /api/chatbot/ask
-     */
+    // 챗봇에게 질문을 보내고 답변을 받는 API
     @PostMapping("/ask")
     public ResponseEntity<ChatBotResponse> ask(@RequestBody ChatBotRequest request) {
-        log.info("챗봇 요청 - studentId: {}, question: {}", request.getStudentId(), request.getQuestion());
 
         // 서비스 계층 호출
         String answer = chatbotService.ask(request.getStudentId(), request.getQuestion());
 
-        log.info("챗봇 답변: {}", answer);
         return ResponseEntity.ok(new ChatBotResponse(answer));
     }
-    
+    // 채팅 내역
     @GetMapping("/history")
     public ResponseEntity<List<ChatLog>> getChatHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
-        // ChatLogRepository에 findByStudentIdOrderByCreatedAtAsc 메서드가 있어야 합니다.
-        // (과거 대화부터 순서대로 보여줘야 하므로 Asc 오름차순 사용) //프론트 확인후 수정
-    	// [수정] 리포지토리가 아니라 서비스를 호출합니다.
     	Long studentId = loginUser.getUser().getId();
         List<ChatLog> history = chatbotService.getChatHistory(studentId);
         return ResponseEntity.ok(history);
     }
-    
+    // 채팅 내역 삭제
     @DeleteMapping("/history")
     public ResponseEntity<String> claerHistory(@AuthenticationPrincipal CustomUserDetails loginUser) {
     	Long studentId = loginUser.getUser().getId();
@@ -54,7 +46,6 @@ public class ChatbotController {
     	return ResponseEntity.ok("대화가 종료되었습니다");
     }
     
-
     // --- DTO 클래스 ---
     @Data
     public static class ChatBotRequest {

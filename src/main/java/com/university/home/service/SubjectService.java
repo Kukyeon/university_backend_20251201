@@ -3,12 +3,16 @@ package com.university.home.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.SubjectDto;
 import com.university.home.dto.SyllabusDto;
 import com.university.home.entity.Subject;
 import com.university.home.entity.Syllabus;
+import com.university.home.exception.CustomRestfullException;
 import com.university.home.repository.DepartmentRepository;
 import com.university.home.repository.ProfessorRepository;
 import com.university.home.repository.RoomRepository;
@@ -42,9 +46,9 @@ public class SubjectService {
 	            throw new RuntimeException("해당 시간에 해당 강의실은 이미 사용 중입니다.");
 	    }
 	}
-	public List<SubjectDto> getSubjects() {
-	    List<Subject> subjects = subjectRepository.findAll();
-	    return subjects.stream().map(this::toDto).toList();
+	public Page<SubjectDto> getSubjects(Pageable pageable) {
+	    Page<Subject> subjects = subjectRepository.findAll(pageable);
+	    return subjects.map(this::toDto);
 	}
 
 	private SubjectDto toDto(Subject subject) {
@@ -63,6 +67,7 @@ public class SubjectService {
 	    dto.setRoomId(subject.getRoom().getId());
 	    dto.setDeptId(subject.getDepartment().getId());
 	    dto.setNumOfStudent(subject.getNumOfStudent());
+	    dto.setTargetGrade(subject.getTargetGrade());
 	    return dto;
 	}
 
@@ -85,8 +90,8 @@ public class SubjectService {
 	    subject.setGrades(dto.getGrades());
 	    subject.setCapacity(dto.getCapacity());
 	    subject.setType(dto.getType());
+	    subject.setTargetGrade(dto.getTargetGrade());
 
-	    // 연관관계 매핑
 	    subject.setProfessor(professorRepository.findById(dto.getProfessorId()).orElseThrow());
 	    subject.setRoom(roomRepository.findById(dto.getRoomId()).orElseThrow());
 	    subject.setDepartment(departmentRepository.findById(dto.getDeptId()).orElseThrow());
@@ -102,7 +107,19 @@ public class SubjectService {
 	@Transactional
 	public void deleteSubject(Long id) {
 		Subject subject = subjectRepository.findById(id)
-	            .orElseThrow(() -> new RuntimeException("강의 없음"));
+				.orElseThrow(() -> new CustomRestfullException("강의를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
+		if (subject.getNumOfStudent() != null && subject.getNumOfStudent() > 0) {
+	        throw new CustomRestfullException(
+	            "이미 수강 신청한 학생이 " + subject.getNumOfStudent() + "명 존재하여 삭제할 수 없습니다.", 
+	            HttpStatus.BAD_REQUEST
+	        );
+	    }
+		try {
+	        subjectRepository.delete(subject);
+	    } catch (Exception e) {
+	        // 기타 DB 제약 조건 위반 시
+	        throw new CustomRestfullException("다른 데이터와 연결되어 있어 삭제할 수 없습니다.", HttpStatus.CONFLICT);
+	    }
 		subjectRepository.delete(subject);
 
 	}
@@ -110,18 +127,15 @@ public class SubjectService {
 	public SubjectDto updateSubject(Long id, SubjectDto dto) {
 
 	    Subject subject = subjectRepository.findById(id)
-	            .orElseThrow(() -> new RuntimeException("강의 없음"));
+	    		.orElseThrow(() -> new CustomRestfullException("강의를 찾을 수 없습니다.", HttpStatus.NOT_FOUND));
 
-	    // 연도/학기는 변경 불가 (기존 로직 유지)
 	    dto.setSubYear(subject.getSubYear());
 	    dto.setSemester(subject.getSemester());
 
-	    // 중복 체크
 	    List<Subject> existed = subjectRepository.findByRoom_IdAndSubDayAndSubYearAndSemester(
 	            dto.getRoomId(), dto.getSubDay(), dto.getSubYear(), dto.getSemester()
 	    );
 
-	    // 본인 제외
 	    existed.removeIf(s -> s.getId().equals(id));
 
 	    validateDuplicateSubject(dto, existed);
@@ -133,6 +147,7 @@ public class SubjectService {
 	    subject.setGrades(dto.getGrades());
 	    subject.setCapacity(dto.getCapacity());
 	    subject.setType(dto.getType());
+	    subject.setTargetGrade(dto.getTargetGrade());
 
 	    subject.setProfessor(professorRepository.findById(dto.getProfessorId()).orElseThrow());
 	    subject.setRoom(roomRepository.findById(dto.getRoomId()).orElseThrow());
@@ -144,32 +159,25 @@ public class SubjectService {
 	@Transactional
     public void updateSyllabus(Long subjectId, Long loginUserId, SyllabusDto dto) {
         
-        // 1. 과목 조회
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 과목입니다."));
 
-        // 2. [권한 검증] 과목의 담당 교수 ID와 로그인한 유저 ID가 일치하는지 확인
-        // 담당 교수가 없거나, ID가 다르면 예외 발생 -> Controller에서 403 처리
         if (subject.getProfessor() == null || !subject.getProfessor().getId().equals(loginUserId)) {
             throw new SecurityException("본인의 강의계획서만 수정할 수 있습니다.");
         }
 
-        // 3. Syllabus 객체 조회 (없으면 생성)
         Syllabus syllabus = subject.getSyllabus();
 
         if (syllabus == null) {
             syllabus = new Syllabus();
-            syllabus.setSubject(subject); // @MapsId 사용 시 관계 설정 중요
-            // subject.setSyllabus(syllabus); // 양방향 관계일 경우 필요
+            syllabus.setSubject(subject); 
         }
 
-        // 4. 내용 업데이트 (DTO -> Entity)
         syllabus.setOverview(dto.getOverview());
         syllabus.setObjective(dto.getObjective());
         syllabus.setTextbook(dto.getTextbook());
         syllabus.setProgram(dto.getProgram());
 
-        // 5. 저장
         syllabusRepository.save(syllabus);
     }
 
