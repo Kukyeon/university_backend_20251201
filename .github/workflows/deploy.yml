@@ -38,6 +38,7 @@ jobs:
           script: |
             cd /home/ubuntu/app
             echo "${{ secrets.ENV_FILE }}" > .env
-			mv build/libs/*.jar ./ 2>/dev/null || true
-			sudo docker-compose down
+            mv build/libs/*.jar ./ 2>/dev/null || true
+            sudo docker-compose down
             sudo docker-compose up --build -d --force-recreate
+            sudo docker image prune -f
