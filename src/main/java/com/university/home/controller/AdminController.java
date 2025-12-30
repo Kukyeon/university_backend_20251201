@@ -3,6 +3,8 @@ package com.university.home.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -85,8 +87,8 @@ public class AdminController {
         return ResponseEntity.ok( "삭제 완료");
     }
 	@GetMapping("/room")
-	public ResponseEntity<?> getRoomList() {
-		List<RoomDto> rooms = roomService.roomList();
+	public ResponseEntity<?> getRoomList(Pageable pageable) {
+		Page<RoomDto> rooms = roomService.roomList(pageable);
 		return ResponseEntity.ok(rooms);
 	}
 
@@ -101,8 +103,8 @@ public class AdminController {
         return ResponseEntity.ok("삭제 완료");
     }
     @GetMapping("/subject")
-	public ResponseEntity<?> getSubject() {
-		List<SubjectDto> subjects = subjectService.getSubjects();
+	public ResponseEntity<?> getSubject(Pageable pageable) {
+		Page<SubjectDto> subjects = subjectService.getSubjects(pageable);
 		return ResponseEntity.ok(subjects);
 	}
     @PutMapping("/subject/{id}")

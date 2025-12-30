@@ -45,26 +45,23 @@ public class CourseService {
 
     // [조회] 개설된 최신 학년 학기 강의 목록 가져오기 (기존 유지)
     @Transactional(readOnly = true)
-    public Page<Subject> getAvailableCourses(Long subYear, Long semester, int page, String type, String name, Long deptId) {
+    public Page<Subject> getAvailableCourses(Long studentId, int page, String type, String name, Long deptId, Long targetGrade) {
+    	Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("학생 정보를 찾을 수 없습니다."));
+    	Subject latest = subjectRepository.findTopByOrderBySubYearDescSemesterDesc().orElse(null);
+        Long subYear = (latest != null) ? latest.getSubYear() : 2025L;
+        Long semester = (latest != null) ? latest.getSemester() : 1L;
         
-        if (subYear == null || semester == null) {
-            Subject latestSubject = subjectRepository.findTopByOrderBySubYearDescSemesterDesc()
-                    .orElse(null);
-            
-            if (latestSubject != null) {
-                subYear = latestSubject.getSubYear();
-                semester = latestSubject.getSemester();
-            } else {
-                subYear = 2023L; // 최신 연도로 수정
-                semester = 1L; 
-            }
-        }
+        Long searchDeptId = (deptId != null) ? deptId : student.getDepartment().getId();
+        Long searchGrade = (targetGrade != null) ? targetGrade : student.getGrade();
+        
         System.out.println(">>> [DEBUG] 현재 조회 조건: 연도=" + subYear + ", 학기=" + semester);
         Specification<Subject> spec = Specification.where(SubjectSpecification.equalYearAndSemester(subYear, semester));
-
+        spec = spec.and(SubjectSpecification.equalDeptId(searchDeptId));
+        spec = spec.and(SubjectSpecification.equalTargetGrade(searchGrade));
+        
         if (type != null && !type.isEmpty()) spec = spec.and(SubjectSpecification.equalType(type));
         if (name != null && !name.isEmpty()) spec = spec.and(SubjectSpecification.likeName(name));
-        if (deptId != null) spec = spec.and(SubjectSpecification.equalDeptId(deptId));
 
         Pageable pageable = PageRequest.of(page, 20, Sort.by(Sort.Direction.ASC, "name"));
 

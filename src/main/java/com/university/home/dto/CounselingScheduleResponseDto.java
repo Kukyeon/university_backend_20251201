@@ -35,11 +35,17 @@ public class CounselingScheduleResponseDto {
     private String convertStatusToKorean(ScheduleStatus status) {
         switch (status) {
             case CONFIRMED:
-                return "확인됨"; // 또는 "예약 완료"
+                return "예약 완료"; // 또는 "예약 완료"
             case CANCELED:
-                return "취소됨";
+                return "예약 취소";
             case COMPLETED:
                 return "상담 완료";
+            case IN_PROGRESS:
+                return "상담 진행중";
+            case PENDING:
+                return "확인중";
+            case NO_SHOW:
+                return "미참석";
             default:
                 return status.name(); // 정의되지 않은 상태는 그대로 영문 사용
         }

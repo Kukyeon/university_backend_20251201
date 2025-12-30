@@ -8,6 +8,8 @@ import com.university.home.repository.RoomRepository;
 import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.university.home.dto.CollegeDto;
@@ -35,10 +37,9 @@ public class RoomService {
 	
 	        return dto;
     }
-	public List<RoomDto> roomList() {
-		 return roomRepository.findAll().stream()
-	                .map(this::toDto)
-	                .collect(Collectors.toList());
+	public Page<RoomDto> roomList(Pageable pageable) {
+		 return roomRepository.findAll(pageable)
+	                .map(this::toDto);
     }
 	@Transactional
     public RoomDto createRoom(RoomDto dto) {
